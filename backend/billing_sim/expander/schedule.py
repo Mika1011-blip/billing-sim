@@ -85,17 +85,25 @@ def review_days(ticket: TicketPlan) -> int:
 
 
 def real_schedule(
-    plan: ScenarioPlan, contract: Contract, order: list[TicketPlan], rng: random.Random
+    plan: ScenarioPlan,
+    contract: Contract,
+    order: list[TicketPlan],
+    rng: random.Random,
+    planned: Schedule,
 ) -> Schedule:
-    """What actually happened: lognormal overrun plus blocked and review days. One rng draw per ticket."""
+    """What actually happened: lognormal overrun plus blocked and review days. One rng draw per ticket.
+
+    Only timing differs from `planned`: each ticket keeps its planned assignee, whose real free day
+    is tracked here.
+    """
     free = {m.name: 0 for m in plan.team}
     result: Schedule = {}
     for ticket in order:
         base = _base_days(ticket, contract, rng)
         duration = base + blocked_days(ticket) + review_days(ticket)
-        member = pick_assignee(plan.team, ticket.profile, free)
-        start = max([free[member.name], *(result[d][2] + 1 for d in ticket.depends_on)])
+        assignee = planned[ticket.key][0]
+        start = max([free[assignee], *(result[d][2] + 1 for d in ticket.depends_on)])
         end = start + duration - 1
-        free[member.name] = end + 1
-        result[ticket.key] = (member.name, start, end)
+        free[assignee] = end + 1
+        result[ticket.key] = (assignee, start, end)
     return result

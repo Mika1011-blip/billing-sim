@@ -7,7 +7,7 @@ import pytest
 
 from billing_sim.expander.calendar import date_for_day, day_for_date
 from billing_sim.expander.expand import expand
-from billing_sim.expander.schedule import plan_schedule, topo_order
+from billing_sim.expander.schedule import plan_schedule, real_schedule, topo_order
 from billing_sim.scenario.schema import Beat, ClientBehaviour
 
 START = date(2026, 3, 2)  # a Monday
@@ -136,6 +136,16 @@ def test_plan_schedule_assigns_by_earliest_free(plan, contract):
     sched = plan_schedule(plan, contract, order)
     assert sched["BANK-1"][0] == "Camille Roux"  # first dev, both free at day 0
     assert sched["BANK-2"][0] == "Yanis Benali"  # Camille is busy until BANK-1 ends; Yanis is free
+
+
+@pytest.mark.parametrize("seed", [1, 7, 42])
+def test_real_assignee_equals_planned(plan, contract, seed):
+    order = topo_order(plan)
+    planned = plan_schedule(plan, contract, order)
+    real = real_schedule(plan, contract, order, random.Random(seed), planned)
+    assert {k: v[0] for k, v in real.items()} == {k: v[0] for k, v in planned.items()}
+    timeline = expand(plan, contract, seed, START)
+    assert {t.key: t.assignee for t in timeline.tickets} == {k: v[0] for k, v in planned.items()}
 
 
 # --- events --------------------------------------------------------------------

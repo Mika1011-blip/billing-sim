@@ -43,7 +43,7 @@ def expand(plan: ScenarioPlan, contract: Contract, seed: int, start_date: date) 
     rng = random.Random(seed)
     order = topo_order(plan)
     planned = plan_schedule(plan, contract, order)
-    real = real_schedule(plan, contract, order, rng)
+    real = real_schedule(plan, contract, order, rng, planned)
     profile_of = {m.name: m.profile for m in plan.team}
 
     tickets: list[ScheduledTicket] = []
