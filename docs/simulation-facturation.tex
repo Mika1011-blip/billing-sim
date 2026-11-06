@@ -1,9 +1,9 @@
 % Simulation de facturation au forfait — description précise du simulateur
 % Compilation : tectonic simulation-facturation.tex   (ou pdflatex ×2)
 \documentclass[11pt,a4paper]{article}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{lmodern}
+\usepackage{fontspec}
+\newfontfamily\symfont{DejaVuSans.ttf}
+\newcommand{\sym}[1]{{\symfont #1}}
 \usepackage[french]{babel}
 \usepackage[margin=2.2cm]{geometry}
 \usepackage{amsmath}
@@ -14,7 +14,7 @@
 \usepackage{enumitem}
 \usepackage{xcolor}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds,chains}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds,chains,patterns}
 \usepackage[hidelinks]{hyperref}
 
 \definecolor{accent}{HTML}{4F46E5}
@@ -35,7 +35,7 @@
   table/.style={draw=line, rounded corners=3pt, align=left, inner sep=5pt, font=\footnotesize, text width=3.1cm},
   tclient/.style={table, fill=client},
   tmanager/.style={table, fill=manager},
-  step/.style={box, fill=accentsoft, minimum height=1.1cm, text width=2.6cm},
+  stage/.style={box, fill=accentsoft, minimum height=1.1cm, text width=2.6cm},
   data/.style={box, fill=manager, text width=2.6cm},
   flow/.style={-{Stealth[length=2.5mm]}, thick, draw=muted},
   state/.style={box, minimum width=2.6cm, minimum height=0.9cm},
@@ -112,7 +112,7 @@ Tout ce que le simulateur enregistre est listé ici, y compris ce que le client 
 
 \subsection{Inventaire des champs}
 
-\begin{longtable}{>{\ttfamily}p{3.4cm} p{6.2cm} c c}
+\begin{longtable}{>{\ttfamily}p{3.3cm} p{8.2cm} >{\centering}p{1.2cm} >{\centering\arraybackslash}p{1.8cm}}
 \toprule
 \textrm{Champ} & Signification & Client & Filtré au jour \\
 \midrule
@@ -158,7 +158,7 @@ payment & paiement enregistré par le participant & oui & oui \\
 approval & validation du lot par la direction des achats & oui & oui \\
 clock & jour courant $D$ & oui & — \\
 \bottomrule
-\multicolumn{4}{l}{\footnotesize $^{*}$ le planning initial est montré au client dans la vue chronologie (section~\ref{sec:layout1}) sous forme de barres « prévu », sans les dates réelles futures.}\\
+\multicolumn{4}{p{15.2cm}}{\footnotesize $^{*}$ le planning initial est montré au client dans la vue chronologie (section~\ref{sec:layout1}) sous forme de barres « prévu », sans les dates réelles futures.}\\
 \end{longtable}
 
 Les données qui restent \textbf{hors de portée du client} : la demande brute, la graine, \key{last\_day}, les dates réelles futures, les aléas scénarisés (\key{beats}) et tout événement postérieur au jour courant. Le pilote (page \emph{Dev}, serveur MCP « manager ») voit tout, y compris le futur.
@@ -191,15 +191,15 @@ Toutes les valeurs ci-dessous sont \textbf{calculées par le code} à partir du 
   \node[data, right=of events] (inv) {Factures $\le D$\\ émission, échéance};
   \node[data, right=of inv] (pay) {Paiements $\le D$};
 
-  \node[step, below=9mm of contract] (jours) {jours facturés\\ $= \text{grille}[\text{taille}]$};
-  \node[step, right=of jours] (prix) {prix ticket\\ $= \text{jours} \times \text{TJM}$};
-  \node[step, right=of prix] (statut) {statut ticket,\\ dates réelles, heures};
-  \node[step, right=of statut] (jreels) {jours réels\\ $= \sum \text{heures} / 8$};
-  \node[step, right=of jreels] (fstatut) {statut facture,\\ jours de retard};
+  \node[stage, below=9mm of contract] (jours) {jours facturés\\ $= \text{grille}[\text{taille}]$};
+  \node[stage, right=of jours] (prix) {prix ticket\\ $= \text{jours} \times \text{TJM}$};
+  \node[stage, right=of prix] (statut) {statut ticket,\\ dates réelles, heures};
+  \node[stage, right=of statut] (jreels) {jours réels\\ $= \sum \text{heures} / 8$};
+  \node[stage, right=of jreels] (fstatut) {statut facture,\\ jours de retard};
 
-  \node[step, below=9mm of prix] (lotprix) {prix lot\\ $= \sum$ prix tickets};
-  \node[step, right=of lotprix] (ttc) {TVA, TTC\\ (arrondi au plus proche)};
-  \node[step, right=of ttc] (synthese) {synthèse : facturé,\\ payé, reste, en retard};
+  \node[stage, below=9mm of prix] (lotprix) {prix lot\\ $= \sum$ prix tickets};
+  \node[stage, right=of lotprix] (ttc) {TVA, TTC\\ (arrondi au plus proche)};
+  \node[stage, right=of ttc] (synthese) {synthèse : facturé,\\ payé, reste, en retard};
 
   \draw[flow] (contract) -- (jours);
   \draw[flow] (plan) -- (jours);
@@ -274,13 +274,13 @@ Un lot est \statut{Livré} quand sa facture est émise ; \statut{Validé} quand 
 
 \begin{figure}[h]\centering
 \begin{tikzpicture}[node distance=5mm, start chain=going below, every node/.style={on chain}]
-  \node[step, text width=11cm] (req) {\textbf{1. Demande du participant} (texte libre, en français ou non) + graine facultative};
-  \node[step, text width=11cm] (haiku) {\textbf{2. Génération par Claude Haiku} (\key{claude-haiku-5-5}), schéma strict : équipe (3--5), lots (2--4), tickets (12--30) avec taille, profil, dépendances, étapes, aléas ; résumé de livraison par lot. Jamais de prix ni de nombre de jours dans le texte. Rejet si la demande ne décrit aucun projet logiciel.};
-  \node[step, text width=11cm] (valid) {\textbf{3. Validation par le code} : clés uniques, lots connus, dépendances sans cycle, blocages de 1 à 3 jours, étapes non vides. Une seule nouvelle tentative, sinon échec explicite. Sans clé API : scénario de secours intégré (12 tickets, 3 lots).};
-  \node[step, text width=11cm] (plan) {\textbf{4. Planning} (déterministe) : ordre topologique (dépendances, puis lot, puis clé) ; affectation au membre du profil voulu le plus tôt libre ; durée prévue = jours de la grille ; sprints de 10 jours ouvrés ; prix des tickets, des lots, livraison prévue.};
-  \node[step, text width=11cm] (real) {\textbf{5. Chronologie réelle} (aléatoire mais rejouable par la graine) : par ticket, un facteur log-normal $e^{\mathcal N(0,\,0{,}25)}$ borné à $[0{,}6\,;\,1{,}8]$ sur la durée, plus les jours de blocage et 2 jours de revue ; même réalisateur ; mêmes dépendances. Puis les événements jour par jour : passage \statut{En cours}, temps passé ($8\text{ h} \times \mathcal U(0{,}5;\,1)$, note = l'étape du jour), blocage/déblocage, commentaires d'avancement, revue, \statut{Terminé}.};
-  \node[step, text width=11cm] (inv) {\textbf{6. Factures et validations} : une par lot à la livraison, une par ticket facturé à part ; échéance à 30 jours ; validation du lot par la direction des achats le jour de l'émission. \textbf{Aucun paiement} n'est scénarisé.};
-  \node[step, text width=11cm] (store) {\textbf{7. Base événementielle} + horloge à 0. La simulation dure jusqu'à 35 jours calendaires après la dernière échéance, pour que toute facture puisse devenir \statut{Très en retard}.};
+  \node[stage, text width=11cm] (req) {\textbf{1. Demande du participant} (texte libre, en français ou non) + graine facultative};
+  \node[stage, text width=11cm] (haiku) {\textbf{2. Génération par Claude Haiku} (\key{claude-haiku-5-5}), schéma strict : équipe (3--5), lots (2--4), tickets (12--30) avec taille, profil, dépendances, étapes, aléas ; résumé de livraison par lot. Jamais de prix ni de nombre de jours dans le texte. Rejet si la demande ne décrit aucun projet logiciel.};
+  \node[stage, text width=11cm] (valid) {\textbf{3. Validation par le code} : clés uniques, lots connus, dépendances sans cycle, blocages de 1 à 3 jours, étapes non vides. Une seule nouvelle tentative, sinon échec explicite. Sans clé API : scénario de secours intégré (12 tickets, 3 lots).};
+  \node[stage, text width=11cm] (plan) {\textbf{4. Planning} (déterministe) : ordre topologique (dépendances, puis lot, puis clé) ; affectation au membre du profil voulu le plus tôt libre ; durée prévue = jours de la grille ; sprints de 10 jours ouvrés ; prix des tickets, des lots, livraison prévue.};
+  \node[stage, text width=11cm] (real) {\textbf{5. Chronologie réelle} (aléatoire mais rejouable par la graine) : par ticket, un facteur log-normal $e^{\mathcal N(0,\,0{,}25)}$ borné à $[0{,}6\,;\,1{,}8]$ sur la durée, plus les jours de blocage et 2 jours de revue ; même réalisateur ; mêmes dépendances. Puis les événements jour par jour : passage \statut{En cours}, temps passé ($8\text{ h} \times \mathcal U(0{,}5;\,1)$, note = l'étape du jour), blocage/déblocage, commentaires d'avancement, revue, \statut{Terminé}.};
+  \node[stage, text width=11cm] (inv) {\textbf{6. Factures et validations} : une par lot à la livraison, une par ticket facturé à part ; échéance à 30 jours ; validation du lot par la direction des achats le jour de l'émission. \textbf{Aucun paiement} n'est scénarisé.};
+  \node[stage, text width=11cm] (store) {\textbf{7. Base événementielle} + horloge à 0. La simulation dure jusqu'à 35 jours calendaires après la dernière échéance, pour que toute facture puisse devenir \statut{Très en retard}.};
   \draw[flow] (req) -- (haiku); \draw[flow] (haiku) -- (valid); \draw[flow] (valid) -- (plan);
   \draw[flow] (plan) -- (real); \draw[flow] (real) -- (inv); \draw[flow] (inv) -- (store);
 \end{tikzpicture}
@@ -365,22 +365,22 @@ Les deux vues partagent le même en-tête (date, navigation), les mêmes tuiles 
 \begin{tikzpicture}[font=\footnotesize]
   \draw[line, rounded corners] (0,0) rectangle (14,9.2);
   \draw[line] (0,8.5) -- (14,8.5); \node[anchor=west] at (0.2,8.85) {Simulation de facturation \quad Dev \quad \textbf{Client} \hfill Jour 45 · 05/05/2026 \quad [Réinitialiser]};
-  \node[anchor=west] at (0.2,8.0) {\textbf{Aujourd'hui : mardi 5 mai 2026 · jour 45} \quad ◀ [05/05/2026] ▶};
+  \node[anchor=west] at (0.2,8.0) {\textbf{Aujourd'hui : mardi 5 mai 2026 · jour 45} \quad \sym{◀} [05/05/2026] \sym{▶}};
   \foreach \i/\t in {0/Contracté, 1/Facturé, 2/Payé, 3/Reste à payer, 4/En retard} {
     \draw[line, rounded corners] (0.2+\i*2.75,6.3) rectangle (2.75+\i*2.75,7.4);
     \node[anchor=west] at (0.3+\i*2.75,7.1) {\t};
   }
   \node[anchor=west, danger] at (11.3,6.65) {7 200 € · 2};
   \draw[line, rounded corners] (0.2,3.3) rectangle (13.8,5.9);
-  \node[anchor=west] at (0.3,5.6) {\textbf{Avancement} \quad prévu \textcolor{muted}{■} \ réel \textcolor{accent}{■} \ bloqué \textcolor{warn}{▨} \ aujourd'hui \textcolor{danger}{|}};
+  \node[anchor=west] at (0.3,5.6) {\textbf{Avancement} \quad prévu \textcolor{muted}{\sym{■}} \ réel \textcolor{accent}{\sym{■}} \ bloqué \textcolor{warn}{\sym{▨}} \ aujourd'hui \textcolor{danger}{|}};
   \foreach \y/\k in {5.1/BANK-4, 4.7/BANK-5, 4.3/BANK-6, 3.9/BANK-8, 3.5/BANK-9} { \node[anchor=west] at (0.4,\y) {\k}; \fill[line] (2,\y+0.08) rectangle (4.5,\y-0.04); }
   \fill[accent] (2,4.99) rectangle (5.1,4.9); \fill[accent] (2,4.59) rectangle (4.2,4.5); \fill[pattern=north east lines, pattern color=warn] (4.2,4.59) rectangle (5.2,4.5);
   \fill[accent] (2,4.19) rectangle (6.2,4.1); \fill[accent] (2,3.79) rectangle (3.4,3.7);
   \draw[danger] (6.4,5.4) -- (6.4,3.4);
   \draw[line, rounded corners] (0.2,0.2) rectangle (6.8,3.0); \node[anchor=west] at (0.3,2.7) {\textbf{Terminé} (7)};
-  \foreach \y/\k in {2.3/BANK-1 · Filtres du tableau de bord, 1.9/BANK-2 · Tri et pagination, 1.5/BANK-4 · Import des relevés, 1.1/BANK-5 · Rapprochement automatique} { \node[anchor=west] at (0.4,\y) {▸ \k}; }
+  \foreach \y/\k in {2.3/BANK-1 · Filtres du tableau de bord, 1.9/BANK-2 · Tri et pagination, 1.5/BANK-4 · Import des relevés, 1.1/BANK-5 · Rapprochement automatique} { \node[anchor=west] at (0.4,\y) {\sym{▸} \k}; }
   \draw[line, rounded corners] (7.0,0.2) rectangle (13.8,3.0); \node[anchor=west] at (7.1,2.7) {\textbf{Reste à faire} (5)};
-  \foreach \y/\k in {2.3/BANK-6 · Alertes (En cours), 1.9/BANK-8 · Export comptable (À faire), 1.5/BANK-9 · Notifications (À faire)} { \node[anchor=west] at (7.2,\y) {▸ \k}; }
+  \foreach \y/\k in {2.3/BANK-6 · Alertes (En cours), 1.9/BANK-8 · Export comptable (À faire), 1.5/BANK-9 · Notifications (À faire)} { \node[anchor=west] at (7.2,\y) {\sym{▸} \k}; }
 \end{tikzpicture}
 \caption{Vue chronologie : avancement prévu contre réel jusqu'au jour courant, puis les tickets terminés et ceux qui restent. Chaque ligne s'ouvre sur la fiche ticket.}
 \end{figure}
@@ -408,7 +408,7 @@ Les deux vues partagent le même en-tête (date, navigation), les mêmes tuiles 
   }
   \draw[line, rounded corners] (0.2,0.2) rectangle (13.8,3.0);
   \node[anchor=west] at (0.3,2.7) {\textbf{Lots en cours} (pas encore facturés)};
-  \node[anchor=west] at (0.4,2.2) {▸ L3 · Exports et notifications · livraison prévue le 02/06 · 4/6 tickets terminés · 9 000 € HT à venir};
+  \node[anchor=west] at (0.4,2.2) {\sym{▸} L3 · Exports et notifications · livraison prévue le 02/06 · 4/6 tickets terminés · 9 000 € HT à venir};
 \end{tikzpicture}
 \caption{Vue par facture : une carte par facture, filtrables par statut ; les lots non encore facturés en dessous.}
 \end{figure}
@@ -424,16 +424,16 @@ Cliquer une carte ouvre le \textbf{détail de la facture} : le résumé de livra
   \node[anchor=west, text width=12.4cm] at (0.3,6.3) {Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.};
   \node[anchor=west] at (0.3,5.5) {\textbf{Assigné à} Sophie Lambert \quad \textbf{Du} 23/03/2026 \textbf{au} 27/03/2026 \quad \textbf{Jours facturés} 3 · \textbf{jours réels} 1,91};
   \node[anchor=west] at (0.3,4.9) {\textbf{Étapes prévues}};
-  \node[anchor=west] at (0.5,4.5) {☑ Créer le connecteur vers l'API bancaire de recette};
-  \node[anchor=west] at (0.5,4.1) {☑ Convertir chaque relevé au format interne};
-  \node[anchor=west] at (0.5,3.7) {☑ Vérifier l'import sur un mois de données réelles};
+  \node[anchor=west] at (0.5,4.5) {\sym{☑} Créer le connecteur vers l'API bancaire de recette};
+  \node[anchor=west] at (0.5,4.1) {\sym{☑} Convertir chaque relevé au format interne};
+  \node[anchor=west] at (0.5,3.7) {\sym{☑} Vérifier l'import sur un mois de données réelles};
   \node[anchor=west] at (0.3,3.1) {\textbf{Journal}};
-  \node[anchor=west] at (0.5,2.7) {23/03 \ ↔ \ Sophie Lambert · À faire → En cours};
-  \node[anchor=west] at (0.5,2.3) {23/03 \ ⏱ \ 4,9 h : Créer le connecteur vers l'API bancaire de recette};
-  \node[anchor=west] at (0.5,1.9) {24/03 \ ⛔ \ En attente des accès à l'API bancaire};
-  \node[anchor=west] at (0.5,1.5) {25/03 \ ✅ \ Le blocage est levé · 4,8 h : Convertir chaque relevé au format interne};
-  \node[anchor=west] at (0.5,1.1) {27/03 \ 💬 \ Terminé. Étapes réalisées : Créer le connecteur … ; Convertir … ; Vérifier …};
-  \node[anchor=west] at (0.5,0.7) {27/03 \ ↔ \ En cours → Terminé};
+  \node[anchor=west] at (0.5,2.7) {23/03 \ \sym{↔} \ Sophie Lambert · À faire → En cours};
+  \node[anchor=west] at (0.5,2.3) {23/03 \ \sym{◷} \ 4,9 h : Créer le connecteur vers l'API bancaire de recette};
+  \node[anchor=west] at (0.5,1.9) {24/03 \ \sym{⊘} \ En attente des accès à l'API bancaire};
+  \node[anchor=west] at (0.5,1.5) {25/03 \ \sym{✔} \ Le blocage est levé · 4,8 h : Convertir chaque relevé au format interne};
+  \node[anchor=west] at (0.5,1.1) {27/03 \ \sym{✎} \ Terminé. Étapes réalisées : Créer le connecteur … ; Convertir … ; Vérifier …};
+  \node[anchor=west] at (0.5,0.7) {27/03 \ \sym{↔} \ En cours → Terminé};
 \end{tikzpicture}
 \caption{La fiche ticket, identique dans les deux vues : identité et prix, réalisateur et dates réelles, jours facturés contre réels, étapes cochées, journal jusqu'au jour courant.}
 \label{fig:popup}
