@@ -171,7 +171,7 @@ def test_dev_plan_ticket_diff_agent_tools(client):
     key = plan["tickets"][0]["key"]
     assert client.get(f"/dev/ticket/{key}").status_code == 200
     assert client.get("/dev/diff").status_code == 200
-    assert client.get("/dev/agent-tools").json() == []
+    assert len(client.get("/dev/agent-tools").json()) == 13  # the client MCP server's tools (see test_wiring)
 
 
 def test_dev_ticket_404(client):

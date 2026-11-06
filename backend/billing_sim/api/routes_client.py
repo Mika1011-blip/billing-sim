@@ -22,65 +22,65 @@ def _lookup(conn: sqlite3.Connection, query, key: str, *args):
 
 
 @router.get("/today")
-def today(conn: sqlite3.Connection = Depends(get_conn)):
+async def today(conn: sqlite3.Connection = Depends(get_conn)):
     return queries.today(conn, get_day(conn))
 
 
 @router.get("/contract")
-def contract(conn: sqlite3.Connection = Depends(get_conn)):
+async def contract(conn: sqlite3.Connection = Depends(get_conn)):
     return queries.get_contract(conn)
 
 
 @router.get("/summary")
-def summary(conn: sqlite3.Connection = Depends(get_conn)):
+async def summary(conn: sqlite3.Connection = Depends(get_conn)):
     return queries.summary(conn, get_day(conn))
 
 
 @router.get("/lots")
-def lots(conn: sqlite3.Connection = Depends(get_conn)):
+async def lots(conn: sqlite3.Connection = Depends(get_conn)):
     return queries.list_lots(conn, get_day(conn))
 
 
 @router.get("/lots/{key}")
-def lot(key: str, conn: sqlite3.Connection = Depends(get_conn)):
+async def lot(key: str, conn: sqlite3.Connection = Depends(get_conn)):
     return _lookup(conn, queries.get_lot, key)
 
 
 @router.get("/tickets")
-def tickets(lot: str | None = None, status: str | None = None, conn: sqlite3.Connection = Depends(get_conn)):
+async def tickets(lot: str | None = None, status: str | None = None, conn: sqlite3.Connection = Depends(get_conn)):
     return queries.list_tickets(conn, get_day(conn), lot_key=lot, status=status)
 
 
 @router.get("/tickets/{key}")
-def ticket(key: str, conn: sqlite3.Connection = Depends(get_conn)):
+async def ticket(key: str, conn: sqlite3.Connection = Depends(get_conn)):
     return _lookup(conn, queries.get_ticket, key)
 
 
 @router.get("/tickets/{key}/history")
-def ticket_history(key: str, conn: sqlite3.Connection = Depends(get_conn)):
+async def ticket_history(key: str, conn: sqlite3.Connection = Depends(get_conn)):
     return _lookup(conn, queries.ticket_history, key)
 
 
 @router.get("/invoices")
-def invoices(conn: sqlite3.Connection = Depends(get_conn)):
+async def invoices(conn: sqlite3.Connection = Depends(get_conn)):
     return queries.list_invoices(conn, get_day(conn))
 
 
 @router.get("/invoices/{number}")
-def invoice(number: str, conn: sqlite3.Connection = Depends(get_conn)):
+async def invoice(number: str, conn: sqlite3.Connection = Depends(get_conn)):
     return _lookup(conn, queries.get_invoice, number)
 
 
 @router.get("/payments")
-def payments(invoice: str | None = None, conn: sqlite3.Connection = Depends(get_conn)):
+async def payments(invoice: str | None = None, conn: sqlite3.Connection = Depends(get_conn)):
     return queries.list_payments(conn, get_day(conn), invoice_number=invoice)
 
 
 @router.get("/approvals/pending")
-def pending_approvals(conn: sqlite3.Connection = Depends(get_conn)):
+async def pending_approvals(conn: sqlite3.Connection = Depends(get_conn)):
     return queries.pending_approvals(conn, get_day(conn))
 
 
 @router.get("/explain/{key}")
-def explain_price(key: str, conn: sqlite3.Connection = Depends(get_conn)):
+async def explain_price(key: str, conn: sqlite3.Connection = Depends(get_conn)):
     return _lookup(conn, queries.explain_price, key)

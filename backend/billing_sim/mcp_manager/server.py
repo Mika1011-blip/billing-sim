@@ -9,6 +9,7 @@ from mcp.server.fastmcp import FastMCP
 
 from billing_sim.api.deps import get_settings
 from billing_sim.engine import clock
+from billing_sim.mcp_client.server import agent_tools_for
 from billing_sim.mcp_manager.pipeline import generate as run_generate
 from billing_sim.store import dev_queries
 from billing_sim.store.db import connect, wipe
@@ -101,6 +102,6 @@ def diff_plan_vs_real() -> dict:
 
 
 @mcp.tool()
-def get_agent_tools() -> list[dict]:
-    """The tools the client agent can call. Empty until the client MCP server exists (Task 7)."""
-    return []
+async def get_agent_tools() -> list[dict]:
+    """The tools the client agent can call: name, description and JSON input schema."""
+    return await agent_tools_for(get_settings().db_path)
