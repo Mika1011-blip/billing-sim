@@ -6,7 +6,7 @@
       "seed": 42,
       "start_date": "2026-03-02",
       "signed_day": 0,
-      "last_day": 84,
+      "last_day": 75,
       "warnings": []
     },
     "contract": {
@@ -1650,7 +1650,7 @@
         "lot": "L1",
         "ticket": null,
         "issued_day": 6,
-        "due_day": 36,
+        "due_day": 28,
         "amount_ht": 3000,
         "vat": 600,
         "amount_ttc": 3600,
@@ -1665,7 +1665,7 @@
         "lot": "L2",
         "ticket": null,
         "issued_day": 23,
-        "due_day": 53,
+        "due_day": 45,
         "amount_ht": 13650,
         "vat": 2730,
         "amount_ttc": 16380,
@@ -1681,7 +1681,7 @@
         "lot": null,
         "ticket": "BANK-12",
         "issued_day": 26,
-        "due_day": 56,
+        "due_day": 48,
         "amount_ht": 750,
         "vat": 150,
         "amount_ttc": 900,
@@ -1694,7 +1694,7 @@
         "lot": "L3",
         "ticket": null,
         "issued_day": 29,
-        "due_day": 59,
+        "due_day": 50,
         "amount_ht": 8100,
         "vat": 1620,
         "amount_ttc": 9720,
@@ -1903,8 +1903,8 @@
     ]
   },
   "clock": {
-    "day": 84,
-    "last_day": 84,
-    "date": "2026-06-26"
+    "day": 75,
+    "last_day": 75,
+    "date": "2026-06-15"
   }
 }

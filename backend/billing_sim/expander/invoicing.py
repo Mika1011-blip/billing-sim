@@ -60,13 +60,13 @@ def build_invoices(
         earliest = max(scheduled[t.key].real_end for t in covered) + 1
         issued = _issue_day(contract, sprints, earliest)
         amount_ht = lot_price(contract, [(t.size, t.profile, _invoiced_on_its_own(t)) for t in lot_tickets])
-        invoice = _invoice(contract, lot.key, None, issued, amount_ht, [t.key for t in covered])
+        invoice = _invoice(contract, start_date, lot.key, None, issued, amount_ht, [t.key for t in covered])
         drafts.append(((issued, 0, position, ""), invoice))
 
     for ticket in plan.tickets:
         if _invoiced_on_its_own(ticket):
             done = scheduled[ticket.key]
-            invoice = _invoice(contract, None, ticket.key, done.real_end, done.fee, [ticket.key])
+            invoice = _invoice(contract, start_date, None, ticket.key, done.real_end, done.fee, [ticket.key])
             drafts.append(((done.real_end, 1, 0, ticket.key), invoice))
 
     drafts.sort(key=lambda d: d[0])
@@ -81,6 +81,7 @@ def build_invoices(
 
 def _invoice(
     contract: Contract,
+    start_date: date,
     lot_key: str | None,
     ticket_key: str | None,
     issued: int,
@@ -88,4 +89,4 @@ def _invoice(
     covers: list[str],
 ) -> Invoice:
     vat, ttc = invoice_total(contract, amount_ht)
-    return Invoice("", lot_key, ticket_key, issued, due_day(contract, issued), amount_ht, vat, ttc, covers)
+    return Invoice("", lot_key, ticket_key, issued, due_day(contract, issued, start_date), amount_ht, vat, ttc, covers)

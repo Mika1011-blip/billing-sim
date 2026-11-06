@@ -338,7 +338,18 @@ def test_lot_invoice_amounts(timeline, contract):
     l1 = _lot_invoice(timeline, "L1")
     assert (l1.amount_ht, l1.vat, l1.amount_ttc) == (3000, 600, 3600)
     assert sorted(l1.covers) == ["BANK-1", "BANK-2", "BANK-3"]
-    assert l1.due_day == l1.issued_day + contract.payment_terms_days
+    due = date_for_day(START, l1.due_day)
+    issued = date_for_day(START, l1.issued_day)
+    assert contract.payment_terms_days == 30 and due.weekday() < 5
+    assert timedelta(days=30) <= due - issued <= timedelta(days=32)  # 30 calendar days, +1/+2 when rolled off a weekend
+
+
+def test_fixture_due_dates_are_calendar(timeline):
+    assert timeline.invoices
+    for invoice in timeline.invoices:
+        due, issued = date_for_day(START, invoice.due_day), date_for_day(START, invoice.issued_day)
+        assert (due - issued).days in (30, 31, 32)
+        assert due.weekday() < 5
 
 
 def test_no_lot_ticket_is_invoiced_on_its_own(timeline):
@@ -446,7 +457,7 @@ def test_last_day_leaves_35_calendar_days_after_last_due_date(plan, contract, se
 
 
 def test_last_day_tail_lands_on_a_working_day_when_due_plus_35_is_a_weekend(plan, contract):
-    from billing_sim.expander.expand import first_working_day_on_or_after
+    from billing_sim.expander.calendar import first_working_day_on_or_after
 
     assert first_working_day_on_or_after(START, date(2026, 3, 7)) == 5  # Saturday -> Monday 9 March (day 5)
     assert first_working_day_on_or_after(START, date(2026, 3, 8)) == 5  # Sunday -> Monday

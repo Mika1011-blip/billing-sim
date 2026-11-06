@@ -1,5 +1,5 @@
 {
-  "day": 84,
+  "day": 75,
   "history": {
     "BANK-5": [
       {
@@ -74,7 +74,7 @@
         "BANK-2",
         "BANK-3"
       ],
-      "echeance_le": "2026-04-21",
+      "echeance_le": "2026-04-09",
       "emise_le": "2026-03-10",
       "jours_de_retard": 0,
       "jours_restants": 0,
@@ -178,7 +178,7 @@
         "BANK-6",
         "BANK-7"
       ],
-      "echeance_le": "2026-05-14",
+      "echeance_le": "2026-05-04",
       "emise_le": "2026-04-02",
       "jours_de_retard": 0,
       "jours_restants": 0,
@@ -188,7 +188,7 @@
       "montant_ttc": 16380,
       "numero": "F-2026-002",
       "paiement": {
-        "date": "2026-06-26",
+        "date": "2026-06-15",
         "montant": 16380,
         "reference": "VIR-F-2026-002-1"
       },
@@ -304,9 +304,9 @@
       "couvre": [
         "BANK-12"
       ],
-      "echeance_le": "2026-05-19",
+      "echeance_le": "2026-05-07",
       "emise_le": "2026-04-07",
-      "jours_de_retard": 38,
+      "jours_de_retard": 39,
       "jours_restants": 0,
       "lot": null,
       "lot_nom": null,
@@ -359,7 +359,7 @@
         "BANK-10",
         "BANK-11"
       ],
-      "echeance_le": "2026-05-22",
+      "echeance_le": "2026-05-11",
       "emise_le": "2026-04-10",
       "jours_de_retard": 35,
       "jours_restants": 0,
@@ -536,7 +536,7 @@
           "BANK-2",
           "BANK-3"
         ],
-        "echeance_le": "2026-04-21",
+        "echeance_le": "2026-04-09",
         "emise_le": "2026-03-10",
         "jours_de_retard": 0,
         "jours_restants": 0,
@@ -640,10 +640,10 @@
           "BANK-6",
           "BANK-7"
         ],
-        "echeance_le": "2026-05-14",
+        "echeance_le": "2026-05-04",
         "emise_le": "2026-04-02",
         "jours_de_retard": 0,
-        "jours_restants": 42,
+        "jours_restants": 32,
         "lot": "L2",
         "lot_nom": "Suivi des paiements",
         "montant_ht": 13650,
@@ -1208,8 +1208,8 @@
     }
   ],
   "today": {
-    "date": "2026-06-26",
-    "date_longue": "vendredi 26 juin 2026",
-    "jour": 84
+    "date": "2026-06-15",
+    "date_longue": "lundi 15 juin 2026",
+    "jour": 75
   }
 }
