@@ -10,20 +10,11 @@ test('generate with the fallback, move the clock to the end, read the client das
   await page.getByRole('button', { name: 'Generate' }).click()
   await expect(page.locator('pre.output')).toContainText('"plan"', { timeout: 30_000 })
 
-  // Clock to the maximum: press +5 until the day stops changing.
-  const dayText = page.locator('.clock-panel p')
-  await expect(dayText).toContainText('Day ')
-  const forward = page.getByRole('button', { name: '+5' })
-  let previous = ''
-  for (let i = 0; i < 100; i++) {
-    const current = (await dayText.textContent()) ?? ''
-    if (current === previous) break
-    previous = current
-    await forward.click()
-    await page.waitForTimeout(150)
-  }
-  const [, day, last] = /Day (\d+) \/ (\d+)/.exec(previous) ?? []
-  expect(day).toBe(last)
+  // Clock to the last day: read it from the API, then set the slider to it.
+  const clock = await (await page.request.get('/sim/clock')).json()
+  const last = String(clock.last_day)
+  await page.getByLabel('Day', { exact: true }).fill(last)
+  await expect(page.locator('.clock-panel p')).toHaveText(new RegExp(`^Day ${last} / ${last} `))
 
   await page.goto('/client')
   await expect(page.getByText('Reste à payer').first()).toBeVisible()
