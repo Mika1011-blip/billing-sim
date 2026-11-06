@@ -1,6 +1,12 @@
 import type {
   AgentTool,
   Clock,
+  ClientInvoice,
+  ClientLot,
+  ClientPayment,
+  ClientSummary,
+  ClientTicket,
+  ClientToday,
   Diff,
   GenerateBody,
   GenerateResult,
@@ -48,3 +54,11 @@ export const getTimeline = (fromDay?: number, toDay?: number) => {
 }
 export const getDiff = () => request<Diff>('/dev/diff')
 export const getAgentTools = () => request<AgentTool[]>('/dev/agent-tools')
+
+export const getClientToday = () => request<ClientToday>('/client/today')
+export const getClientSummary = () => request<ClientSummary>('/client/summary')
+export const getClientLots = () => request<ClientLot[]>('/client/lots')
+export const getClientTickets = () => request<ClientTicket[]>('/client/tickets')
+export const getClientInvoices = () => request<ClientInvoice[]>('/client/invoices')
+export const getClientPayments = () => request<ClientPayment[]>('/client/payments')
+export const getClientApprovals = () => request<ClientLot[]>('/client/approvals/pending')
