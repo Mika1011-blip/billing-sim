@@ -80,6 +80,10 @@ async def test_tool_names_exact(server):
     assert len(names) == 13
 
 
+async def test_client_agent_cannot_pay(server):
+    assert "pay_invoice" not in {t["name"] for t in await agent_tool_list(server)}
+
+
 async def test_no_tool_accepts_a_day(server):
     for t in await server.list_tools():
         assert not ({"day", "as_of", "date", "jour"} & set(t.inputSchema.get("properties", {})))
