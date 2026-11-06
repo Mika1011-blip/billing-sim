@@ -1,6 +1,6 @@
 import snapshot from '../test-fixtures/client-snapshot.json'
 import type { ClientTicket } from '../types'
-import { fmtCalcul, fmtDate, fmtDays, fmtEuro } from './format'
+import { fmtCalcul, fmtDate, fmtDays, fmtEuro, fmtNumber } from './format'
 
 // Intl uses U+202F (narrow no-break space) as group separator and U+00A0 before the euro sign.
 const NNBSP = ' '
@@ -29,6 +29,14 @@ describe('fmtDate', () => {
 
   it('shows a dash for a missing date', () => {
     expect(fmtDate(null)).toBe('—')
+  })
+})
+
+describe('fmtNumber', () => {
+  it('uses the French decimal comma, at most two decimals, no unit', () => {
+    expect(fmtNumber(14.2)).toBe('14,2')
+    expect(fmtNumber(17)).toBe('17')
+    expect(fmtNumber(0.736)).toBe('0,74')
   })
 })
 

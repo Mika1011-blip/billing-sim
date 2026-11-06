@@ -37,3 +37,4 @@ frontend/test-results/
 frontend/playwright-report/
 docs/demo/*.webm
 docs/demo/contact.png
+docs/demo/seg/

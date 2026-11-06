@@ -19,10 +19,13 @@ export const fmtDate = (iso: string | null | undefined) => {
   return `${d}/${m}/${y}`
 }
 
-const DAYS = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 })
+const NUMBER = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 })
+
+/** `14,2`: a plain number with the French decimal comma, at most two decimals. */
+export const fmtNumber = (n: number) => NUMBER.format(n)
 
 /** `6,4 j`: a day count with the French decimal comma, glued to its unit by a no-break space. */
-export const fmtDays = (n: number) => `${DAYS.format(n)} j`
+export const fmtDays = (n: number) => `${fmtNumber(n)} j`
 
 /** A ticket's fixed price: `L → 5 j × 750 € = 3 750 €` (taille → jours facturés × TJM = montant). */
 export const fmtCalcul = (t: Pick<ClientTicket, 'taille' | 'jours_factures' | 'tjm' | 'montant'>) =>
