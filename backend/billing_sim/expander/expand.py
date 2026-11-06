@@ -70,9 +70,7 @@ def expand(plan: ScenarioPlan, contract: Contract, seed: int, start_date: date) 
             )
 
     last_work_day = max(max(t.planned_end, t.real_end) for t in tickets)
-    sprints = [
-        Sprint(n, (n - 1) * SPRINT_DAYS, n * SPRINT_DAYS - 1) for n in range(1, last_work_day // SPRINT_DAYS + 2)
-    ]
+    sprints = _sprints_through(last_work_day)
 
     scheduled = {t.key: t for t in tickets}
     streams: list[Event] = []
@@ -81,9 +79,15 @@ def expand(plan: ScenarioPlan, contract: Contract, seed: int, start_date: date) 
     events = _merge_streams(streams)
 
     invoices, approvals, payments = build_invoices(plan, contract, tickets, sprints, start_date)
+    sprints = _sprints_through(max(last_work_day, *(i.issued_day for i in invoices)))
 
     last_day = max([e.day for e in events] + [i.due_day for i in invoices] + [p.day for p in payments]) + TAIL_DAYS
     return Timeline(sprints, tickets, events, invoices, payments, approvals, last_day, warnings)
+
+
+def _sprints_through(day: int) -> list[Sprint]:
+    """Sprints from day 0 up to and including the one holding `day`."""
+    return [Sprint(n, (n - 1) * SPRINT_DAYS, n * SPRINT_DAYS - 1) for n in range(1, day // SPRINT_DAYS + 2)]
 
 
 def _merge_streams(events: list[Event]) -> list[Event]:

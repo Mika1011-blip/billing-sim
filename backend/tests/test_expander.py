@@ -25,6 +25,42 @@ def _payments_of(timeline, invoice):
     return sorted((p for p in timeline.payments if p.invoice_number == invoice.number), key=lambda p: p.day)
 
 
+LEGAL_TRANSITIONS = {
+    ("À faire", "En cours"),
+    ("En cours", "Bloqué"),
+    ("Bloqué", "En cours"),
+    ("En cours", "En revue"),
+    ("En revue", "En cours"),
+    ("En cours", "Terminé"),
+}
+
+
+def _assert_legal_story(timeline, plan):
+    """Status changes are legal and chained, blocks last their duration_days, nobody works while blocked."""
+    ordered = sorted(timeline.events, key=lambda e: (e.day, e.seq))
+    for ticket in plan.tickets:
+        events = [e for e in ordered if e.ticket_key == ticket.key]
+        state = "À faire"
+        for e in events:
+            if e.type == "transition":
+                assert e.payload["from"] == state, (ticket.key, e)
+                assert (e.payload["from"], e.payload["to"]) in LEGAL_TRANSITIONS, (ticket.key, e)
+                state = e.payload["to"]
+        assert state == "Terminé"
+
+        durations = [b.duration_days for b in ticket.beats if b.kind == "blocked"]
+        blocked = [e for e in events if e.type == "blocked"]
+        unblocked = [e for e in events if e.type == "unblocked"]
+        assert len(blocked) == len(unblocked) == len(durations)
+        for b, u, duration in zip(blocked, unblocked, durations, strict=True):
+            assert u.day - b.day + 1 == duration, (ticket.key, b, u)
+            assert not any(
+                e.type == "worklog" and b.day <= e.day <= u.day for e in events
+            ), (ticket.key, b, u)
+        spans = sorted((b.day, u.day) for b, u in zip(blocked, unblocked, strict=True))
+        assert all(a[1] < b[0] for a, b in itertools.pairwise(spans)), "blocks overlap"
+
+
 # --- calendar -----------------------------------------------------------------
 
 
@@ -168,13 +204,45 @@ def test_each_ticket_has_one_start_and_one_done(timeline, plan):
         assert transitions[-1] is dones[0]
 
 
-def test_transitions_chain_consistently(timeline, plan):
-    for ticket in plan.tickets:
-        state = "À faire"
-        for e in _transitions(timeline, ticket.key):
-            assert e.payload["from"] == state
-            state = e.payload["to"]
-        assert state == "Terminé"
+@pytest.mark.parametrize("seed", [0, 1, 6, 42])
+def test_story_is_legal(plan, contract, seed):
+    _assert_legal_story(expand(plan, contract, seed, START), plan)
+
+
+def _ticket(plan, key):
+    return next(t for t in plan.tickets if t.key == key)
+
+
+def test_two_long_blocks_and_a_review_on_an_l_ticket(plan, contract):
+    bank8 = _ticket(plan, "BANK-8")
+    assert bank8.size == "L"
+    bank8.beats = [
+        Beat(kind="blocked", text="Attente des accès.", duration_days=2),
+        Beat(kind="blocked", text="Attente de la recette.", duration_days=2),
+        Beat(kind="review_changes", text="Ajouter des tests."),
+    ]
+    for seed in [0, *range(1, 10)]:
+        timeline = expand(plan, contract, seed, START)
+        _assert_legal_story(timeline, plan)
+        scheduled = _by_key(timeline.tickets)["BANK-8"]
+        events = [e for e in timeline.events if e.ticket_key == "BANK-8"]
+        blocks = [e for e in events if e.type == "blocked"]
+        unblocks = [e for e in events if e.type == "unblocked"]
+        assert len(blocks) == len(unblocks) == 2
+        requested = next(e for e in events if e.type == "review_requested")
+        assert all(b.day > scheduled.real_start for b in blocks)
+        assert max(u.day for u in unblocks) <= requested.day == scheduled.real_end - 2
+
+
+def test_short_ticket_with_a_block_and_a_review(plan, contract):
+    bank3 = _ticket(plan, "BANK-3")
+    assert bank3.size == "S"
+    bank3.beats = [
+        Beat(kind="blocked", text="Attente des accès.", duration_days=2),
+        Beat(kind="review_changes", text="Ajouter des tests."),
+    ]
+    for seed in range(10):
+        _assert_legal_story(expand(plan, contract, seed, START), plan)
 
 
 def test_events_ordered_with_increasing_seq_per_day(timeline):
@@ -198,11 +266,12 @@ def test_blocked_span_has_no_worklogs(timeline):
     assert not open_spans
 
 
-def test_blocked_span_lasts_at_least_duration_days(timeline):
+def test_blocked_span_lasts_exactly_duration_days(timeline, plan):
+    (beat,) = [b for b in _ticket(plan, "BANK-5").beats if b.kind == "blocked"]
     events = [e for e in timeline.events if e.ticket_key == "BANK-5"]
     blocked = next(e for e in events if e.type == "blocked")
     unblocked = next(e for e in events if e.type == "unblocked")
-    assert unblocked.day - blocked.day >= 2 or unblocked.day == _by_key(timeline.tickets)["BANK-5"].real_end
+    assert unblocked.day - blocked.day + 1 == beat.duration_days
 
 
 def test_review_beats_emit_the_review_cycle(timeline):
@@ -306,6 +375,29 @@ def test_sprint_end_timing_issues_on_a_sprint_boundary(plan, contract):
         assert invoice.issued_day in sprint_ends
         assert invoice.issued_day >= earliest
         assert invoice.issued_day - earliest < 10
+
+
+@pytest.mark.parametrize("seed", range(10))
+def test_sprint_end_invoices_land_on_a_sprint_end(plan, contract, seed):
+    timeline = expand(plan, replace(contract, invoice_timing="sprint_end"), seed, START)
+    sprint_ends = {s.end_day for s in timeline.sprints}
+    tickets = _by_key(timeline.tickets)
+    for invoice in (i for i in timeline.invoices if i.lot_key is not None):
+        assert invoice.issued_day % 10 == 9
+        assert invoice.issued_day in sprint_ends
+        assert invoice.issued_day > max(tickets[k].real_end for k in invoice.covers)
+
+
+def test_sprint_end_invoice_on_day_ten_boundary_goes_to_next_sprint_end(plan, contract):
+    # Force a lot whose last ticket ends on day 9 (a sprint end): the invoice must wait for day 19.
+    from billing_sim.expander.invoicing import build_invoices
+    from billing_sim.expander.models import Sprint
+
+    contract = replace(contract, invoice_timing="sprint_end")
+    timeline = expand(plan, contract, 42, START)
+    tickets = [replace(t, real_end=9) if t.key in ("BANK-1", "BANK-2", "BANK-3") else t for t in timeline.tickets]
+    invoices, _, _ = build_invoices(plan, contract, tickets, [Sprint(1, 0, 9)], START)
+    assert next(i for i in invoices if i.lot_key == "L1").issued_day == 19
 
 
 def test_approvals_one_per_lot_on_issue_day(timeline, plan):

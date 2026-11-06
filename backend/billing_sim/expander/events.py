@@ -1,10 +1,17 @@
 """Jira-like event stream for one ticket, derived from its real schedule and its beats.
 
 Draw order from the shared rng (changing it reshuffles every seeded timeline):
-  1. one `randint` per `blocked` beat, in beat order (offset of the block from the start);
+  1. blocked beats, in beat order: the first draws `randint(1, max(1, base - 1))` (its offset from
+     `real_start`); every further one draws `randint(0, spare)` (working days between it and the
+     previous block, `spare` being what is left of the base window, one day kept for the end);
   2. one `choice([2, 3])` for the first comment interval;
   3. then for each non-blocked working day from `real_start` to `real_end`: one
      `uniform(0.5, 1.0)` (hours), followed by one `choice([2, 3])` each time a comment is emitted.
+
+Blocks: the ticket is `Bloqué` from the `blocked` day to the `unblocked` day inclusive (the last
+blocked day, so a block spans exactly `duration_days` days); worklogs resume the next working day.
+Blocks never overlap and lie within `[real_start + 1, real_end - review_len]`, which is exactly
+`base - 1` working days wider than the blocks themselves, so the draws above always fit.
 """
 
 from __future__ import annotations
@@ -15,6 +22,7 @@ from dataclasses import dataclass
 
 from billing_sim.billing.policy import Contract
 from billing_sim.expander.models import Event, ScheduledTicket
+from billing_sim.expander.schedule import blocked_days, review_days
 from billing_sim.scenario.schema import TeamMember, TicketPlan
 
 TODO, DOING, BLOCKED, IN_REVIEW, DONE = "À faire", "En cours", "Bloqué", "En revue", "Terminé"
@@ -64,10 +72,8 @@ def ticket_events(
     blocked_beats = [b for b in ticket.beats if b.kind == "blocked"]
     review_beat = next((b for b in ticket.beats if b.kind == "review_changes"), None)
     reviewer = _reviewer(team, assignee)
-    base = max(
-        1,
-        (end - start + 1) - sum(b.duration_days or 0 for b in blocked_beats) - (2 if review_beat else 0),
-    )
+    review_len = review_days(ticket)
+    base = (end - start + 1) - blocked_days(ticket) - review_len
 
     pending: list[_Pending] = []
 
@@ -79,18 +85,25 @@ def ticket_events(
 
     move(start, _R_START, assignee, DOING)
 
-    blocked_days: set[int] = set()
-    cursor = start
-    for beat in blocked_beats:
-        offset = rng.randint(1, max(1, base - 1))
-        blocked_on = max(cursor, min(cursor + offset, end - 1))
-        unblocked_on = min(blocked_on + (beat.duration_days or 1), end)
-        blocked_days.update(range(blocked_on, unblocked_on))
+    blocked_set: set[int] = set()
+    next_free = start + 1  # first day a block may start
+    spare = 0
+    for i, beat in enumerate(blocked_beats):
+        length = beat.duration_days or 0
+        if i == 0:
+            blocked_on = start + rng.randint(1, max(1, base - 1))
+            spare = max(0, (base - 1) - (blocked_on - start - 1) - 1)  # keep one working day at the end
+        else:
+            gap = rng.randint(0, spare)
+            spare -= gap
+            blocked_on = next_free + gap
+        unblocked_on = blocked_on + length - 1
+        blocked_set.update(range(blocked_on, unblocked_on + 1))
         add(blocked_on, _R_STATE, "blocked", assignee, {"reason": beat.text})
         move(blocked_on, _R_STATE, assignee, BLOCKED)
         add(unblocked_on, _R_STATE, "unblocked", assignee, {})
         move(unblocked_on, _R_STATE, assignee, DOING)
-        cursor = unblocked_on
+        next_free = unblocked_on + 1
 
     if review_beat is not None:
         add(end - 2, _R_REVIEW, "review_requested", assignee, {"text": review_beat.text})
@@ -103,7 +116,7 @@ def ticket_events(
     comment_every = rng.choice([2, 3])
     worked = since_comment = comments = 0
     for day in range(start, end + 1):
-        if day in blocked_days:
+        if day in blocked_set:
             continue
         hours = round(contract.hours_per_day * rng.uniform(0.5, 1.0), 1)
         add(day, _R_WORKLOG, "worklog", assignee, {"hours": hours, "note": notes[worked % len(notes)]})

@@ -24,9 +24,18 @@ def _invoiced_on_its_own(ticket: TicketPlan) -> bool:
 
 
 def _issue_day(contract: Contract, sprints: list[Sprint], earliest: int) -> int:
-    if contract.invoice_timing == "sprint_end":
-        return next((s.end_day for s in sprints if s.end_day >= earliest), earliest)
-    return earliest
+    """`on_delivery`: right away. `sprint_end`: the last day of the first sprint ending on/after `earliest`.
+
+    `sprints` may stop short of `earliest`; the sprint grid is then continued arithmetically
+    (the caller extends the list to cover the result).
+    """
+    if contract.invoice_timing != "sprint_end":
+        return earliest
+    last = sprints[-1]
+    if earliest > last.end_day:
+        length = last.end_day - last.start_day + 1
+        return last.end_day + -(-(earliest - last.end_day) // length) * length
+    return next(s.end_day for s in sprints if s.end_day >= earliest)
 
 
 def build_invoices(
