@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { fr } from '../../i18n/fr'
 import { dateForDay } from '../../lib/workdays'
 import type { ClientToday } from '../../types'
@@ -14,8 +14,14 @@ export function Header({ today, lastDay, onStep, onPickDate }: Props) {
   const t = fr.header
   // The picked date is only applied on Enter or blur, so typing a year digit by digit never moves the clock;
   // a date outside the simulation (before its first day or after its last) is dropped.
+  // The draft follows a new day in the same render (not in an effect, which can run after the next keystroke
+  // and overwrite a date typed right after the page loaded the previous one).
   const [draft, setDraft] = useState(today.date)
-  useEffect(() => setDraft(today.date), [today.date])
+  const [shownDate, setShownDate] = useState(today.date)
+  if (today.date !== shownDate) {
+    setShownDate(today.date)
+    setDraft(today.date)
+  }
 
   function commit() {
     const first = dateForDay(today, 0)

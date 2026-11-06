@@ -17,7 +17,7 @@ type AgentEvent =
   | { type: 'error'; message?: string }
   | { type: 'done' }
 
-/** Event name a citation click announces; `LotCard` and `TicketDetail` listen and expand when they hold the record. */
+/** Event name a citation click announces; `LotsEnCours` and `TicketDetail` listen and expand when they hold the record. */
 export const REVEAL_EVENT = 'reveal-record'
 
 const CITATION = /\[(BANK-\d+|F-\d{4}-\d{3}|L\d)\]/g

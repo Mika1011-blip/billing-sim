@@ -27,15 +27,18 @@ describe('SummaryTiles', () => {
     expect(plain(tile.textContent)).toContain('soit 25 500 € HT')
   })
 
-  it('marks the late tile with the alert class when en_retard > 0', () => {
+  it('shows the late amount and the number of late invoices, in the danger style when > 0', () => {
     render(<SummaryTiles summary={lastDay} />)
     const late = screen.getByText('En retard').closest('li')!
-    expect(late).toHaveClass('alert')
-    expect(plain(late.textContent)).toContain('10 620 €')
+    expect(late).toHaveClass('tile', 'danger')
+    expect(plain(late.querySelector('.tile-value')!.textContent)).toBe('10 620 €')
+    expect(late.querySelector('.tile-sub')).toHaveTextContent('2 factures')
   })
 
-  it('has no alert class when nothing is late', () => {
+  it('has no danger style when nothing is late', () => {
     render(<SummaryTiles summary={midRun} />)
-    expect(screen.getByText('En retard').closest('li')).not.toHaveClass('alert')
+    const late = screen.getByText('En retard').closest('li')!
+    expect(late).not.toHaveClass('danger')
+    expect(late.querySelector('.tile-sub')).toHaveTextContent('0 facture')
   })
 })

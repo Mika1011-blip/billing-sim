@@ -24,4 +24,9 @@ describe('Pill', () => {
     render(<Pill statut="Autre" />)
     expect(screen.getByText('Autre').className).toBe('pill')
   })
+
+  it('can show a longer text in the colour of its statut', () => {
+    render(<Pill statut="Très en retard">Très en retard (35 j)</Pill>)
+    expect(screen.getByText('Très en retard (35 j)')).toHaveClass('pill', 'pill-danger-strong')
+  })
 })
