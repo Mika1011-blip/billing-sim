@@ -128,6 +128,11 @@ describe('InvoiceDetail', () => {
     expect(within(dialog).getByRole('button', { name: 'Marquer comme payée' })).toBeEnabled()
   })
 
+  it('hides its backdrop from assistive technology', () => {
+    const { container } = setup(l2)
+    expect(container.querySelector('.drawer-backdrop')).toHaveAttribute('aria-hidden', 'true')
+  })
+
   it('focuses its close button when it opens', () => {
     setup(l2)
     expect(screen.getByRole('button', { name: 'Fermer' })).toHaveFocus()

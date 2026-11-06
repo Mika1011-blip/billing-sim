@@ -62,4 +62,8 @@ test('generate with the fallback, move the clock to the end, pay an overdue invo
   await expect(dialog).toBeHidden()
   await expect(page).toHaveURL(/\/client$/)
   await expect(card.locator('.invoice-card-title')).toBeFocused()
+
+  // Opening and closing the drawer left no history entry behind: one Back leaves the client page.
+  await page.goBack()
+  await expect(page).toHaveURL(/\/dev$/)
 })

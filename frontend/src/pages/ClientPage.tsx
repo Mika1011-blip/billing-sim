@@ -87,12 +87,20 @@ export function ClientPage() {
   useEffect(() => {
     openRef.current = open
   })
+  // Whether opening the drawer pushed the current history entry (a card, a citation link), as opposed to the page
+  // being loaded with the hash: closing then goes back to the entry it came from instead of leaving a copy of it.
+  const pushed = useRef(false)
 
   const closeInvoice = useCallback(() => {
+    openRef.current = null
     setOpen(null)
-    // Drop the hash without a new history entry; Back after closing does not reopen the drawer.
     if (hashInvoice() === null) return
-    window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search)
+    if (pushed.current) {
+      pushed.current = false
+      window.history.back() // its hashchange finds no invoice: nothing left to do there
+    } else {
+      window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search)
+    }
   }, [])
 
   const refresh = useCallback(async () => {
@@ -159,15 +167,27 @@ export function ClientPage() {
 
   function openInvoice(numero: string, revealKey: string | null = null) {
     rememberOpener()
-    setOpen({ numero, revealKey })
-    if (hashInvoice() !== numero) window.location.hash = invoiceHash(numero)
+    const next = { numero, revealKey }
+    openRef.current = next // before the hashchange below arrives, so it reads as our own
+    setOpen(next)
+    if (hashInvoice() === numero) return
+    if (hashInvoice() !== null) {
+      window.location.replace(invoiceHash(numero)) // another invoice's entry: switch in place
+    } else {
+      pushed.current = true
+      window.location.hash = invoiceHash(numero)
+    }
   }
 
   // Back/forward, a citation link or a typed URL change the hash: the drawer follows.
   useEffect(() => {
     const onHash = () => {
       const numero = hashInvoice()
-      if (numero && !openRef.current) rememberOpener()
+      if (numero && !openRef.current) {
+        rememberOpener()
+        pushed.current = true // a citation link (or Forward) put this entry on top of the page's own
+      }
+      if (!numero) pushed.current = false
       // Our own hash change names the open invoice: keep its row to reveal.
       setOpen((prev) => (prev?.numero === numero ? prev : numero ? { numero, revealKey: null } : null))
     }
@@ -190,6 +210,12 @@ export function ClientPage() {
   }, [data, open, closeInvoice]) // openInvoice only sets state and the hash: no stale value to miss
 
   const shown = open && data ? data.invoices.find((i) => i.numero === open.numero) : undefined
+
+  // An invoice that is not (or no longer) visible as of today: forget it, hash included, so that a later refetch
+  // where it is visible again does not pop the drawer open by itself.
+  useEffect(() => {
+    if (data && open && !shown) closeInvoice()
+  }, [data, open, shown, closeInvoice])
 
   // Focus goes back where it was when the drawer opened: the card, or the citation link; else the card.
   const lastShown = useRef<string | null>(null)

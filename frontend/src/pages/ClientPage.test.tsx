@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -197,6 +197,77 @@ describe('ClientPage', () => {
       renderPage()
       await shownDay(2)
       expect(screen.queryByRole('dialog')).toBeNull()
+      expect(window.location.hash).toBe('') // forgotten: a later refetch cannot pop it open
+    })
+
+    it('forgets an open invoice that is no longer visible after a refetch', async () => {
+      const calls = installFetch()
+      renderPage()
+      await shownDay(2)
+      await userEvent.click(within(document.getElementById('rec-F-2026-004')!).getByRole('button', { name: /^F-2026-004/ }))
+      await drawer(/^F-2026-004/)
+      view = midRun // the clock moved back from /dev: F-2026-004 is not issued yet
+      await act(async () => void window.dispatchEvent(new Event('focus')))
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+      await waitFor(() => expect(window.location.hash).toBe(''))
+      view = lastDay // and forward again: the drawer stays closed
+      await act(async () => void window.dispatchEvent(new Event('focus')))
+      await waitFor(() => expect(summaryFetches(calls)).toBe(3))
+      expect(await screen.findByText(/^F-2026-004/)).toBeInTheDocument()
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+
+    describe('history', () => {
+      // Mark the entry the page was loaded on: Back from the page must land before it.
+      const loadedOn = (url: string) => window.history.replaceState({ mark: 'loaded' }, '', url)
+      const onLoadedEntry = () =>
+        waitFor(() => expect((window.history.state as { mark?: string } | null)?.mark).toBe('loaded'))
+
+      it('leaves no history entry behind once a drawer opened from a card is closed', async () => {
+        loadedOn('/client')
+        const before = window.history.length
+        installFetch()
+        renderPage()
+        await shownDay(2)
+        for (const numero of ['F-2026-004', 'F-2026-003']) {
+          await userEvent.click(within(document.getElementById(`rec-${numero}`)!).getByRole('button', { name: new RegExp(`^${numero}`) }))
+          await drawer(new RegExp(`^${numero}`))
+          expect(window.location.hash).toBe(`#facture-${numero}`)
+          await userEvent.keyboard('{Escape}')
+          await onLoadedEntry() // closing went back to the entry the drawer pushed onto
+          expect(window.location.hash).toBe('')
+          expect(screen.queryByRole('dialog')).toBeNull()
+        }
+        // Each opening reuses the one entry above the page's (jsdom may or may not still count it after Back);
+        // a close that only rewrote the entry would leave one more per cycle.
+        expect(window.history.length).toBeLessThanOrEqual(before + 1)
+      })
+
+      it('closes in place a drawer opened by the URL it was loaded with', async () => {
+        loadedOn('/client#facture-F-2026-001')
+        const before = window.history.length
+        installFetch()
+        renderPage()
+        await userEvent.click(within(await drawer(/^F-2026-001/)).getByRole('button', { name: 'Fermer' }))
+        expect(screen.queryByRole('dialog')).toBeNull()
+        expect(window.location.hash).toBe('')
+        expect(window.history.length).toBe(before)
+        await onLoadedEntry() // the same entry, rewritten without the hash
+      })
+
+      it('closes when Back is pressed', async () => {
+        loadedOn('/client')
+        installFetch()
+        renderPage()
+        await shownDay(2)
+        const cardButton = within(document.getElementById('rec-F-2026-003')!).getByRole('button', { name: /^F-2026-003/ })
+        await userEvent.click(cardButton)
+        await drawer(/^F-2026-003/)
+        await act(async () => window.history.back())
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+        await onLoadedEntry()
+        expect(cardButton).toHaveFocus()
+      })
     })
 
     it('opens from a card, sets the hash, and Escape closes it, clears the hash and refocuses the card', async () => {

@@ -85,7 +85,7 @@ export function InvoiceDetail({ invoice, day, onClose, onPay, revealKey = null }
 
   return (
     <div className="drawer-root">
-      <div className="drawer-backdrop" onClick={onClose} />
+      <div className="drawer-backdrop" aria-hidden="true" onClick={onClose} />
       <aside
         ref={panel}
         className="drawer"
