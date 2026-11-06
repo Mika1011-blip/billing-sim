@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Simulation de facturation au forfait — l'essentiel</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --text: #1f2937; --muted: #6b7280; --border: #e5e7eb;
+    --accent: #4f46e5; --accent-soft: #eef2ff; --ok: #15803d; --ok-soft: #dcfce7;
+    --warn: #b45309; --warn-soft: #fef3c7; --danger: #b91c1c; --danger-soft: #fee2e2;
+    --info: #1d4ed8; --info-soft: #dbeafe; --gray: #cbd5e1;
+  }
+  @page { size: A4; margin: 16mm 14mm 16mm 14mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; color: var(--text); font: 10.5pt/1.45 Inter, "Segoe UI", system-ui, -apple-system, sans-serif; background: #fff; }
+  h1 { font-size: 24pt; margin: 0 0 2pt; letter-spacing: -0.01em; }
+  h2 { font-size: 15pt; margin: 0 0 8pt; padding-bottom: 4pt; border-bottom: 2px solid var(--accent-soft); }
+  h2 .n { display: inline-block; width: 22pt; height: 22pt; line-height: 22pt; text-align: center; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11pt; margin-right: 8pt; vertical-align: 2pt; }
+  p { margin: 0 0 6pt; }
+  .sub { color: var(--muted); font-size: 12pt; margin-bottom: 10pt; }
+  .lead { font-size: 11.5pt; padding: 10pt 12pt; background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 6px; margin: 8pt 0 14pt; }
+  section { margin-bottom: 16pt; }
+  h2 { break-after: avoid; }
+  .mock, .formulas, svg, .flow, .grid4, .card, .lead, .cols { break-inside: avoid; }
+  .page-break { break-before: auto; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt; }
+  .formulas { background: var(--accent-soft); border-radius: 8px; padding: 8pt 12pt; margin: 8pt 0; font-size: 10pt; }
+  .formulas div { display: flex; justify-content: space-between; gap: 12pt; padding: 2pt 0; }
+  .formulas div + div { border-top: 1px dashed #c7d2fe; }
+  .formulas b { color: var(--accent); }
+  .formulas .r { color: var(--muted); text-align: right; }
+  ul { margin: 0; padding-left: 14pt; } li { margin: 1.5pt 0; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8pt 10pt; }
+  .caption { color: var(--muted); font-size: 9pt; margin: 4pt 0 0; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6pt; }
+  .ent { border-radius: 8px; padding: 6pt 8pt; font-size: 9pt; border: 1px solid var(--border); }
+  .ent b { display: block; margin-bottom: 2pt; }
+  .ent.c { background: var(--info-soft); border-color: #bfdbfe; } .ent.m { background: #f3f4f6; }
+  .pill { display: inline-block; padding: 1pt 7pt; border-radius: 999px; font-size: 8.5pt; font-weight: 600; }
+  .pill.info { background: var(--info-soft); color: var(--info); } .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); } .pill.danger { background: var(--danger-soft); color: var(--danger); }
+  .pill.strong { background: var(--danger); color: #fff; }
+  .flow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6pt; align-items: stretch; }
+  .flow .step { background: var(--accent-soft); border-radius: 8px; padding: 6pt 7pt; font-size: 8.5pt; position: relative; }
+  .flow .step b { display: block; color: var(--accent); margin-bottom: 2pt; }
+  .flow .step:not(:last-child)::after { content: "›"; position: absolute; right: -6.5pt; top: 40%; color: var(--muted); font-size: 12pt; }
+  svg text { font-family: inherit; }
+  .mock { border: 1px solid var(--border); border-radius: 10px; background: var(--bg); padding: 8pt; font-size: 8.5pt; }
+  .mock .bar { display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid var(--border); margin: -8pt -8pt 8pt; padding: 6pt 10pt; border-radius: 10px 10px 0 0; }
+  .mock .bar .nav span { margin-left: 10pt; } .mock .bar .active { background: var(--accent-soft); color: var(--accent); padding: 2pt 8pt; border-radius: 999px; font-weight: 600; }
+  .mock .btn { border: 1px solid var(--danger); color: var(--danger); border-radius: 6px; padding: 2pt 7pt; }
+  .mock .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5pt; margin-bottom: 7pt; }
+  .mock .tile { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 5pt 7pt; }
+  .mock .tile small { display: block; text-transform: uppercase; color: var(--muted); font-size: 7pt; letter-spacing: .04em; }
+  .mock .tile b { font-size: 11pt; } .mock .tile.danger { border-color: #fecaca; background: #fff5f5; } .mock .tile.danger b { color: var(--danger); }
+  .mock .panel { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 6pt 8pt; margin-top: 6pt; }
+  .mock .panel h4 { margin: 0 0 4pt; font-size: 9pt; }
+  .mock .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6pt; }
+  .mock .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6pt; }
+  .mock .inv { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 6pt 8pt; }
+  .mock .inv .amt { font-size: 11pt; font-weight: 600; margin: 2pt 0; }
+  .mock .inv .pay { display: inline-block; margin-top: 4pt; border: 1px solid var(--border); border-radius: 6px; padding: 1.5pt 6pt; }
+  .mock .row { display: flex; gap: 8pt; padding: 2pt 0; border-top: 1px solid #f1f5f9; }
+  .mock .ico { width: 12pt; text-align: center; color: var(--muted); }
+  .tabs span { border: 1px solid var(--border); border-radius: 999px; padding: 1pt 8pt; margin-right: 4pt; background: #fff; }
+  .tabs .on { background: var(--accent-soft); color: var(--accent); border-color: #c7d2fe; font-weight: 600; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 9pt; background: #f3f4f6; padding: 0 3pt; border-radius: 3px; }
+  .tools { columns: 2; column-gap: 14pt; font-size: 9.5pt; }
+  .tools li { break-inside: avoid; }
+  .rules li { margin: 3pt 0; }
+</style>
+</head>
+<body>
+
+<h1>Simulation de facturation au forfait</h1>
+<div class="sub">L'essentiel en cinq pages · projet <code>billing-sim</code> · 6 novembre 2026</div>
+
+<p class="lead">Une société de services réalise un projet pour une banque. L'équipe est payée <b>à la journée</b> (TJM) ; le client paie <b>par lot, à prix fixe</b>. Le simulateur rejoue ce projet jour par jour et répond aux trois questions du client : <i>qu'est-ce que je paie, pour quel travail, suis-je à jour ?</i></p>
+
+<section>
+<h2><span class="n">1</span>Le principe</h2>
+<div class="formulas">
+  <div><span><b>prix d'un ticket</b> = jours(taille) × TJM(profil)</span><span class="r">S = 1 j · M = 3 j · L = 5 j · XL = 10 j — dev 600 € · senior 750 € · architecte 900 €</span></div>
+  <div><span><b>prix d'un lot</b> = somme des prix de ses tickets</span><span class="r">TTC = HT × 1,20 · échéance = émission + 30 jours</span></div>
+  <div><span><b>si l'équipe dépasse</b> : l'écart est absorbé par le prestataire — le prix ne change pas.</span></div>
+</div>
+<p>Tout est <b>daté</b> : chaque fait porte un jour. L'état « aujourd'hui » est l'ensemble des faits dont le jour est ≤ aujourd'hui. Déplacer l'horloge ne modifie rien, cela déplace la frontière.</p>
+</section>
+
+<section>
+<h2><span class="n">2</span>Ce qui est enregistré, ce que le client voit</h2>
+<div class="grid4">
+  <div class="ent c"><b>Contrat</b>TJM, grille S/M/L/XL, TVA, délai de paiement</div>
+  <div class="ent c"><b>Lot</b>nom, prix HT, livraison prévue, résumé de livraison</div>
+  <div class="ent c"><b>Ticket</b>titre, taille, profil, prix, assigné, étapes de travail</div>
+  <div class="ent m"><b>Réservé au pilote</b>demande brute, graine, dates réelles futures, aléas scénarisés</div>
+  <div class="ent c"><b>Événement</b> <span class="caption">daté</span> statut, temps passé, blocage, commentaire</div>
+  <div class="ent c"><b>Facture</b> <span class="caption">datée</span> émission, échéance, HT / TVA / TTC</div>
+  <div class="ent c"><b>Paiement</b> <span class="caption">daté</span> jour, montant, référence</div>
+  <div class="ent c"><b>Horloge</b>jour courant</div>
+</div>
+<p class="caption">Bleu : accessible au client, toujours filtré au jour courant. Gris : le pilote seulement. Les faits datés ne sont visibles que jusqu'à aujourd'hui.</p>
+<div class="cols" style="margin-top:8pt">
+  <div><b>Le client doit savoir</b>
+    <ul>
+      <li>les termes du contrat ;</li>
+      <li>chaque facture : montant, échéance, statut, paiement ;</li>
+      <li>ce qu'elle couvre : résumé + tickets livrés ;</li>
+      <li>pourquoi ce prix : jours × TJM, HT, TVA, TTC ;</li>
+      <li>chaque ticket : qui, quand, combien de jours, journal ;</li>
+      <li>où il en est : facturé, payé, reste, en retard ;</li>
+      <li>ce qu'il doit faire : payer, valider.</li>
+    </ul></div>
+  <div><b>Le client ne voit jamais</b>
+    <ul>
+      <li>le futur : aucun événement, facture ou date au-delà d'aujourd'hui ;</li>
+      <li>les dates réelles prévues par le scénario ;</li>
+      <li>les aléas avant qu'ils n'arrivent ;</li>
+      <li>la graine et la demande brute.</li>
+    </ul>
+    <p style="margin-top:6pt"><b>Une seule chose est écrite pendant le jeu</b> : le paiement d'une facture par le participant.</p></div>
+</div>
+</section>
+
+<section>
+<h2><span class="n">3</span>D'où vient chaque chiffre</h2>
+<svg viewBox="0 0 760 150" width="100%" style="display:block">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker></defs>
+  <g font-size="11" text-anchor="middle">
+    <rect x="10" y="10" width="130" height="40" rx="8" fill="#f3f4f6" stroke="#e5e7eb"/><text x="75" y="34">Contrat</text>
+    <rect x="160" y="10" width="130" height="40" rx="8" fill="#f3f4f6" stroke="#e5e7eb"/><text x="225" y="28">Plan</text><text x="225" y="42" fill="#6b7280" font-size="10">taille, profil, lot</text>
+    <rect x="310" y="10" width="130" height="40" rx="8" fill="#f3f4f6" stroke="#e5e7eb"/><text x="375" y="34">Événements ≤ auj.</text>
+    <rect x="460" y="10" width="130" height="40" rx="8" fill="#f3f4f6" stroke="#e5e7eb"/><text x="525" y="34">Factures ≤ auj.</text>
+    <rect x="610" y="10" width="130" height="40" rx="8" fill="#f3f4f6" stroke="#e5e7eb"/><text x="675" y="34">Paiements ≤ auj.</text>
+    <rect x="10" y="95" width="130" height="44" rx="8" fill="#eef2ff" stroke="#c7d2fe"/><text x="75" y="121">jours facturés</text>
+    <rect x="160" y="95" width="130" height="44" rx="8" fill="#eef2ff" stroke="#c7d2fe"/><text x="225" y="114">prix ticket, lot,</text><text x="225" y="128">TVA, TTC</text>
+    <rect x="310" y="95" width="130" height="44" rx="8" fill="#eef2ff" stroke="#c7d2fe"/><text x="375" y="114">statut, dates réelles,</text><text x="375" y="128">jours réels</text>
+    <rect x="460" y="95" width="130" height="44" rx="8" fill="#eef2ff" stroke="#c7d2fe"/><text x="525" y="114">statut facture,</text><text x="525" y="128">jours de retard</text>
+    <rect x="610" y="95" width="130" height="44" rx="8" fill="#eef2ff" stroke="#c7d2fe"/><text x="675" y="114">facturé, payé,</text><text x="675" y="128">reste, en retard</text>
+  </g>
+  <g stroke="#6b7280" stroke-width="1.4" fill="none" marker-end="url(#a)">
+    <path d="M75,50 L75,95"/><path d="M225,50 L90,95"/><path d="M140,117 L160,117"/><path d="M90,50 L210,95"/>
+    <path d="M375,50 L375,95"/><path d="M525,50 L525,95"/><path d="M675,50 L540,95"/><path d="M590,117 L610,117"/><path d="M675,50 L675,95"/>
+  </g>
+</svg>
+<p class="caption">Gris : enregistré. Bleu : calculé par le code à la demande. Le modèle de langage n'écrit jamais un chiffre.</p>
+<div class="formulas">
+  <div><span><b>statut ticket</b> = cible de la dernière transition rejouée · <b>jours réels</b> = heures saisies / 8</span></div>
+  <div><span><b>statut facture</b> = <i>Payée</i> si paiement ≤ auj. ; sinon <i>À payer</i> jusqu'à l'échéance ; <i>En retard</i> de 1 à 30 jours après ; <i>Très en retard</i> au-delà</span></div>
+  <div><span><b>écart</b> = jours réels − jours facturés</span><span class="r">&gt; 0 : « absorbé par le prestataire, le prix ne change pas »</span></div>
+  <div><span><b>en retard</b> = TTC des factures en retard · <b>reste à payer</b> = facturé − payé · <b>prochaine facture</b> = premier lot non facturé</span></div>
+</div>
+<p>Exemple : BANK-5, taille M, senior ⇒ 3 × 750 = <b>2 250 € HT</b>. Il a pris 6 jours au lieu de 3 : même prix.</p>
+</section>
+
+<section class="page-break">
+<h2><span class="n">4</span>Comment une simulation est fabriquée</h2>
+<div class="flow">
+  <div class="step"><b>1. Demande</b>texte libre du participant, graine facultative</div>
+  <div class="step"><b>2. Claude Haiku</b>lots, tickets, tailles, équipe, étapes, aléas ; jamais de prix ; rejet si pas de projet</div>
+  <div class="step"><b>3. Validation</b>clés, dépendances, blocages 1–3 j ; une reprise, sinon échec</div>
+  <div class="step"><b>4. Planning</b>déterministe : ordre, affectation, sprints de 10 j, prix</div>
+  <div class="step"><b>5. Réel</b>graine → durées × [0,6 ; 1,8], blocages, revues, heures jour par jour</div>
+  <div class="step"><b>6. Factures</b>une par lot livré ; aucun paiement scénarisé</div>
+</div>
+<p class="caption">Seule l'étape 2 fait appel au modèle de langage. Même plan + même graine = même chronologie.</p>
+
+<svg viewBox="0 0 760 170" width="100%" style="display:block;margin-top:10pt">
+  <defs><pattern id="h" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#fff"/><rect width="2.5" height="6" fill="#b45309"/></pattern></defs>
+  <rect x="330" y="18" width="200" height="118" fill="#eef2ff" opacity=".6"/>
+  <g stroke="#e5e7eb"><line x1="130" y1="18" x2="130" y2="136"/><line x1="230" y1="18" x2="230" y2="136"/><line x1="330" y1="18" x2="330" y2="136"/><line x1="430" y1="18" x2="430" y2="136"/><line x1="530" y1="18" x2="530" y2="136"/><line x1="630" y1="18" x2="630" y2="136"/><line x1="730" y1="18" x2="730" y2="136"/></g>
+  <g font-size="10" fill="#6b7280" text-anchor="middle"><text x="130" y="12">j0</text><text x="230" y="12">j5</text><text x="330" y="12">j10</text><text x="430" y="12">j15</text><text x="530" y="12">j20</text><text x="630" y="12">j25</text><text x="730" y="12">j30</text></g>
+  <g font-size="11" text-anchor="end"><text x="122" y="42">BANK-4 (M, 3 j)</text><text x="122" y="80">BANK-5 (M, 3 j)</text><text x="122" y="118">BANK-6 (L, 5 j)</text></g>
+  <rect x="130" y="28" width="60" height="7" fill="#cbd5e1"/><rect x="130" y="37" width="80" height="9" fill="#4f46e5"/>
+  <rect x="190" y="66" width="60" height="7" fill="#cbd5e1"/><rect x="210" y="75" width="20" height="9" fill="#4f46e5"/><rect x="230" y="75" width="40" height="9" fill="url(#h)" stroke="#b45309" stroke-width=".5"/><rect x="270" y="75" width="60" height="9" fill="#4f46e5"/>
+  <rect x="250" y="104" width="100" height="7" fill="#cbd5e1"/><rect x="330" y="113" width="80" height="9" fill="#4f46e5"/>
+  <line x1="370" y1="18" x2="370" y2="140" stroke="#b91c1c" stroke-width="2"/><text x="370" y="152" font-size="10" fill="#b91c1c" text-anchor="middle">aujourd'hui (j12)</text>
+  <g font-size="10"><rect x="470" y="150" width="16" height="7" fill="#cbd5e1"/><text x="490" y="157">prévu</text><rect x="530" y="150" width="16" height="7" fill="#4f46e5"/><text x="550" y="157">réel</text><rect x="585" y="150" width="16" height="7" fill="url(#h)" stroke="#b45309" stroke-width=".5"/><text x="605" y="157">bloqué</text></g>
+</svg>
+<p class="caption">Prévu contre réel. BANK-5 : 3 jours prévus, 6 jours réels dont 2 de blocage ; prix inchangé. Le client ne voit le réel qu'à gauche de la ligne rouge.</p>
+</section>
+
+<section>
+<h2><span class="n">5</span>Jouer la simulation</h2>
+<p>Le participant joue le <b>client</b> ; le pilote (page <i>Dev</i>) génère le scénario et peut aussi bouger l'horloge et réinitialiser.</p>
+<div class="cols">
+  <ul>
+    <li><b>Se déplacer dans le temps</b> : jour précédent, jour suivant, choisir une date. Tout est recalculé au jour choisi.</li>
+    <li><b>Voir l'argent</b> : contracté, facturé, payé, reste à payer, <span style="color:var(--danger)">en retard</span> ; une ligne d'alerte « 2 factures en retard · 1 à payer avant le … · prochaine facture L3 vers le … ».</li>
+    <li><b>Payer</b> : <i>Marquer comme payée</i> enregistre un paiement intégral à la date du jour. Ne rien payer est permis : tout finit <i>Très en retard</i>.</li>
+    <li><b>Interroger l'assistant</b> (section 7).</li>
+  </ul>
+  <div>
+  <svg viewBox="0 0 360 150" width="100%">
+    <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker></defs>
+    <g font-size="10.5" text-anchor="middle" font-weight="600">
+      <rect x="5" y="20" width="90" height="34" rx="8" fill="#dbeafe"/><text x="50" y="41" fill="#1d4ed8">À payer</text>
+      <rect x="135" y="20" width="90" height="34" rx="8" fill="#fef3c7"/><text x="180" y="37" fill="#b45309">En retard</text><text x="180" y="49" font-size="8" font-weight="400" fill="#b45309">1–30 j après l'échéance</text>
+      <rect x="265" y="20" width="90" height="34" rx="8" fill="#fee2e2"/><text x="310" y="37" fill="#b91c1c">Très en retard</text><text x="310" y="49" font-size="8" font-weight="400" fill="#b91c1c">&gt; 30 j</text>
+      <rect x="135" y="105" width="90" height="34" rx="8" fill="#dcfce7"/><text x="180" y="126" fill="#15803d">Payée</text>
+    </g>
+    <g stroke="#6b7280" stroke-width="1.3" fill="none" marker-end="url(#b)">
+      <path d="M95,37 L135,37"/><path d="M225,37 L265,37"/>
+      <path d="M50,54 L50,122 L135,122"/><path d="M180,54 L180,105"/><path d="M310,54 L310,122 L225,122"/>
+    </g>
+    <g font-size="8" fill="#6b7280" text-anchor="middle"><text x="115" y="31">le temps passe</text><text x="245" y="31">le temps passe</text><text x="60" y="90">Marquer comme payée</text></g>
+  </svg>
+  <p class="caption">États d'une facture. Revenir dans le temps avant le jour du paiement masque le paiement : l'état est toujours recalculé.</p>
+  </div>
+</div>
+</section>
+
+<section class="page-break">
+<h2><span class="n">6</span>Les deux vues du client</h2>
+<p>Même en-tête, mêmes tuiles d'argent, même <b>fiche ticket</b>. La vue 1 lit le projet par le temps, la vue 2 par la facture.</p>
+
+<div class="mock">
+  <div class="bar"><span><b>Simulation de facturation</b> <span class="nav"><span>Dev</span><span class="active">Client</span></span></span><span>Jour 45 · 05/05/2026 &nbsp; <span class="btn">Réinitialiser</span></span></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6pt"><b style="font-size:10pt">Aujourd'hui : mardi 5 mai 2026 · jour 45</b><span>◀ [05/05/2026] ▶ &nbsp; <span class="tabs"><span class="on">Chronologie</span><span>Factures</span></span></span></div>
+  <div class="tiles">
+    <div class="tile"><small>Contracté (TTC)</small><b>30 600 €</b></div><div class="tile"><small>Facturé</small><b>18 000 €</b></div><div class="tile"><small>Payé</small><b>0 €</b></div><div class="tile"><small>Reste à payer</small><b>18 000 €</b></div><div class="tile danger"><small>En retard</small><b>7 200 €</b> · 2 fact.</div>
+  </div>
+  <div class="panel"><h4>Avancement <span style="font-weight:400;color:var(--muted)">— prévu <span style="color:#cbd5e1">■</span> réel <span style="color:var(--accent)">■</span> bloqué <span style="color:var(--warn)">▨</span> aujourd'hui <span style="color:var(--danger)">|</span></span></h4>
+    <svg viewBox="0 0 700 70" width="100%">
+      <g font-size="9"><text x="0" y="12">BANK-4</text><text x="0" y="27">BANK-5</text><text x="0" y="42">BANK-6</text><text x="0" y="57">BANK-8</text></g>
+      <rect x="60" y="4" width="120" height="4" fill="#cbd5e1"/><rect x="60" y="9" width="140" height="5" fill="#4f46e5"/>
+      <rect x="180" y="19" width="120" height="4" fill="#cbd5e1"/><rect x="200" y="24" width="60" height="5" fill="#4f46e5"/><rect x="260" y="24" width="40" height="5" fill="url(#h)" stroke="#b45309" stroke-width=".4"/><rect x="300" y="24" width="60" height="5" fill="#4f46e5"/>
+      <rect x="300" y="34" width="150" height="4" fill="#cbd5e1"/><rect x="360" y="39" width="60" height="5" fill="#4f46e5"/>
+      <rect x="450" y="49" width="120" height="4" fill="#cbd5e1"/>
+      <line x1="420" y1="0" x2="420" y2="64" stroke="#b91c1c" stroke-width="1.5"/>
+    </svg></div>
+  <div class="two">
+    <div class="panel"><h4>Terminé (7)</h4><div class="row">▸ BANK-1 · Filtres du tableau de bord <span class="pill ok">Terminé</span></div><div class="row">▸ BANK-2 · Tri et pagination <span class="pill ok">Terminé</span></div><div class="row">▸ BANK-4 · Import des relevés <span class="pill ok">Terminé</span></div><div class="row">▸ BANK-5 · Rapprochement automatique <span class="pill ok">Terminé</span></div></div>
+    <div class="panel"><h4>Reste à faire (5)</h4><div class="row">▸ BANK-6 · Alertes <span class="pill info">En cours</span></div><div class="row">▸ BANK-8 · Export comptable <span class="pill">À faire</span> <span class="caption">début prévu le 18/05</span></div><div class="row">▸ BANK-9 · Notifications <span class="pill">À faire</span></div></div>
+  </div>
+</div>
+<p class="caption"><b>Vue 1 — Chronologie</b> : prévu contre réel jusqu'à aujourd'hui, puis les tickets terminés et ceux qui restent. Chaque ligne ouvre la fiche ticket.</p>
+
+<div class="mock" style="margin-top:10pt">
+  <div style="margin-bottom:6pt"><b style="font-size:10pt">Factures</b> &nbsp; <span class="tabs"><span class="on">Toutes 3</span><span>À payer 1</span><span>En retard 2</span><span>Payées 0</span></span></div>
+  <div class="cards">
+    <div class="inv"><b>F-2026-001 · L1</b><br>Tableau de bord factures<div class="amt">3 600 € TTC</div><span class="caption">Émise le 10/03 · Échéance le 09/04</span><br><span class="pill strong">Très en retard (26 j)</span><br><span class="pay">Marquer comme payée</span></div>
+    <div class="inv"><b>F-2026-002 · L2</b><br>Suivi des paiements<div class="amt">10 800 € TTC</div><span class="caption">Émise le 02/04 · Échéance le 02/05</span><br><span class="pill danger">En retard (3 j)</span><br><span class="pay">Marquer comme payée</span></div>
+    <div class="inv"><b>F-2026-003 · BANK-12</b><br>Export comptable (séparé)<div class="amt">3 600 € TTC</div><span class="caption">Émise le 20/04 · Échéance le 20/05</span><br><span class="pill info">À payer (15 j restants)</span><br><span class="pay">Marquer comme payée</span></div>
+  </div>
+  <div class="panel"><h4>Lots en cours <span style="font-weight:400;color:var(--muted)">(pas encore facturés)</span></h4><div class="row">▸ L3 · Exports et notifications · livraison prévue le 02/06 · 4/6 tickets terminés · 9 000 € HT à venir</div></div>
+</div>
+<p class="caption"><b>Vue 2 — Factures</b> : une carte par facture ; cliquer ouvre le détail (résumé de livraison, tickets couverts, calcul HT → TVA → TTC, jours facturés contre réels, paiement).</p>
+
+<div class="mock" style="margin-top:10pt;background:#fff">
+  <div style="display:flex;justify-content:space-between"><b style="font-size:10pt">BANK-5 · Import des relevés bancaires</b><span>M → 3 j × 750 € = <b>2 250 € HT</b> &nbsp; <span class="pill ok">Terminé</span></span></div>
+  <div style="margin:4pt 0"><b>Assigné à</b> Sophie Lambert · <b>Du</b> 23/03/2026 <b>au</b> 27/03/2026 · <b>Jours facturés</b> 3 · <b>jours réels</b> 1,91</div>
+  <div><b>Étapes prévues</b> &nbsp; ☑ Créer le connecteur vers l'API &nbsp; ☑ Convertir chaque relevé &nbsp; ☑ Vérifier sur un mois réel</div>
+  <div style="margin-top:4pt"><b>Journal</b></div>
+  <div class="row"><span>23/03</span><span class="ico">↔</span><span>Sophie Lambert · À faire → En cours</span></div>
+  <div class="row"><span>23/03</span><span class="ico">⏱</span><span>4,9 h : Créer le connecteur vers l'API bancaire de recette</span></div>
+  <div class="row"><span>24/03</span><span class="ico">⛔</span><span>En attente des accès à l'API bancaire</span></div>
+  <div class="row"><span>25/03</span><span class="ico">✅</span><span>Le blocage est levé · 4,8 h : Convertir chaque relevé au format interne</span></div>
+  <div class="row"><span>27/03</span><span class="ico">💬</span><span>Terminé. Étapes réalisées : connecteur ; conversion ; vérification</span></div>
+  <div class="row"><span>27/03</span><span class="ico">↔</span><span>En cours → Terminé</span></div>
+</div>
+<p class="caption"><b>La fiche ticket</b>, identique dans les deux vues : prix et son calcul, qui et quand, jours facturés contre réels, étapes cochées, journal jusqu'à aujourd'hui.</p>
+</section>
+
+<section class="page-break">
+<h2><span class="n">7</span>L'assistant du client</h2>
+<svg viewBox="0 0 760 120" width="100%" style="display:block">
+  <defs><marker id="c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker></defs>
+  <g font-size="10.5" text-anchor="middle">
+    <rect x="10" y="20" width="120" height="44" rx="8" fill="#dbeafe" stroke="#bfdbfe"/><text x="70" y="46">Page client</text>
+    <rect x="175" y="20" width="130" height="44" rx="8" fill="#fff" stroke="#e5e7eb"/><text x="240" y="38">Agent</text><text x="240" y="52" fill="#6b7280" font-size="9.5">Claude Haiku, boucle d'outils</text>
+    <rect x="350" y="14" width="160" height="56" rx="8" fill="#dbeafe" stroke="#bfdbfe"/><text x="430" y="34">Serveur MCP « client »</text><text x="430" y="48" fill="#6b7280" font-size="9.5">13 outils, lecture seule,</text><text x="430" y="61" fill="#6b7280" font-size="9.5">toujours au jour courant</text>
+    <rect x="590" y="14" width="160" height="56" rx="8" fill="#f3f4f6" stroke="#e5e7eb"/><text x="670" y="34">Serveur MCP « pilote »</text><text x="670" y="48" fill="#6b7280" font-size="9.5">générer, horloge,</text><text x="670" y="61" fill="#6b7280" font-size="9.5">réinitialiser, lire le futur</text>
+    <rect x="470" y="88" width="130" height="28" rx="8" fill="#fff" stroke="#e5e7eb"/><text x="535" y="106">Base événementielle</text>
+  </g>
+  <g stroke="#6b7280" stroke-width="1.3" fill="none" marker-end="url(#c)"><path d="M130,42 L175,42"/><path d="M305,42 L350,42"/><path d="M450,70 L515,88"/><path d="M650,70 L560,88"/></g>
+  <text x="152" y="36" font-size="8.5" fill="#6b7280" text-anchor="middle">SSE</text>
+  <line x1="550" y1="6" x2="550" y2="82" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="5 3"/><text x="550" y="118" font-size="8.5" fill="#b91c1c" text-anchor="middle">frontière</text>
+</svg>
+<p class="caption">L'assistant n'atteint que le serveur « client » : aucun outil ne prend de date, chacun lit l'horloge et ne renvoie que des faits ≤ aujourd'hui.</p>
+
+<div class="cols" style="margin-top:8pt">
+  <div><b>Les 13 outils</b> <span class="caption" style="display:inline">(JSON en français, mêmes calculs que la page)</span>
+    <ul class="tools" style="margin-top:4pt">
+      <li><code>get_today</code></li><li><code>get_contract</code></li><li><code>get_summary</code></li>
+      <li><code>list_lots</code> · <code>get_lot</code></li>
+      <li><code>list_tickets</code> · <code>get_ticket</code></li><li><code>get_ticket_history</code></li>
+      <li><code>list_invoices</code> · <code>get_invoice</code></li><li><code>list_payments</code></li>
+      <li><code>list_pending_approvals</code></li>
+      <li><code>explain_price</code> : taille → jours × TJM = montant</li>
+    </ul></div>
+  <div><b>Ses règles</b>
+    <ul class="rules">
+      <li>ne sait que ce que les outils renvoient ; commence par <code>get_today</code> ;</li>
+      <li>ne calcule jamais un prix : il recopie <code>explain_price</code> ;</li>
+      <li>cite ses sources — [BANK-12], [F-2026-001], [L1] — la page en fait des liens vers les fiches ;</li>
+      <li>ne voit pas le futur ; ne paie pas ;</li>
+      <li>sa mémoire est liée au jour : si l'horloge change, la conversation repart de zéro.</li>
+    </ul></div>
+</div>
+
+<svg viewBox="0 0 760 230" width="100%" style="display:block;margin-top:12pt">
+  <defs><marker id="d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker></defs>
+  <g font-size="11" font-weight="600" text-anchor="middle"><text x="60" y="16">Client</text><text x="330" y="16">Assistant</text><text x="660" y="16">Serveur MCP client</text></g>
+  <g stroke="#e5e7eb"><line x1="60" y1="22" x2="60" y2="225"/><line x1="330" y1="22" x2="330" y2="225"/><line x1="660" y1="22" x2="660" y2="225"/></g>
+  <g stroke="#6b7280" stroke-width="1.3" fill="none" marker-end="url(#d)">
+    <path d="M60,40 L330,40"/><path d="M330,70 L660,70"/><path d="M660,90 L330,90"/><path d="M330,120 L660,120"/><path d="M660,140 L330,140"/><path d="M330,170 L660,170"/><path d="M660,190 L330,190"/><path d="M330,215 L60,215"/>
+  </g>
+  <g font-size="9.5" text-anchor="middle">
+    <text x="195" y="35">« Pourquoi le lot L1 coûte 3 000 € ? »</text>
+    <text x="495" y="65" font-family="monospace">get_today</text><text x="495" y="86" fill="#6b7280">jour 45 · 5 mai 2026</text>
+    <text x="495" y="115" font-family="monospace">explain_price(L1)</text><text x="495" y="136" fill="#6b7280">BANK-1 : 3 j × 600 · BANK-2 : 1 × 600 · BANK-3 : 1 × 600 · total 3 000</text>
+    <text x="495" y="165" font-family="monospace">get_invoice(F-2026-001)</text><text x="495" y="186" fill="#6b7280">TTC 3 600 · échéance 09/04 · Très en retard (26 j)</text>
+    <text x="195" y="208">« [L1] : [BANK-1] 3 j × 600 €, [BANK-2] et [BANK-3] 1 j × 600 € = 3 000 € HT,</text><text x="195" y="222">3 600 € TTC, facture [F-2026-001] en retard de 26 jours. »</text>
+  </g>
+</svg>
+<p class="caption">Une question, trois outils, une réponse citée. La page affiche les appels en pastilles « consulte … » pendant que le texte arrive.</p>
+</section>
+
+</body>
+</html>
