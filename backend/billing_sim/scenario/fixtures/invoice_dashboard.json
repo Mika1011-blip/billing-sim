@@ -17,7 +17,7 @@
       "key": "L2",
       "name": "Suivi des paiements",
       "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement.",
-      "delivery_summary": "Les relevés de votre banque sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû."
+      "delivery_summary": "Vos relevés bancaires sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû."
     },
     {
       "key": "L3",
@@ -134,8 +134,8 @@
       "steps": [
         "Ajouter sur la fiche de la facture l'historique des paiements reçus.",
         "Afficher le solde restant dû et la date d'échéance.",
-        "Afficher la référence du virement bancaire de chaque paiement.",
-        "Vérifier l'affichage sur des factures réglées en plusieurs fois."
+        "Vérifier l'affichage sur des factures réglées en plusieurs fois.",
+        "Afficher la référence du virement bancaire de chaque paiement."
       ],
       "lot_key": "L2",
       "size": "S",
