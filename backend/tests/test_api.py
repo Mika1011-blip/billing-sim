@@ -225,6 +225,19 @@ def test_pay_invoice_route(client):
     assert [(p["date"], p["montant"]) for p in paid] == [(body["date"], 3600)]
 
 
+def test_paid_invoice_reads_back_as_payee(client):
+    generate(client)
+    client.put("/sim/clock", json={"day": 20})
+    assert client.get("/client/invoices/F-2026-001").json()["statut"] == "À payer"
+    receipt = client.post("/client/invoices/F-2026-001/payer").json()
+    invoice = client.get("/client/invoices/F-2026-001").json()
+    assert invoice["statut"] == "Payée"
+    assert invoice["paiement"] == {"date": receipt["date"], "reference": receipt["reference"], "montant": 3600}
+    summary = client.get("/client/summary").json()
+    assert (summary["paye"], summary["a_payer"], summary["en_retard_nombre"]) == (3600, 0, 0)
+    assert summary["prochaine_facture"]["lot"] == "L2"
+
+
 def test_pay_invoice_not_yet_issued_is_404(client):
     generate(client)
     r = client.post("/client/invoices/F-2026-001/payer")

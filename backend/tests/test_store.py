@@ -4,7 +4,9 @@ from datetime import date
 
 import pytest
 
+from billing_sim.billing.policy import invoice_total
 from billing_sim.engine.clock import get_day, last_day, set_day
+from billing_sim.engine.payments import pay_invoice
 from billing_sim.expander.calendar import date_for_day
 from billing_sim.expander.expand import expand
 from billing_sim.store.db import NotFound, connect, wipe
@@ -36,6 +38,10 @@ from .conftest import START
 INV1 = "F-2026-001"
 INV2 = "F-2026-002"
 STATUSES = {"À faire", "En cours", "Bloqué", "En revue", "Terminé"}
+INVOICE_KEYS = {
+    "numero", "lot", "lot_nom", "ticket", "couvre", "emise_le", "echeance_le", "montant_ht", "tva", "montant_ttc",
+    "statut", "jours_de_retard", "jours_restants", "paiement", "resume_livraison", "tickets", "calcul",
+}  # fmt: skip
 
 
 def _invoice(conn, number):
@@ -96,36 +102,164 @@ def test_status_before_and_after_start(conn):
 
 def test_loaded_scenario_has_no_payments(conn):
     assert conn.execute("SELECT COUNT(*) FROM payment").fetchone()[0] == 0
-    inv = _invoice(conn, INV1)
     unpaid = get_invoice(conn, last_day(conn), INV1)
-    assert unpaid["paye"] == 0 and unpaid["reste"] == inv["amount_ttc"] and unpaid["statut"] == "En retard"
+    assert unpaid["statut"] == "Très en retard" and unpaid["paiement"] is None
+    assert unpaid["jours_de_retard"] > 30 and unpaid["jours_restants"] == 0
 
 
-def test_invoice_statuses(conn):
-    inv = _invoice(conn, INV1)
-    _pay(conn, INV1, inv["due_day"], 1200)
-    _pay(conn, INV1, inv["due_day"] + 15, 2400, n=2)
-    assert get_invoice(conn, inv["issued_day"], INV1)["statut"] == "Émise"
-    partial = get_invoice(conn, inv["due_day"], INV1)
-    assert partial["paye"] == 1200 and partial["reste"] == 2400
-    assert partial["statut"] == "Payée partiellement" and partial["en_retard"] is False
-    late = get_invoice(conn, inv["due_day"] + 1, INV1)
-    assert late["statut"] == "En retard" and late["en_retard"] is True
-    assert get_invoice(conn, inv["due_day"] + 15, INV1)["statut"] == "Payée"
-
-    inv2 = _invoice(conn, INV2)
-    _pay(conn, INV2, inv2["due_day"] + 12, inv2["amount_ttc"])
-    assert get_invoice(conn, inv2["due_day"] + 11, INV2)["statut"] == "En retard"
-    paid = get_invoice(conn, inv2["due_day"] + 12, INV2)
-    assert paid["statut"] == "Payée" and paid["reste"] == 0 and paid["en_retard"] is False
+def _d(day):
+    return date_for_day(START, day).isoformat()
 
 
-def test_overdue_amount_in_summary(conn):
-    inv = _invoice(conn, INV1)
-    assert summary(conn, inv["due_day"] + 1)["en_retard"] == 3600
-    _pay(conn, INV1, inv["due_day"], 1200)
-    assert summary(conn, inv["due_day"] + 1)["en_retard"] == 2400
-    assert summary(conn, inv["due_day"])["en_retard"] == 0
+def _pay_on(conn, number, day):
+    """Pay as the participant does: move the clock to `day`, then mark the invoice paid."""
+    set_day(conn, day)
+    return pay_invoice(conn, number)
+
+
+@pytest.mark.parametrize("offset,expected", [(-1, "À payer"), (0, "À payer"), (1, "En retard")])
+def test_invoice_status_around_due_day(conn, offset, expected):
+    due = _invoice(conn, INV1)["due_day"]
+    assert get_invoice(conn, due + offset, INV1)["statut"] == expected
+
+
+def test_invoice_very_late_after_30_calendar_days(conn):
+    due = _invoice(conn, INV1)["due_day"]
+    due_date = date_for_day(START, due)
+    first = next(d for d in range(due, last_day(conn) + 1) if (date_for_day(START, d) - due_date).days > 30)
+    assert (date_for_day(START, first - 1) - due_date).days == 30  # the fixture has a day exactly 30 days late
+    before, after = get_invoice(conn, first - 1, INV1), get_invoice(conn, first, INV1)
+    assert (before["statut"], before["jours_de_retard"]) == ("En retard", 30)
+    assert (after["statut"], after["jours_de_retard"]) == ("Très en retard", 31)
+
+
+def test_invoice_paid_status_and_paiement_block(conn):
+    assert get_invoice(conn, 19, INV1)["paiement"] is None
+    _pay_on(conn, INV1, 20)
+    for day in (20, last_day(conn)):
+        paid = get_invoice(conn, day, INV1)
+        assert paid["statut"] == "Payée" and paid["jours_de_retard"] == 0 == paid["jours_restants"]
+        assert paid["paiement"] == {"date": _d(20), "reference": "VIR-F-2026-001-1", "montant": 3600}
+    before = get_invoice(conn, 19, INV1)
+    assert before["statut"] == "À payer" and before["paiement"] is None
+
+
+def test_days_late_and_remaining_are_calendar_days(conn):
+    due = _invoice(conn, INV1)["due_day"]
+    assert date_for_day(START, due).weekday() == 1  # due on a Tuesday
+    friday, monday = due - 2, due + 4
+    assert date_for_day(START, friday).weekday() == 4 and date_for_day(START, monday).weekday() == 0
+    remaining = get_invoice(conn, friday, INV1)
+    assert (remaining["jours_restants"], remaining["jours_de_retard"]) == (4, 0)  # 2 working days, 4 calendar days
+    late = get_invoice(conn, monday, INV1)
+    assert (late["jours_de_retard"], late["jours_restants"]) == (6, 0)  # 4 working days, 6 calendar days
+    assert get_invoice(conn, due, INV1)["jours_restants"] == 0
+
+
+def test_invoice_due_after_last_day_is_a_payer(conn):
+    end = last_day(conn)
+    with conn:  # the separate ticket's invoice issued late in the run, due after its end
+        conn.execute("UPDATE invoice SET issued_day = ?, due_day = ? WHERE ticket_id IS NOT NULL", (end - 2, end + 28))
+    separate = next(i for i in list_invoices(conn, end) if i["ticket"] is not None)
+    expected = (date_for_day(START, end + 28) - date_for_day(START, end)).days
+    assert separate["statut"] == "À payer" and separate["jours_restants"] == expected == 40
+    assert separate["echeance_le"] == _d(end + 28) and separate["jours_de_retard"] == 0
+
+
+def test_invoice_row_keys_and_delivery_summary(conn, plan):
+    end = last_day(conn)
+    rows = list_invoices(conn, end)
+    assert [i["numero"] for i in rows] == [INV1, INV2, "F-2026-003", "F-2026-004"]
+    for row in rows:
+        assert set(row) == INVOICE_KEYS
+    lot_invoice, separate = rows[0], rows[2]
+    assert (lot_invoice["lot"], lot_invoice["ticket"]) == ("L1", None)
+    assert lot_invoice["lot_nom"] == "Tableau de bord factures"
+    assert lot_invoice["resume_livraison"] == next(lot.delivery_summary for lot in plan.lots if lot.key == "L1")
+    assert (separate["lot"], separate["lot_nom"], separate["ticket"]) == (None, None, "BANK-12")
+    assert separate["resume_livraison"] == next(t.description for t in plan.tickets if t.key == "BANK-12")
+    assert get_invoice(conn, end, INV2) == rows[1]
+
+
+def test_invoice_detail_calcul_matches_explain_price(conn, contract):
+    end = last_day(conn)
+    for number, key in ((INV2, "L2"), ("F-2026-003", "BANK-12")):
+        inv = get_invoice(conn, end, number)
+        explained = explain_price(conn, end, key)
+        total_ht = explained["total"] if explained["type"] == "lot" else explained["montant"]
+        tickets = inv["tickets"]
+        assert [t["cle"] for t in tickets] == inv["couvre"]
+        assert tickets == [get_ticket(conn, end, t["cle"]) for t in tickets]
+        assert all(t["etapes"] for t in tickets)
+        calcul = inv["calcul"]
+        vat, ttc = invoice_total(contract, total_ht)
+        jours_reels = round(sum(t["jours_reels"] for t in tickets), 2)
+        jours_factures = sum(t["jours_factures"] for t in tickets)
+        assert calcul == {
+            "total_ht": total_ht,
+            "tva": vat,
+            "taux_tva": 0.2,
+            "total_ttc": ttc,
+            "jours_factures": jours_factures,
+            "jours_reels": jours_reels,
+            "ecart_jours": round(jours_reels - jours_factures, 2),
+        }
+        totals = (calcul["total_ht"], calcul["tva"], calcul["total_ttc"])
+        assert totals == (inv["montant_ht"], inv["tva"], inv["montant_ttc"])
+    assert list_invoices(conn, end)[1] == get_invoice(conn, end, INV2)
+
+
+def test_summary_extras(conn):
+    early = summary(conn, 20)
+    assert (early["en_retard_nombre"], early["en_retard"], early["a_payer"]) == (0, 0, 3600)
+    assert early["prochaine_facture"] == {
+        "lot": "L2", "nom": "Suivi des paiements", "date_prevue": _d(19), "montant_ht": 13650,
+    }  # fmt: skip
+    end = last_day(conn)
+    late = summary(conn, end)
+    assert late["en_retard_nombre"] == 4 and late["en_retard"] == late["facture"] and late["a_payer"] == 0
+    assert late["prochaine_facture"] is None
+    _pay_on(conn, INV1, end)
+    paid = summary(conn, end)
+    assert (paid["en_retard_nombre"], paid["en_retard"]) == (3, late["en_retard"] - 3600)
+    assert paid["paye"] == 3600 and paid["reste_a_payer"] == paid["facture"] - 3600
+
+
+def test_prochaine_facture_skips_lot_without_invoice(plan, contract):
+    tickets = [t.model_copy(update={"charged_separately": True}) if t.lot_key == "L2" else t for t in plan.tickets]
+    separate_l2 = plan.model_copy(update={"tickets": tickets})
+    timeline = expand(separate_l2, contract, seed=42, start_date=START)
+    c = connect(":memory:")
+    try:
+        load_scenario(
+            c, plan=separate_l2, contract=contract, timeline=timeline, request_text="x", seed=42, start_date=START
+        )
+        assert c.execute("SELECT planned_delivery_day FROM lot WHERE key = 'L2'").fetchone()[0] is None
+        l1_issued = c.execute(
+            "SELECT i.issued_day FROM invoice i JOIN lot l ON l.id = i.lot_id WHERE l.key = 'L1'"
+        ).fetchone()[0]
+        assert summary(c, l1_issued)["prochaine_facture"]["lot"] == "L3"
+        assert summary(c, l1_issued - 1)["prochaine_facture"]["lot"] == "L1"
+    finally:
+        c.close()
+
+
+def test_ticket_has_etapes_and_journal_nombre(conn, plan):
+    steps = next(t.steps for t in plan.tickets if t.key == "BANK-5")
+    for day in (0, 30, last_day(conn)):
+        t = get_ticket(conn, day, "BANK-5")
+        assert t["etapes"] == steps
+        assert t["journal_nombre"] == len(ticket_history(conn, day, "BANK-5"))
+    assert get_ticket(conn, last_day(conn), "BANK-5")["journal_nombre"] > 0
+    listed = {t["cle"]: t for t in list_tickets(conn, 30)}
+    assert listed["BANK-5"] == get_ticket(conn, 30, "BANK-5")
+
+
+def test_lot_has_resume_livraison(conn, plan):
+    summaries = {lot.key: lot.delivery_summary for lot in plan.lots}
+    assert {lot["cle"]: lot["resume_livraison"] for lot in list_lots(conn, 0)} == summaries
+    assert get_lot(conn, 0, "L2")["resume_livraison"] == summaries["L2"]
+    assert get_lot(conn, last_day(conn), "L1")["statut_facture"] == "Très en retard"
 
 
 def test_explain_price_ticket(conn):
@@ -264,7 +398,7 @@ def test_history_is_flattened_and_ordered(conn):
 
 
 def test_lot_dict(conn):
-    _pay(conn, INV1, _invoice(conn, INV1)["due_day"], 3600)
+    _pay_on(conn, INV1, _invoice(conn, INV1)["due_day"])
     lot = get_lot(conn, last_day(conn), "L1")
     assert lot["nom"] == "Tableau de bord factures" and lot["prix"] == 3000
     assert lot["tickets_total"] == 3 and lot["tickets_termines"] == 3 and lot["jours_factures"] == 5
@@ -292,9 +426,10 @@ def test_summary_totals(conn, timeline):
     assert end["paye"] == 0 == len(timeline.payments)
     assert end["reste_a_payer"] == end["facture"] == end["en_retard"] > 0  # nothing paid: every invoice is overdue
     due = _invoice(conn, INV1)["due_day"]
-    _pay(conn, INV1, due, 1200)
+    _pay_on(conn, INV1, due)
     mid = summary(conn, due + 1)
-    assert mid["paye"] == 1200 and mid["reste_a_payer"] == mid["facture"] - mid["paye"] > 0
+    assert mid["paye"] == 3600 and mid["reste_a_payer"] == mid["facture"] - mid["paye"] > 0
+    assert mid["en_retard"] == 0  # the only invoice due by then was paid on its due day
     assert [lot["cle"] for lot in mid["lots"]] == ["L1", "L2", "L3"]
 
 
@@ -303,10 +438,10 @@ def test_invoice_dict_and_payments(conn):
     inv = get_invoice(conn, end, INV1)
     assert inv["numero"] == INV1 and inv["lot"] == "L1" and inv["couvre"] == ["BANK-1", "BANK-2", "BANK-3"]
     assert (inv["montant_ht"], inv["tva"], inv["montant_ttc"]) == (3000, 600, 3600)
-    assert inv["emise_le"] < inv["echeance"]
+    assert inv["emise_le"] < inv["echeance_le"]
     assert list_payments(conn, end) == []
-    _pay(conn, INV1, _invoice(conn, INV1)["due_day"], 3600)
-    _pay(conn, INV2, end, _invoice(conn, INV2)["amount_ttc"])
+    _pay_on(conn, INV1, _invoice(conn, INV1)["due_day"])
+    _pay_on(conn, INV2, end)
     assert [p["montant"] for p in list_payments(conn, end, INV1)] == [3600]
     assert all(p["facture"] == INV1 for p in list_payments(conn, end, INV1))
     assert len(list_payments(conn, end)) == 2

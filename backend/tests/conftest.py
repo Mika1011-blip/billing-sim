@@ -12,7 +12,7 @@ from billing_sim.store.load import load_scenario
 def pytest_addoption(parser):
     parser.addoption(
         "--update-snapshot", action="store_true", default=False,
-        help="rewrite frontend/src/test-fixtures/dev-snapshot.json from the backend",
+        help="rewrite frontend/src/test-fixtures/dev-snapshot.json and client-snapshot.json from the backend",
     )  # fmt: skip
 
 

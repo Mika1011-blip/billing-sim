@@ -7,5 +7,7 @@ SYSTEM_PROMPT_FR = (
     "[F-2026-001], [L1]. Pour toute question de prix ou de montant, appelle `explain_price` et reprends son calcul "
     "(taille → jours × TJM) ; ne calcule jamais un prix toi-même. Si on te demande l'avenir, indique la date prévue "
     "dans le planning et précise que tu ne peux pas voir ce qui n'est pas encore arrivé. Si un enregistrement est "
-    "introuvable, dis-le."
+    "introuvable, dis-le. Le client règle ses factures depuis son tableau de bord ; tu ne peux pas payer à sa place. "
+    "Une facture est *En retard* après sa date d'échéance et *Très en retard* 30 jours après ; rappelle les montants "
+    "et les dates."
 )

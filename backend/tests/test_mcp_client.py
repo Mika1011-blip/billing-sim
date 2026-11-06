@@ -123,6 +123,18 @@ async def test_parity_with_rest(server, client, shared):
         assert payload(await call(server, name, **args)) == response.json(), name
 
 
+async def test_invoice_tools_return_the_extended_records(server, shared):
+    set_day(shared, 40)
+    invoice = payload(await call(server, "get_invoice", number="F-2026-001"))
+    assert {"calcul", "resume_livraison", "tickets", "statut", "jours_de_retard", "paiement"} <= set(invoice)
+    assert invoice["calcul"]["total_ttc"] == invoice["montant_ttc"]
+    assert payload(await call(server, "list_invoices"))[0] == invoice
+    ticket = payload(await call(server, "get_ticket", key="BANK-1"))
+    assert ticket["etapes"] and ticket["journal_nombre"] > 0
+    assert {"en_retard_nombre", "a_payer", "prochaine_facture"} <= set(payload(await call(server, "get_summary")))
+    assert all("resume_livraison" in lot for lot in payload(await call(server, "list_lots")))
+
+
 async def test_tools_read_the_clock(server, shared):
     set_day(shared, 10)
     first = payload(await call(server, "get_today"))

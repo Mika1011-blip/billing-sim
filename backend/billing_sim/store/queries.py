@@ -22,6 +22,8 @@ from billing_sim.expander.calendar import date_for_day
 from billing_sim.store.db import NotFound, contract_data, start_date
 
 TODO, DOING, BLOCKED, REVIEW, DONE = "À faire", "En cours", "Bloqué", "En revue", "Terminé"
+TO_PAY, LATE, VERY_LATE, PAID = "À payer", "En retard", "Très en retard", "Payée"
+VERY_LATE_AFTER = 30  # calendar days past the due date
 
 _WEEKDAYS = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
 _MONTHS = (
@@ -61,6 +63,29 @@ def _flatten(event_type: str, payload: dict) -> str:
     return payload["text"]
 
 
+def _invoice_status(today: date, due: date, paid: bool) -> tuple[str, int, int]:
+    """`(statut, jours_de_retard, jours_restants)`, the day counts in calendar days between the two dates."""
+    if paid:
+        return PAID, 0, 0
+    late = (today - due).days
+    if late <= 0:
+        return TO_PAY, 0, -late
+    return (VERY_LATE if late > VERY_LATE_AFTER else LATE), late, 0
+
+
+def _line(t: dict) -> dict:
+    """One ticket's price line: size -> days x TJM = amount."""
+    return {
+        "cle": t["cle"],
+        "titre": t["titre"],
+        "taille": t["taille"],
+        "jours": t["jours_factures"],
+        "tjm": t["tjm"],
+        "montant": t["montant"],
+        "calcul": f"taille {t['taille']} = {t['jours_factures']} j × {_eur(t['tjm'])} = {_eur(t['montant'])}",
+    }
+
+
 class _Ctx:
     """What every as-of query needs: the day, the calendar, the contract and each ticket's derived state."""
 
@@ -71,6 +96,9 @@ class _Ctx:
         self.contract = contract_data(conn)
         self.hours_per_day = self.contract["hours_per_day"]
         self.state = self._ticket_states()
+        self.journal = dict(
+            self.conn.execute("SELECT ticket_id, COUNT(*) FROM ticket_event WHERE day <= ? GROUP BY ticket_id", (day,))
+        )
 
     def iso(self, day: int | None) -> str | None:
         return None if day is None else date_for_day(self.start, day).isoformat()
@@ -122,6 +150,8 @@ class _Ctx:
                     "debut_reel": self.iso(s["debut"]),
                     "fin_reel": self.iso(s["fin"]),
                     "jours_reels": round(s["heures"] / self.hours_per_day, 2),
+                    "etapes": json.loads(r["steps"]),
+                    "journal_nombre": self.journal.get(r["id"], 0),
                     "_id": r["id"],
                     "_fin": s["fin"],
                 }
@@ -129,41 +159,88 @@ class _Ctx:
         return out
 
     def invoices(self) -> list[dict]:
+        """Issued invoices with their status as of the day; `paiement` is the earliest payment dated on or before it."""
         rows = self.conn.execute(
-            "SELECT i.*, l.key AS lot_key,"
-            " COALESCE((SELECT SUM(p.amount) FROM payment p WHERE p.invoice_id = i.id AND p.day <= ?), 0) AS paid"
-            " FROM invoice i LEFT JOIN lot l ON l.id = i.lot_id WHERE i.issued_day <= ? ORDER BY i.number",
+            "SELECT i.*, l.key AS lot_key, l.name AS lot_name, l.delivery_summary, t.key AS ticket_key,"
+            " t.description AS ticket_description, p.day AS paid_day, p.reference, p.amount AS paid_amount"
+            " FROM invoice i LEFT JOIN lot l ON l.id = i.lot_id LEFT JOIN ticket t ON t.id = i.ticket_id"
+            " LEFT JOIN payment p ON p.id = (SELECT q.id FROM payment q WHERE q.invoice_id = i.id AND q.day <= ?"
+            " ORDER BY q.day, q.id LIMIT 1)"
+            " WHERE i.issued_day <= ? ORDER BY i.number",
             (self.day, self.day),
         )
+        today = date_for_day(self.start, self.day)
         out = []
         for r in rows:
-            paid, rest = r["paid"], r["amount_ttc"] - r["paid"]
-            overdue = rest > 0 and self.day > r["due_day"]
-            if overdue:
-                status = "En retard"
-            elif rest == 0:
-                status = "Payée"
-            elif paid > 0:
-                status = "Payée partiellement"
-            else:
-                status = "Émise"
+            paid = r["paid_day"] is not None
+            status, late, remaining = _invoice_status(today, date_for_day(self.start, r["due_day"]), paid)
             out.append(
                 {
                     "numero": r["number"],
                     "lot": r["lot_key"],
+                    "lot_nom": r["lot_name"],
+                    "ticket": r["ticket_key"],
                     "couvre": json.loads(r["covers"]),
                     "emise_le": self.iso(r["issued_day"]),
-                    "echeance": self.iso(r["due_day"]),
+                    "echeance_le": self.iso(r["due_day"]),
                     "montant_ht": r["amount_ht"],
                     "tva": r["vat"],
                     "montant_ttc": r["amount_ttc"],
-                    "paye": paid,
-                    "reste": rest,
                     "statut": status,
-                    "en_retard": overdue,
+                    "jours_de_retard": late,
+                    "jours_restants": remaining,
+                    "paiement": (
+                        {"date": self.iso(r["paid_day"]), "reference": r["reference"], "montant": r["paid_amount"]}
+                        if paid
+                        else None
+                    ),
+                    "resume_livraison": r["delivery_summary"] if r["lot_key"] is not None else r["ticket_description"],
                 }
             )
         return out
+
+    def invoice_details(self) -> list[dict]:
+        """`invoices()` rows plus the tickets each one covers and its price calculation."""
+        tickets = {t["cle"]: t for t in _public(self.tickets())}
+        out = []
+        for invoice in self.invoices():
+            covered = [tickets[key] for key in invoice["couvre"]]
+            out.append({**invoice, "tickets": covered, "calcul": self.calcul(covered)})
+        return out
+
+    def calcul(self, tickets: list[dict]) -> dict:
+        """The invoice total rebuilt from its tickets' price lines, with billed against actually spent days."""
+        lines = [_line(t) for t in tickets]
+        total_ht = sum(line["montant"] for line in lines)
+        vat, total_ttc = invoice_total(Contract(**self.contract), total_ht)
+        billed = sum(line["jours"] for line in lines)
+        spent = round(sum(t["jours_reels"] for t in tickets), 2)
+        return {
+            "total_ht": total_ht,
+            "tva": vat,
+            "taux_tva": self.contract["vat_rate"],
+            "total_ttc": total_ttc,
+            "jours_factures": billed,
+            "jours_reels": spent,
+            "ecart_jours": round(spent - billed, 2),
+        }
+
+    def next_invoice(self, invoices: list[dict]) -> dict | None:
+        """The lot with no invoice issued yet and the earliest planned delivery (plan data: what was promised)."""
+        invoiced = {i["lot"] for i in invoices}
+        rows = self.conn.execute(
+            "SELECT key, name, price, planned_delivery_day FROM lot"
+            " WHERE planned_delivery_day IS NOT NULL ORDER BY planned_delivery_day, id"
+        )
+        for lot in rows:
+            if lot["key"] not in invoiced:
+                return {
+                    "lot": lot["key"],
+                    "nom": lot["name"],
+                    "date_prevue": self.iso(lot["planned_delivery_day"]),
+                    "montant_ht": lot["price"],
+                }
+        return None
 
     def lots(self) -> list[dict]:
         invoices = {i["lot"]: i for i in self.invoices() if i["lot"] is not None}
@@ -187,6 +264,7 @@ class _Ctx:
                     "cle": lot["key"],
                     "nom": lot["name"],
                     "description": lot["description"],
+                    "resume_livraison": lot["delivery_summary"],
                     "prix": lot["price"],
                     "livraison_prevue": self.iso(lot["planned_delivery_day"]),
                     "livre_le": self.iso(delivered),
@@ -229,7 +307,8 @@ def summary(conn: sqlite3.Connection, day: int) -> dict:
     ctx = _Ctx(conn, day)
     invoices = ctx.invoices()
     invoiced = sum(i["montant_ttc"] for i in invoices)
-    paid = sum(i["paye"] for i in invoices)
+    paid = sum(i["montant_ttc"] for i in invoices if i["statut"] == PAID)
+    late = [i for i in invoices if i["statut"] in (LATE, VERY_LATE)]
     contracted_ht = conn.execute("SELECT COALESCE(SUM(fee), 0) FROM ticket").fetchone()[0]
     return {
         "contracte": contracted_ht,  # HT
@@ -237,7 +316,10 @@ def summary(conn: sqlite3.Connection, day: int) -> dict:
         "facture": invoiced,  # TTC, like payments and balances
         "paye": paid,
         "reste_a_payer": invoiced - paid,
-        "en_retard": sum(i["reste"] for i in invoices if i["en_retard"]),
+        "en_retard": sum(i["montant_ttc"] for i in late),
+        "en_retard_nombre": len(late),
+        "a_payer": sum(i["montant_ttc"] for i in invoices if i["statut"] == TO_PAY),
+        "prochaine_facture": ctx.next_invoice(invoices),
         "lots": ctx.lots(),
     }
 
@@ -291,11 +373,11 @@ def ticket_history(conn: sqlite3.Connection, day: int, key: str) -> list[dict]:
 
 
 def list_invoices(conn: sqlite3.Connection, day: int) -> list[dict]:
-    return _Ctx(conn, day).invoices()
+    return _Ctx(conn, day).invoice_details()
 
 
 def get_invoice(conn: sqlite3.Connection, day: int, number: str) -> dict:
-    for invoice in _Ctx(conn, day).invoices():
+    for invoice in _Ctx(conn, day).invoice_details():
         if invoice["numero"] == number:
             return invoice
     raise NotFound(f"facture introuvable : {number}")
@@ -340,21 +422,10 @@ def explain_price(conn: sqlite3.Connection, day: int, key: str) -> dict:
     def invoice_for(ticket_keys: list[str]) -> str | None:
         return next((i["numero"] for i in invoices if set(ticket_keys) <= set(i["couvre"])), None)
 
-    def line(t: dict) -> dict:
-        return {
-            "cle": t["cle"],
-            "titre": t["titre"],
-            "taille": t["taille"],
-            "jours": t["jours_factures"],
-            "tjm": t["tjm"],
-            "montant": t["montant"],
-            "calcul": f"taille {t['taille']} = {t['jours_factures']} j × {_eur(t['tjm'])} = {_eur(t['montant'])}",
-        }
-
     lot = conn.execute("SELECT id, key, name FROM lot WHERE key = ?", (key,)).fetchone()
     if lot is not None:
         lines = [
-            line(t)
+            _line(t)
             for t in ctx.tickets("WHERE t.lot_id = ? AND t.charged_separately = 0", (lot["id"],))
         ]
         total = sum(entry["montant"] for entry in lines)
@@ -367,7 +438,7 @@ def explain_price(conn: sqlite3.Connection, day: int, key: str) -> dict:
     t = found[0]
     return {
         "type": "ticket",
-        **line(t),
+        **_line(t),
         "lot": t["lot"],
         "facture_separement": t["facture_separement"],
         "facture": invoice_for([key]),
