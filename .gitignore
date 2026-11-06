@@ -28,3 +28,10 @@ Thumbs.db
 
 # Build process scratch
 .superpowers/
+
+# Docker compose data volume
+data/
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/

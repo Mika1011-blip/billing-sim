@@ -17,3 +17,9 @@ fi
 if [ -f "$ROOT/frontend/package.json" ]; then
     (cd "$ROOT/frontend" && npm test -- --run)
 fi
+
+# Optional end-to-end run against a live stack: `docker compose up --build -d`, then `E2E=1 bash scripts/test.sh`.
+# E2E_BASE_URL defaults to http://localhost:5173.
+if [ "${E2E:-}" = "1" ]; then
+    (cd "$ROOT/frontend" && npx playwright test)
+fi
