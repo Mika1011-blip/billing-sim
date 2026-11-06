@@ -9,6 +9,7 @@ from mcp.server.fastmcp import FastMCP
 
 from billing_sim.api.deps import get_settings
 from billing_sim.engine import clock
+from billing_sim.engine.payments import pay_invoice as pay
 from billing_sim.mcp_client.server import agent_tools_for
 from billing_sim.mcp_manager.pipeline import generate as run_generate
 from billing_sim.store import dev_queries
@@ -71,6 +72,13 @@ def step(n: int) -> int:
     """Move the clock by `n` days (clamped to the run); returns the new day."""
     with _db() as conn:
         return clock.step(conn, n)
+
+
+@mcp.tool()
+def pay_invoice(number: str) -> dict:
+    """Pay invoice `number` in full at the current clock day (what the participant does from the client page)."""
+    with _db() as conn:
+        return pay(conn, number)
 
 
 @mcp.tool()

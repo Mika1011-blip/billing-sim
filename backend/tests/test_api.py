@@ -211,3 +211,39 @@ def test_dev_ticket_404(client):
 def test_cors_allows_vite_origin(client):
     r = client.get("/sim/clock", headers={"Origin": "http://localhost:5173"})
     assert r.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_pay_invoice_route(client):
+    generate(client)
+    client.put("/sim/clock", json={"day": 20})
+    r = client.post("/client/invoices/F-2026-001/payer")
+    assert r.status_code == 200
+    body = r.json()
+    assert (body["facture"], body["reference"], body["montant"]) == ("F-2026-001", "VIR-F-2026-001-1", 3600)
+    assert body["date"] == client.get("/sim/clock").json()["date"]
+    paid = client.get("/client/payments", params={"invoice": "F-2026-001"}).json()
+    assert [(p["date"], p["montant"]) for p in paid] == [(body["date"], 3600)]
+
+
+def test_pay_invoice_not_yet_issued_is_404(client):
+    generate(client)
+    r = client.post("/client/invoices/F-2026-001/payer")
+    assert r.status_code == 404
+    assert r.json() == {"detail": "Enregistrement introuvable : F-2026-001"}
+
+
+def test_pay_unknown_invoice_is_404(client):
+    generate(client)
+    client.put("/sim/clock", json={"day": 20})
+    r = client.post("/client/invoices/F-9999-999/payer")
+    assert r.status_code == 404
+    assert r.json() == {"detail": "Enregistrement introuvable : F-9999-999"}
+
+
+def test_pay_invoice_twice_is_409(client):
+    generate(client)
+    client.put("/sim/clock", json={"day": 20})
+    first = client.post("/client/invoices/F-2026-001/payer").json()
+    r = client.post("/client/invoices/F-2026-001/payer")
+    assert r.status_code == 409
+    assert r.json() == {"detail": f"Facture déjà payée le {first['date']}"}
