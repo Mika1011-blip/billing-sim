@@ -76,7 +76,7 @@
         "key": "L2",
         "name": "Suivi des paiements",
         "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement.",
-        "delivery_summary": "Les relevés de votre banque sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû.",
+        "delivery_summary": "Vos relevés bancaires sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû.",
         "price": 13650,
         "planned_delivery_day": 19
       },
@@ -267,8 +267,8 @@
         "steps": [
           "Ajouter sur la fiche de la facture l'historique des paiements reçus.",
           "Afficher le solde restant dû et la date d'échéance.",
-          "Afficher la référence du virement bancaire de chaque paiement.",
-          "Vérifier l'affichage sur des factures réglées en plusieurs fois."
+          "Vérifier l'affichage sur des factures réglées en plusieurs fois.",
+          "Afficher la référence du virement bancaire de chaque paiement."
         ],
         "lot": "L2",
         "charged_separately": false,
@@ -450,7 +450,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 7.9,
-          "note": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut."
+          "note": "Recenser avec l'équipe comptable les critères de filtre attendus. ; Créer les filtres par période, fournisseur, montant et statut sur la liste des factures."
         }
       },
       {
@@ -462,7 +462,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 5.5,
-          "note": "Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue."
+          "note": "Conserver les filtres actifs dans l'adresse de la page pour pouvoir partager une vue."
         }
       },
       {
@@ -473,7 +473,7 @@
         "type": "comment",
         "actor": "Camille Roux",
         "payload": {
-          "text": "Point d'avancement sur « Filtres du tableau de bord » : ça avance comme prévu."
+          "text": "Point d'avancement : Créer les filtres par période, fournisseur, montant et statut sur la liste des factures."
         }
       },
       {
@@ -485,7 +485,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 7.3,
-          "note": "Le client aimerait aussi un filtre par centre de coût, à confirmer lors de la prochaine revue."
+          "note": "Tester les combinaisons de filtres sur un jeu de factures réel."
         }
       },
       {
@@ -493,6 +493,17 @@
         "day": 2,
         "date": "2026-03-04",
         "seq": 1,
+        "type": "comment",
+        "actor": "Camille Roux",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Recenser avec l'équipe comptable les critères de filtre attendus. ; Créer les filtres par période, fournisseur, montant et statut sur la liste des factures. ; Conserver les filtres actifs dans l'adresse de la page pour pouvoir partager une vue. ; Tester les combinaisons de filtres sur un jeu de factures réel."
+        }
+      },
+      {
+        "ticket": "BANK-1",
+        "day": 2,
+        "date": "2026-03-04",
+        "seq": 2,
         "type": "transition",
         "actor": "Camille Roux",
         "payload": {
@@ -521,7 +532,7 @@
         "actor": "Yanis Benali",
         "payload": {
           "hours": 6.3,
-          "note": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel."
+          "note": "Générer le fichier CSV à partir de la liste filtrée, avec les colonnes visibles."
         }
       },
       {
@@ -568,7 +579,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 7.9,
-          "note": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition."
+          "note": "Mettre en page la liste filtrée des factures avec l'en-tête de la banque. ; Ajouter la pagination et la date d'édition sur chaque page. ; Contrôler le rendu du PDF sur une liste longue."
         }
       },
       {
@@ -576,6 +587,17 @@
         "day": 3,
         "date": "2026-03-05",
         "seq": 6,
+        "type": "comment",
+        "actor": "Camille Roux",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Mettre en page la liste filtrée des factures avec l'en-tête de la banque. ; Ajouter la pagination et la date d'édition sur chaque page. ; Contrôler le rendu du PDF sur une liste longue."
+        }
+      },
+      {
+        "ticket": "BANK-3",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 7,
         "type": "transition",
         "actor": "Camille Roux",
         "payload": {
@@ -587,7 +609,7 @@
         "ticket": "BANK-4",
         "day": 3,
         "date": "2026-03-05",
-        "seq": 7,
+        "seq": 8,
         "type": "transition",
         "actor": "Marc Delorme",
         "payload": {
@@ -599,12 +621,12 @@
         "ticket": "BANK-4",
         "day": 3,
         "date": "2026-03-05",
-        "seq": 8,
+        "seq": 9,
         "type": "worklog",
         "actor": "Marc Delorme",
         "payload": {
           "hours": 7.5,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Analyser le format des relevés bancaires et des factures existantes."
         }
       },
       {
@@ -639,7 +661,7 @@
         "actor": "Yanis Benali",
         "payload": {
           "hours": 6.8,
-          "note": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel."
+          "note": "Régler l'encodage pour que le fichier s'ouvre correctement dans Excel."
         }
       },
       {
@@ -651,7 +673,7 @@
         "actor": "Marc Delorme",
         "payload": {
           "hours": 5.5,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Poursuite : Analyser le format des relevés bancaires et des factures existantes."
         }
       },
       {
@@ -662,7 +684,7 @@
         "type": "comment",
         "actor": "Marc Delorme",
         "payload": {
-          "text": "Point d'avancement sur « Architecture du rapprochement bancaire » : ça avance comme prévu."
+          "text": "Point d'avancement : Analyser le format des relevés bancaires et des factures existantes."
         }
       },
       {
@@ -674,7 +696,7 @@
         "actor": "Yanis Benali",
         "payload": {
           "hours": 4.2,
-          "note": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel."
+          "note": "Vérifier l'export sur une longue liste de factures filtrées."
         }
       },
       {
@@ -685,7 +707,7 @@
         "type": "comment",
         "actor": "Yanis Benali",
         "payload": {
-          "text": "Point d'avancement sur « Export CSV » : ça avance comme prévu."
+          "text": "Point d'avancement : Vérifier l'export sur une longue liste de factures filtrées."
         }
       },
       {
@@ -693,6 +715,17 @@
         "day": 5,
         "date": "2026-03-09",
         "seq": 2,
+        "type": "comment",
+        "actor": "Yanis Benali",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Générer le fichier CSV à partir de la liste filtrée, avec les colonnes visibles. ; Régler l'encodage pour que le fichier s'ouvre correctement dans Excel. ; Vérifier l'export sur une longue liste de factures filtrées."
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 5,
+        "date": "2026-03-09",
+        "seq": 3,
         "type": "review_approved",
         "actor": "Sophie Lambert",
         "payload": {
@@ -703,7 +736,7 @@
         "ticket": "BANK-2",
         "day": 5,
         "date": "2026-03-09",
-        "seq": 3,
+        "seq": 4,
         "type": "transition",
         "actor": "Sophie Lambert",
         "payload": {
@@ -715,12 +748,12 @@
         "ticket": "BANK-4",
         "day": 5,
         "date": "2026-03-09",
-        "seq": 4,
+        "seq": 5,
         "type": "worklog",
         "actor": "Marc Delorme",
         "payload": {
           "hours": 6.5,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Concevoir le modèle de données du rapprochement."
         }
       },
       {
@@ -732,7 +765,7 @@
         "actor": "Marc Delorme",
         "payload": {
           "hours": 5.5,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Poursuite : Concevoir le modèle de données du rapprochement."
         }
       },
       {
@@ -744,7 +777,7 @@
         "actor": "Marc Delorme",
         "payload": {
           "hours": 5.5,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Définir les règles de correspondance entre une ligne de relevé et une facture."
         }
       },
       {
@@ -755,7 +788,7 @@
         "type": "comment",
         "actor": "Marc Delorme",
         "payload": {
-          "text": "Je fais un premier retour sur « Architecture du rapprochement bancaire », pas de difficulté particulière."
+          "text": "Point d'avancement : Définir les règles de correspondance entre une ligne de relevé et une facture."
         }
       },
       {
@@ -767,7 +800,7 @@
         "actor": "Marc Delorme",
         "payload": {
           "hours": 6.7,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Poursuite : Définir les règles de correspondance entre une ligne de relevé et une facture."
         }
       },
       {
@@ -779,7 +812,7 @@
         "actor": "Marc Delorme",
         "payload": {
           "hours": 6.8,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Prévoir le traitement des écarts et des paiements partiels."
         }
       },
       {
@@ -790,7 +823,7 @@
         "type": "comment",
         "actor": "Marc Delorme",
         "payload": {
-          "text": "Mise à jour sur « Architecture du rapprochement bancaire » : les cas limites sont en cours de traitement."
+          "text": "Point d'avancement : Prévoir le traitement des écarts et des paiements partiels."
         }
       },
       {
@@ -802,7 +835,7 @@
         "actor": "Marc Delorme",
         "payload": {
           "hours": 6.4,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Poursuite : Prévoir le traitement des écarts et des paiements partiels."
         }
       },
       {
@@ -814,7 +847,7 @@
         "actor": "Marc Delorme",
         "payload": {
           "hours": 4.7,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Documenter l'architecture et la faire valider par l'équipe."
         }
       },
       {
@@ -825,7 +858,7 @@
         "type": "comment",
         "actor": "Marc Delorme",
         "payload": {
-          "text": "« Architecture du rapprochement bancaire » : j'ai échangé avec l'équipe, on garde cette approche."
+          "text": "Point d'avancement : Documenter l'architecture et la faire valider par l'équipe."
         }
       },
       {
@@ -837,7 +870,7 @@
         "actor": "Marc Delorme",
         "payload": {
           "hours": 4.7,
-          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+          "note": "Poursuite : Documenter l'architecture et la faire valider par l'équipe."
         }
       },
       {
@@ -845,6 +878,17 @@
         "day": 12,
         "date": "2026-03-18",
         "seq": 1,
+        "type": "comment",
+        "actor": "Marc Delorme",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Analyser le format des relevés bancaires et des factures existantes. ; Concevoir le modèle de données du rapprochement. ; Définir les règles de correspondance entre une ligne de relevé et une facture. ; Prévoir le traitement des écarts et des paiements partiels. ; Documenter l'architecture et la faire valider par l'équipe."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 12,
+        "date": "2026-03-18",
+        "seq": 2,
         "type": "transition",
         "actor": "Marc Delorme",
         "payload": {
@@ -873,7 +917,7 @@
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 8.0,
-          "note": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement."
+          "note": "Brancher le connecteur sur l'API bancaire de recette. ; Récupérer automatiquement les relevés de compte chaque jour."
         }
       },
       {
@@ -929,7 +973,7 @@
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 6.6,
-          "note": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement."
+          "note": "Convertir les relevés au format interne et les enregistrer. ; Tester l'import sur les relevés d'un mois complet."
         }
       },
       {
@@ -937,6 +981,17 @@
         "day": 16,
         "date": "2026-03-24",
         "seq": 1,
+        "type": "comment",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Brancher le connecteur sur l'API bancaire de recette. ; Récupérer automatiquement les relevés de compte chaque jour. ; Convertir les relevés au format interne et les enregistrer. ; Tester l'import sur les relevés d'un mois complet."
+        }
+      },
+      {
+        "ticket": "BANK-5",
+        "day": 16,
+        "date": "2026-03-24",
+        "seq": 2,
         "type": "transition",
         "actor": "Sophie Lambert",
         "payload": {
@@ -965,7 +1020,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 6.7,
-          "note": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés."
+          "note": "Calculer le statut de paiement de chaque facture à partir des paiements rapprochés."
         }
       },
       {
@@ -989,7 +1044,7 @@
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 4.9,
-          "note": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement."
+          "note": "Décrire la procédure de déploiement. ; Expliquer comment surveiller l'import des relevés."
         }
       },
       {
@@ -1001,7 +1056,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 7.4,
-          "note": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés."
+          "note": "Afficher le statut dans la liste et sur la fiche de la facture."
         }
       },
       {
@@ -1012,7 +1067,7 @@
         "type": "comment",
         "actor": "Camille Roux",
         "payload": {
-          "text": "Point d'avancement sur « Statut de paiement des factures » : ça avance comme prévu."
+          "text": "Point d'avancement : Afficher le statut dans la liste et sur la fiche de la facture."
         }
       },
       {
@@ -1024,7 +1079,7 @@
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 6.0,
-          "note": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement."
+          "note": "Rédiger la procédure à suivre en cas d'échec du rapprochement."
         }
       },
       {
@@ -1032,6 +1087,17 @@
         "day": 18,
         "date": "2026-03-26",
         "seq": 3,
+        "type": "comment",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Décrire la procédure de déploiement. ; Expliquer comment surveiller l'import des relevés. ; Rédiger la procédure à suivre en cas d'échec du rapprochement."
+        }
+      },
+      {
+        "ticket": "BANK-11",
+        "day": 18,
+        "date": "2026-03-26",
+        "seq": 4,
         "type": "transition",
         "actor": "Sophie Lambert",
         "payload": {
@@ -1048,7 +1114,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 4.9,
-          "note": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés."
+          "note": "Tester les cas payée, partiellement payée et en retard."
         }
       },
       {
@@ -1056,6 +1122,17 @@
         "day": 19,
         "date": "2026-03-27",
         "seq": 1,
+        "type": "comment",
+        "actor": "Camille Roux",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Calculer le statut de paiement de chaque facture à partir des paiements rapprochés. ; Afficher le statut dans la liste et sur la fiche de la facture. ; Tester les cas payée, partiellement payée et en retard."
+        }
+      },
+      {
+        "ticket": "BANK-6",
+        "day": 19,
+        "date": "2026-03-27",
+        "seq": 2,
         "type": "transition",
         "actor": "Camille Roux",
         "payload": {
@@ -1084,7 +1161,7 @@
         "actor": "Yanis Benali",
         "payload": {
           "hours": 7.2,
-          "note": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance."
+          "note": "Ajouter sur la fiche de la facture l'historique des paiements reçus. ; Afficher le solde restant dû et la date d'échéance."
         }
       },
       {
@@ -1131,7 +1208,7 @@
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 4.6,
-          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+          "note": "Sélectionner chaque matin les factures dont l'échéance est dépassée."
         }
       },
       {
@@ -1166,7 +1243,7 @@
         "actor": "Yanis Benali",
         "payload": {
           "hours": 5.6,
-          "note": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance."
+          "note": "Vérifier l'affichage sur des factures réglées en plusieurs fois."
         }
       },
       {
@@ -1177,7 +1254,7 @@
         "type": "comment",
         "actor": "Yanis Benali",
         "payload": {
-          "text": "Point d'avancement sur « Détail des paiements partiels » : ça avance comme prévu."
+          "text": "Point d'avancement : Afficher le solde restant dû et la date d'échéance."
         }
       },
       {
@@ -1189,7 +1266,7 @@
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 4.6,
-          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+          "note": "Rédiger le modèle de l'e-mail récapitulatif."
         }
       },
       {
@@ -1201,7 +1278,7 @@
         "actor": "Yanis Benali",
         "payload": {
           "hours": 4.8,
-          "note": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance."
+          "note": "Afficher la référence du virement bancaire de chaque paiement."
         }
       },
       {
@@ -1209,6 +1286,17 @@
         "day": 22,
         "date": "2026-04-01",
         "seq": 1,
+        "type": "comment",
+        "actor": "Yanis Benali",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Ajouter sur la fiche de la facture l'historique des paiements reçus. ; Afficher le solde restant dû et la date d'échéance. ; Vérifier l'affichage sur des factures réglées en plusieurs fois. ; Afficher la référence du virement bancaire de chaque paiement."
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 22,
+        "date": "2026-04-01",
+        "seq": 2,
         "type": "review_approved",
         "actor": "Sophie Lambert",
         "payload": {
@@ -1219,7 +1307,7 @@
         "ticket": "BANK-7",
         "day": 22,
         "date": "2026-04-01",
-        "seq": 2,
+        "seq": 3,
         "type": "transition",
         "actor": "Sophie Lambert",
         "payload": {
@@ -1231,23 +1319,23 @@
         "ticket": "BANK-8",
         "day": 22,
         "date": "2026-04-01",
-        "seq": 3,
+        "seq": 4,
         "type": "worklog",
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 7.0,
-          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+          "note": "Envoyer l'e-mail aux gestionnaires concernés par chaque facture."
         }
       },
       {
         "ticket": "BANK-8",
         "day": 22,
         "date": "2026-04-01",
-        "seq": 4,
+        "seq": 5,
         "type": "comment",
         "actor": "Sophie Lambert",
         "payload": {
-          "text": "Point d'avancement sur « Alertes e-mail pour factures en retard » : ça avance comme prévu."
+          "text": "Point d'avancement : Envoyer l'e-mail aux gestionnaires concernés par chaque facture."
         }
       },
       {
@@ -1259,7 +1347,7 @@
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 7.0,
-          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+          "note": "Planifier l'envoi automatique chaque matin."
         }
       },
       {
@@ -1283,7 +1371,7 @@
         "actor": "Yanis Benali",
         "payload": {
           "hours": 7.4,
-          "note": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées."
+          "note": "Reprendre le format d'écritures attendu par l'outil de comptabilité de la banque."
         }
       },
       {
@@ -1295,7 +1383,7 @@
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 5.7,
-          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+          "note": "Tester l'envoi avec des factures en retard de plusieurs fournisseurs."
         }
       },
       {
@@ -1303,6 +1391,17 @@
         "day": 24,
         "date": "2026-04-03",
         "seq": 1,
+        "type": "comment",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Sélectionner chaque matin les factures dont l'échéance est dépassée. ; Rédiger le modèle de l'e-mail récapitulatif. ; Envoyer l'e-mail aux gestionnaires concernés par chaque facture. ; Planifier l'envoi automatique chaque matin. ; Tester l'envoi avec des factures en retard de plusieurs fournisseurs."
+        }
+      },
+      {
+        "ticket": "BANK-8",
+        "day": 24,
+        "date": "2026-04-03",
+        "seq": 2,
         "type": "transition",
         "actor": "Sophie Lambert",
         "payload": {
@@ -1314,23 +1413,23 @@
         "ticket": "BANK-9",
         "day": 24,
         "date": "2026-04-03",
-        "seq": 2,
+        "seq": 3,
         "type": "worklog",
         "actor": "Yanis Benali",
         "payload": {
           "hours": 4.6,
-          "note": "Le service comptabilité demande d'ajouter le code journal dans le fichier, hors périmètre initial."
+          "note": "Produire le fichier d'écritures à partir des factures payées."
         }
       },
       {
         "ticket": "BANK-9",
         "day": 24,
         "date": "2026-04-03",
-        "seq": 3,
+        "seq": 4,
         "type": "comment",
         "actor": "Yanis Benali",
         "payload": {
-          "text": "Point d'avancement sur « Export comptable » : ça avance comme prévu."
+          "text": "Point d'avancement : Reprendre le format d'écritures attendu par l'outil de comptabilité de la banque."
         }
       },
       {
@@ -1354,7 +1453,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 5.4,
-          "note": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés."
+          "note": "Créer le centre de notifications dans l'interface."
         }
       },
       {
@@ -1366,7 +1465,7 @@
         "actor": "Yanis Benali",
         "payload": {
           "hours": 7.2,
-          "note": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées."
+          "note": "Faire valider un fichier d'essai par le service comptabilité."
         }
       },
       {
@@ -1390,7 +1489,7 @@
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 5.5,
-          "note": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable."
+          "note": "Reproduire l'erreur d'arrondi sur une facture à taux multiples. ; Corriger le calcul de l'arrondi de la TVA."
         }
       },
       {
@@ -1402,7 +1501,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 8.0,
-          "note": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés."
+          "note": "Y afficher les alertes de retard de paiement et les imports de relevés terminés."
         }
       },
       {
@@ -1414,7 +1513,7 @@
         "actor": "Yanis Benali",
         "payload": {
           "hours": 5.7,
-          "note": "Le service comptabilité demande d'ajouter le code journal dans le fichier, hors périmètre initial."
+          "note": "Poursuite : Faire valider un fichier d'essai par le service comptabilité."
         }
       },
       {
@@ -1425,7 +1524,7 @@
         "type": "comment",
         "actor": "Yanis Benali",
         "payload": {
-          "text": "Je fais un premier retour sur « Export comptable », pas de difficulté particulière."
+          "text": "Point d'avancement : Faire valider un fichier d'essai par le service comptabilité."
         }
       },
       {
@@ -1433,6 +1532,17 @@
         "day": 26,
         "date": "2026-04-07",
         "seq": 3,
+        "type": "comment",
+        "actor": "Yanis Benali",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Reprendre le format d'écritures attendu par l'outil de comptabilité de la banque. ; Produire le fichier d'écritures à partir des factures payées. ; Faire valider un fichier d'essai par le service comptabilité."
+        }
+      },
+      {
+        "ticket": "BANK-9",
+        "day": 26,
+        "date": "2026-04-07",
+        "seq": 4,
         "type": "transition",
         "actor": "Yanis Benali",
         "payload": {
@@ -1444,19 +1554,30 @@
         "ticket": "BANK-12",
         "day": 26,
         "date": "2026-04-07",
-        "seq": 4,
+        "seq": 5,
         "type": "worklog",
         "actor": "Sophie Lambert",
         "payload": {
           "hours": 8.0,
-          "note": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable."
+          "note": "Vérifier le correctif sur les factures signalées par l'équipe comptable."
         }
       },
       {
         "ticket": "BANK-12",
         "day": 26,
         "date": "2026-04-07",
-        "seq": 5,
+        "seq": 6,
+        "type": "comment",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Reproduire l'erreur d'arrondi sur une facture à taux multiples. ; Corriger le calcul de l'arrondi de la TVA. ; Vérifier le correctif sur les factures signalées par l'équipe comptable."
+        }
+      },
+      {
+        "ticket": "BANK-12",
+        "day": 26,
+        "date": "2026-04-07",
+        "seq": 7,
         "type": "transition",
         "actor": "Sophie Lambert",
         "payload": {
@@ -1473,7 +1594,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 4.6,
-          "note": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés."
+          "note": "Permettre de marquer une notification comme lue."
         }
       },
       {
@@ -1484,7 +1605,7 @@
         "type": "comment",
         "actor": "Camille Roux",
         "payload": {
-          "text": "Point d'avancement sur « Centre de notifications » : ça avance comme prévu."
+          "text": "Point d'avancement : Permettre de marquer une notification comme lue."
         }
       },
       {
@@ -1496,7 +1617,7 @@
         "actor": "Camille Roux",
         "payload": {
           "hours": 4.4,
-          "note": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés."
+          "note": "Tester l'affichage avec un grand nombre de notifications."
         }
       },
       {
@@ -1504,6 +1625,17 @@
         "day": 28,
         "date": "2026-04-09",
         "seq": 1,
+        "type": "comment",
+        "actor": "Camille Roux",
+        "payload": {
+          "text": "Terminé. Étapes réalisées : Créer le centre de notifications dans l'interface. ; Y afficher les alertes de retard de paiement et les imports de relevés terminés. ; Permettre de marquer une notification comme lue. ; Tester l'affichage avec un grand nombre de notifications."
+        }
+      },
+      {
+        "ticket": "BANK-10",
+        "day": 28,
+        "date": "2026-04-09",
+        "seq": 2,
         "type": "transition",
         "actor": "Camille Roux",
         "payload": {

@@ -68,7 +68,7 @@ Rules, in order:
 
 `expander/events.py`, for a ticket with `D` real work days (days with a worklog) and `n = len(steps)`, work day `d` (0-based):
 
-- `assigned = steps[floor(d·n/D) : floor((d+1)·n/D)]`
+- `assigned = steps[ceil(d·n/D) : ceil((d+1)·n/D)]` (ceil, so a step is logged on its first day and continued afterwards; with floor the continuation would precede the step)
 - note = `" ; ".join(assigned)` when `assigned` is non-empty, else `"Poursuite : " + steps[floor(d·n/D)]`
 - The worklog payload becomes `{"hours": h, "note": note}` as today; `_notes()` and the description-sentence recycling are removed.
 - The comment emitted on the day the ticket becomes `Terminé` is `"Terminé. Étapes réalisées : " + " ; ".join(steps)`. The periodic progress comment keeps its current rule but reads `"Point d'avancement : " + steps[floor(d·n/D)]`.
