@@ -203,6 +203,7 @@ def diff_plan_vs_real(conn: sqlite3.Connection) -> dict:
         {
             "key": r["key"],
             "lot": r["lot_key"],
+            "assignee": r["assignee"],
             "planned_start": r["planned_start_day"],
             "planned_end": r["planned_end_day"],
             "real_start": r["real_start_day"],
@@ -215,12 +216,13 @@ def diff_plan_vs_real(conn: sqlite3.Connection) -> dict:
         for r in conn.execute(_TICKET_SQL + "ORDER BY t.position")
     ]
     lots = []
-    for lot in conn.execute("SELECT key, planned_delivery_day FROM lot ORDER BY id"):
+    for lot in conn.execute("SELECT key, name, planned_delivery_day FROM lot ORDER BY id"):
         own = [t for t in tickets if t["lot"] == lot["key"] and t["_priced_with_lot"]]
         real_delivery = max((t["real_end"] for t in own), default=None)
         lots.append(
             {
                 "key": lot["key"],
+                "name": lot["name"],
                 "planned_delivery_day": lot["planned_delivery_day"],
                 "real_delivery_day": real_delivery,
                 "slip_days": None if real_delivery is None else real_delivery - lot["planned_delivery_day"],

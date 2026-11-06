@@ -1,11 +1,12 @@
 import { render, screen, within } from '@testing-library/react'
 import { Ledger } from './Ledger'
+import { snapshot } from '../../test-fixtures/snapshot'
 import type { Diff, Invoice, Payment } from '../../types'
 
 const inv = (number: string, issued: number, ttc: number): Invoice => ({
   number,
-  lot_key: 'L1',
-  ticket_key: null,
+  lot: 'L1',
+  ticket: null,
   issued_day: issued,
   due_day: issued + 30,
   amount_ht: Math.round(ttc / 1.2),
@@ -16,8 +17,8 @@ const inv = (number: string, issued: number, ttc: number): Invoice => ({
 
 const invoices = [inv('F-001', 3, 1200), inv('F-002', 10, 600)]
 const payments: Payment[] = [
-  { invoice_number: 'F-001', day: 4, amount: 500, reference: 'VIR-1' },
-  { invoice_number: 'F-001', day: 20, amount: 700, reference: 'VIR-2' },
+  { invoice: 'F-001', day: 4, amount: 500, reference: 'VIR-1' },
+  { invoice: 'F-001', day: 20, amount: 700, reference: 'VIR-2' },
 ]
 const diff: Diff = {
   tickets: [],
@@ -64,5 +65,26 @@ describe('Ledger', () => {
     const row = screen.getByText('Lot one').closest('tr')!
     expect(within(row).getAllByRole('cell').map((c) => c.textContent).slice(0, 3)).toEqual(['Lot one', '8', '10'])
     expect(container.textContent).not.toContain('undefined')
+  })
+
+  it('renders the backend snapshot: paid amounts, the lot of every invoice, no blank diff cell', () => {
+    const { timeline, diff: real, clock } = snapshot
+    render(<Ledger invoices={timeline.invoices} payments={timeline.payments} diff={real} today={clock.day} />)
+    const [invoiceTable, lotTable, ticketTable] = screen.getAllByRole('table')
+
+    const rows = within(invoiceTable).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(timeline.invoices.length)
+    const cells = rows.map((r) => within(r).getAllByRole('cell').map((c) => c.textContent))
+    expect(cells.some((c) => Number(c[5]) > 0)).toBe(true) // Paid
+    expect(cells.map((c) => c[1])).not.toContain('—') // Lot (or the ticket, for an invoice outside any lot)
+
+    for (const table of [lotTable, ticketTable]) {
+      for (const cell of within(table).getAllByRole('cell')) {
+        expect(cell.textContent?.trim()).toBeTruthy()
+        expect(cell.textContent).not.toContain('undefined')
+      }
+    }
+    expect(within(lotTable).getByText(snapshot.plan.lots[0].name)).toBeInTheDocument()
+    expect(within(ticketTable).getAllByText(snapshot.plan.tickets[0].assignee).length).toBeGreaterThan(0)
   })
 })

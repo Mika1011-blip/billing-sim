@@ -17,6 +17,7 @@ from billing_sim.agent.prompt import SYSTEM_PROMPT_FR
 from billing_sim.agent.tools import anthropic_tool_defs, dispatch
 from billing_sim.api.app import create_app
 from billing_sim.api.deps import Settings
+from billing_sim.engine.clock import set_day
 from billing_sim.mcp_client.server import build_server
 from billing_sim.store.db import connect
 
@@ -203,6 +204,30 @@ async def test_history_kept_per_session(agent):
     assert len(agent.client.calls[4]["messages"]) == 1
 
 
+NEW_DATE = {"type": "info", "message": "Nouvelle date : la conversation repart de zéro."}
+
+
+async def test_clock_change_starts_a_fresh_conversation(server, conn):
+    agent = make_agent(server, full_script() * 4)
+    set_day(conn, 30)
+    await run(agent)
+    events = await run(agent)  # same day: the history carries over, no notice
+    assert NEW_DATE not in events
+    assert len(agent.client.calls[2]["messages"]) >= 3
+
+    set_day(conn, 10)  # scrubbed back: everything the model saw at day 30 is the future
+    events = await run(agent)
+    assert events[0] == NEW_DATE
+    assert events.count(NEW_DATE) == 1
+    assert len(agent.client.calls[4]["messages"]) == 1
+    assert agent.client.calls[4]["messages"][0]["content"] == "Combien reste-t-il à payer ?"
+
+    set_day(conn, 50)  # forward moves reset too: the earlier answers describe a stale date
+    events = await run(agent)
+    assert events[0] == NEW_DATE
+    assert len(agent.client.calls[6]["messages"]) == 1
+
+
 def test_trim_history_keeps_last_40_from_a_user_turn():
     history = []
     for i in range(30):
@@ -234,7 +259,7 @@ async def test_error_event_when_api_fails_and_history_recovers(server):
     events = await run(agent)
     assert [e["type"] for e in events] == ["tool_call", "tool_result", "error", "done"]
     assert events[2]["message"] == ERROR_NO_DATA
-    assert agent.sessions["s1"] == []  # the half-finished exchange is rolled back
+    assert agent.sessions["s1"][1] == []  # the half-finished exchange is rolled back
     events = await run(agent)
     assert events[-1] == {"type": "done"}
     assert len(agent.client.calls[-1]["messages"]) == 1
@@ -347,7 +372,7 @@ async def test_empty_end_turn_is_an_error_and_history_unchanged(server):
     agent = make_agent(server, [empty])
     events = await run(agent)
     assert events == [{"type": "error", "message": ERROR_UNUSABLE}, {"type": "done"}]
-    assert agent.sessions["s1"] == []
+    assert agent.sessions["s1"][1] == []
 
 
 async def test_max_tokens_inside_tool_use_is_an_error_and_session_still_works(server):
@@ -356,7 +381,7 @@ async def test_max_tokens_inside_tool_use_is_an_error_and_session_still_works(se
     agent = make_agent(server, [([], cut), answer_turn()])
     events = await run(agent)
     assert events == [{"type": "error", "message": ERROR_UNUSABLE}, {"type": "done"}]
-    assert agent.sessions["s1"] == []
+    assert agent.sessions["s1"][1] == []
     agent.client.script.insert(0, tool_use_turn())
     events = await run(agent)
     assert events[-1] == {"type": "done"} and "error" not in [e["type"] for e in events]

@@ -13,7 +13,7 @@ const fmtSlip = (s: number | null) => (s === null ? '—' : s > 0 ? `+${s}` : St
 export function Ledger({ invoices, payments, diff, today }: Props) {
   const paidFor = (number: string) =>
     payments
-      .filter((p) => p.invoice_number === number && p.day <= today)
+      .filter((p) => p.invoice === number && p.day <= today)
       .reduce((sum, p) => sum + p.amount, 0)
 
   return (
@@ -37,7 +37,7 @@ export function Ledger({ invoices, payments, diff, today }: Props) {
             return (
               <tr key={inv.number} className={inv.issued_day > today ? 'future' : undefined}>
                 <td>{inv.number}</td>
-                <td>{inv.lot_key ?? inv.ticket_key ?? '—'}</td>
+                <td>{inv.lot ?? inv.ticket ?? '—'}</td>
                 <td>{inv.issued_day}</td>
                 <td>{inv.due_day}</td>
                 <td>{inv.amount_ttc}</td>
@@ -93,7 +93,7 @@ export function Ledger({ invoices, payments, diff, today }: Props) {
           {diff.tickets.map((t) => (
             <tr key={t.key}>
               <td>{t.key}</td>
-              <td>{t.lot_key}</td>
+              <td>{t.lot ?? 'no lot'}</td>
               <td>{t.assignee}</td>
               <td>
                 {fmtDay(t.planned_start)}–{fmtDay(t.planned_end)}

@@ -29,14 +29,16 @@ class GenerateOutcome:
 def generate(request_text: str, *, seed: int | None, fallback: bool, settings: Settings) -> GenerateOutcome:
     """Generate (or load the fixture), validate, expand and replace the stored scenario.
 
-    Raises ValueError for a blank request or an invalid plan (the message is the reason), and lets
+    Raises ValueError for a blank request (not with `fallback`) or an invalid plan (the message is the reason), and lets
     `GenerationUnavailable` / `GenerationFailed` through. A rejection leaves the store untouched."""
-    if not request_text or not request_text.strip():
+    if not fallback and (not request_text or not request_text.strip()):
         raise ValueError("request_text is empty")
     seed = random.getrandbits(32) if seed is None else seed
     contract = load_contract(settings.contract_path)
     if fallback:
         plan = load_fixture()
+        if not request_text or not request_text.strip():
+            request_text = plan.product_summary  # the fixture needs no request: record its own summary
     else:
         result = haiku.generate_plan(
             request_text, contract, model=settings.model, api_key=settings.anthropic_api_key

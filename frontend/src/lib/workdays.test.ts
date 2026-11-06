@@ -1,4 +1,4 @@
-import { dayForDate } from './workdays'
+import { dateForDay, dayForDate } from './workdays'
 
 // 2026-03-02 is a Monday.
 const today = { date: '2026-03-02', jour: 10 }
@@ -37,5 +37,15 @@ describe('dayForDate', () => {
 
   it('returns the current day for an invalid date', () => {
     expect(dayForDate(today, '', 40)).toBe(10)
+  })
+})
+
+describe('dateForDay', () => {
+  it('is the inverse of dayForDate on working days, forward and backward', () => {
+    expect(dateForDay(today, 10)).toBe('2026-03-02')
+    expect(dateForDay(today, 14)).toBe('2026-03-06')
+    expect(dateForDay(today, 15)).toBe('2026-03-09') // skips the weekend
+    expect(dateForDay(today, 9)).toBe('2026-02-27')
+    expect(dateForDay(today, 0)).toBe('2026-02-16')
   })
 })
