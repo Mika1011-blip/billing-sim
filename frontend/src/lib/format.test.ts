@@ -1,4 +1,6 @@
-import { fmtDate, fmtEuro } from './format'
+import snapshot from '../test-fixtures/client-snapshot.json'
+import type { ClientTicket } from '../types'
+import { fmtCalcul, fmtDate, fmtDays, fmtEuro } from './format'
 
 // Intl uses U+202F (narrow no-break space) as group separator and U+00A0 before the euro sign.
 const NNBSP = ' '
@@ -27,5 +29,20 @@ describe('fmtDate', () => {
 
   it('shows a dash for a missing date', () => {
     expect(fmtDate(null)).toBe('—')
+  })
+})
+
+describe('fmtDays', () => {
+  it('writes days with a French decimal comma and a no-break space before "j"', () => {
+    expect(fmtDays(6.4)).toBe(`6,4${NBSP}j`)
+    expect(fmtDays(5)).toBe(`5${NBSP}j`)
+    expect(fmtDays(1.82)).toBe(`1,82${NBSP}j`)
+  })
+})
+
+describe('fmtCalcul', () => {
+  it('renders "taille → jours × TJM = montant" for a ticket of the snapshot', () => {
+    const bank8 = snapshot.tickets.find((t) => t.cle === 'BANK-8') as ClientTicket // L, 5 j at 750 €
+    expect(fmtCalcul(bank8)).toBe(`L → 5${NBSP}j × 750${NBSP}€ = 3${NNBSP}750${NBSP}€`)
   })
 })

@@ -1,6 +1,7 @@
 import type {
   AgentTool,
   Clock,
+  ClientHistoryEntry,
   ClientInvoice,
   ClientLot,
   ClientPayment,
@@ -16,15 +17,22 @@ import type {
 
 export class ApiError extends Error {
   status: number
-  constructor(message: string, status: number) {
+  /** The backend's `detail` when it sent one (French on the client routes, e.g. « Facture déjà payée le … »). */
+  detail?: string
+  constructor(message: string, status: number, detail?: string) {
     super(message)
     this.status = status
+    this.detail = detail
   }
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init)
-  if (!res.ok) throw new ApiError(`${init?.method ?? 'GET'} ${url} failed: ${res.status}`, res.status)
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    const detail = typeof body?.detail === 'string' ? body.detail : undefined
+    throw new ApiError(`${init?.method ?? 'GET'} ${url} failed: ${res.status}`, res.status, detail)
+  }
   return (await res.json()) as T
 }
 
@@ -69,5 +77,10 @@ export const getClientSummary = () => request<ClientSummary>('/client/summary')
 export const getClientLots = () => request<ClientLot[]>('/client/lots')
 export const getClientTickets = () => request<ClientTicket[]>('/client/tickets')
 export const getClientInvoices = () => request<ClientInvoice[]>('/client/invoices')
+export const getInvoice = (number: string) => request<ClientInvoice>(`/client/invoices/${number}`)
+/** Pays the invoice in full at today's date; a 409 (already paid) rejects with the French message in `detail`. */
+export const payInvoice = (number: string) =>
+  request<ClientPayment>(`/client/invoices/${number}/payer`, { method: 'POST' })
+export const getTicketHistory = (key: string) => request<ClientHistoryEntry[]>(`/client/tickets/${key}/history`)
 export const getClientPayments = () => request<ClientPayment[]>('/client/payments')
 export const getClientApprovals = () => request<ClientLot[]>('/client/approvals/pending')

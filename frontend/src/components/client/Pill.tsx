@@ -1,10 +1,10 @@
 const CLASS_BY_STATUS: Record<string, string> = {
-  // invoices / lots
+  // invoices (and a lot's invoice statut)
   'À venir': 'pill-a-venir',
-  'Émise': 'pill-emise',
-  'Payée partiellement': 'pill-payee-partiellement',
-  'Payée': 'pill-payee',
-  'En retard': 'pill-en-retard',
+  'À payer': 'pill-info',
+  'En retard': 'pill-danger',
+  'Très en retard': 'pill-danger-strong',
+  'Payée': 'pill-ok',
   // tickets
   'À faire': 'pill-a-faire',
   'En cours': 'pill-en-cours',

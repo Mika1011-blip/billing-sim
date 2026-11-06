@@ -268,25 +268,30 @@ td.num {
 }
 
 .pill-termine,
-.pill-payee {
+.pill-ok {
   background: var(--ok-soft);
   color: var(--ok);
 }
 
-.pill-bloque,
-.pill-payee-partiellement {
+.pill-bloque {
   background: var(--warn-soft);
   color: var(--warn);
 }
 
-.pill-en-retard {
+.pill-danger {
   background: var(--danger-soft);
   color: var(--danger);
 }
 
+/* Très en retard: the same danger hue, inverted so it reads as the stronger tier. */
+.pill-danger-strong {
+  background: var(--danger);
+  color: #fff;
+}
+
 .pill-en-cours,
 .pill-en-revue,
-.pill-emise {
+.pill-info {
   background: var(--info-soft);
   color: var(--info);
 }
@@ -642,6 +647,100 @@ td.num {
 
 .client-page .note {
   color: var(--muted);
+}
+
+/* ---- ticket detail row ---- */
+
+.ticket-detail {
+  border-top: 1px solid var(--border);
+}
+
+.ticket-detail:first-child {
+  border-top: 0;
+}
+
+.ticket-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  width: 100%;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ticket-row:hover:not(:disabled) {
+  background: var(--zebra);
+}
+
+.ticket-row-title {
+  flex: 1 1 280px;
+}
+
+.ticket-row-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticket-body {
+  padding: 0 0 12px 12px;
+  border-left: 3px solid var(--accent-soft);
+}
+
+.ticket-body > p {
+  margin: 4px 0 8px;
+}
+
+.ticket-body .meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ticket-body h4 {
+  margin: 12px 0 4px;
+  font-size: 0.9rem;
+}
+
+.ticket-body .steps {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.ticket-body .steps .done {
+  color: var(--muted);
+}
+
+.ticket-body .tick {
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.journal {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.journal li {
+  padding: 2px 0;
+}
+
+.journal-date {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.journal-actor {
+  font-weight: 600;
 }
 
 .drawer {
