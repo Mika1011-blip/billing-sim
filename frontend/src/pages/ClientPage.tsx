@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  ApiError,
   getClientApprovals,
   getClientInvoices,
   getClientLots,
@@ -57,19 +58,26 @@ export function ClientPage() {
   const [message, setMessage] = useState<string>(fr.page.loading)
   const [error, setError] = useState('')
   const latest = useRef(0)
+  const hasData = useRef(false)
 
   const refresh = useCallback(async () => {
     const id = ++latest.current
     try {
       const loaded = await fetchAll()
-      if (id === latest.current) {
-        setData(loaded)
-        setError('')
-      }
-    } catch {
       if (id !== latest.current) return
-      setData(null)
-      setMessage(fr.page.empty)
+      hasData.current = true
+      setData(loaded)
+      setError('')
+    } catch (e) {
+      if (id !== latest.current) return
+      if (hasData.current) {
+        // Keep the dashboard (and the header) so the user can retry.
+        setError(fr.page.error)
+        return
+      }
+      // Initial load: only "no scenario yet" (404/409) gets the empty-state message.
+      const noSimulation = e instanceof ApiError && (e.status === 404 || e.status === 409)
+      setMessage(noSimulation ? fr.page.empty : fr.page.error)
     }
   }, [])
 

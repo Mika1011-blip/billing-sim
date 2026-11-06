@@ -25,6 +25,8 @@ const summary = { contracte: 2000, facture: 2400, paye: 0, reste_a_payer: 2400, 
 
 const reply = (body: unknown, status = 200) => ({ ok: status < 300, status, statusText: '', json: async () => body })
 
+let failClient = false
+
 function installFetch() {
   let day = 2
   const calls: string[] = []
@@ -32,6 +34,7 @@ function installFetch() {
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       calls.push(`${init?.method ?? 'GET'} ${url}`)
+      if (failClient && url.startsWith('/client/')) return reply({ detail: 'boom' }, 500)
       if (url === '/sim/clock' && init?.method === 'PUT') day = JSON.parse(String(init.body)).day
       if (url === '/sim/clock') return reply({ day, last_day: 5, date: DATES[day] })
       if (url === '/client/today') return reply({ jour: day, date: DATES[day], date_longue: LONG[day] })
@@ -47,7 +50,10 @@ function installFetch() {
   return calls
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  failClient = false
+  vi.unstubAllGlobals()
+})
 
 describe('ClientPage', () => {
   it('loads everything and renders the French dashboard with record anchors', async () => {
@@ -95,6 +101,33 @@ describe('ClientPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Jour précédent' })).toBeDisabled())
     fireEvent.change(screen.getByLabelText('Choisir une date'), { target: { value: '2030-01-01' } })
     await waitFor(() => expect(screen.getByRole('button', { name: 'Jour suivant' })).toBeDisabled())
+  })
+
+  it('keeps the dashboard and shows an error banner when a refetch fails', async () => {
+    installFetch()
+    render(<ClientPage />)
+    await screen.findByText(/mercredi 4 mars 2026/)
+    // The clock move succeeds, then every client fetch fails with a 500.
+    failClient = true
+    await userEvent.click(screen.getByRole('button', { name: 'Jour suivant' }))
+    expect(await screen.findByText('Impossible de charger les données.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+    expect(document.getElementById('rec-L1')).not.toBeNull()
+    expect(screen.queryByText(/Aucune simulation en cours/)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Jour suivant' })).toBeEnabled()
+  })
+
+  it('shows the error message, not the empty state, when the initial load fails with a 500', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => reply({ detail: 'boom' }, 500)))
+    render(<ClientPage />)
+    expect(await screen.findByText('Impossible de charger les données.')).toBeInTheDocument()
+    expect(screen.queryByText(/Aucune simulation en cours/)).toBeNull()
+  })
+
+  it('shows the error message when the initial load hits a network error', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('network down') }))
+    render(<ClientPage />)
+    expect(await screen.findByText('Impossible de charger les données.')).toBeInTheDocument()
   })
 
   it('shows a French message when there is no simulation', async () => {

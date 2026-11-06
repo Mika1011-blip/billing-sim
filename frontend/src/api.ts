@@ -14,9 +14,17 @@ import type {
   Timeline,
 } from './types'
 
+export class ApiError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init)
-  if (!res.ok) throw new Error(`${init?.method ?? 'GET'} ${url} failed: ${res.status}`)
+  if (!res.ok) throw new ApiError(`${init?.method ?? 'GET'} ${url} failed: ${res.status}`, res.status)
   return (await res.json()) as T
 }
 
