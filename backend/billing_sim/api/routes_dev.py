@@ -6,7 +6,8 @@ import sqlite3
 
 from fastapi import APIRouter, Depends
 
-from billing_sim.api.deps import get_conn
+from billing_sim.api.deps import Settings, get_conn, get_settings
+from billing_sim.mcp_client.server import agent_tools_for
 from billing_sim.store import dev_queries
 
 router = APIRouter(prefix="/dev", tags=["dev"])
@@ -35,5 +36,5 @@ async def get_diff(conn: sqlite3.Connection = Depends(get_conn)):
 
 
 @router.get("/agent-tools")
-async def get_agent_tools() -> list[dict]:
-    return []  # Task 7 replaces this with the client MCP server's tool list
+async def get_agent_tools(settings: Settings = Depends(get_settings)) -> list[dict]:
+    return await agent_tools_for(settings.db_path)

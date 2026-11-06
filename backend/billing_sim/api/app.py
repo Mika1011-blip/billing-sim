@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from billing_sim.api import routes_dev, routes_setup, routes_sim
+from billing_sim.api import routes_client, routes_dev, routes_setup, routes_sim
 from billing_sim.api.deps import Settings, get_settings
 from billing_sim.store.db import NotFound
 
@@ -28,5 +28,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(routes_setup.router)
     app.include_router(routes_sim.router)
     app.include_router(routes_dev.router)
-    # Task 7 adds the /client router here.
+    app.include_router(routes_client.router)
     return app
