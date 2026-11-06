@@ -1,13 +1,17 @@
 import itertools
+import json
 import random
 from dataclasses import replace
 from datetime import date, timedelta
+from pathlib import Path
 
 import pytest
 
 from billing_sim.expander.calendar import date_for_day, day_for_date
+from billing_sim.expander.events import step_notes
 from billing_sim.expander.expand import expand
 from billing_sim.expander.schedule import plan_schedule, real_schedule, topo_order
+from billing_sim.scenario.fixture import load_fixture
 from billing_sim.scenario.schema import Beat
 
 START = date(2026, 3, 2)  # a Monday
@@ -452,3 +456,37 @@ def test_last_day_tail_lands_on_a_working_day_when_due_plus_35_is_a_weekend(plan
 def test_last_day_after_everything(timeline):
     assert timeline.last_day >= max(e.day for e in timeline.events) + 15
     assert timeline.last_day >= max(i.due_day for i in timeline.invoices) + 15
+
+
+# --- step notes ----------------------------------------------------------------
+
+
+def test_step_notes_fewer_days_than_steps():
+    assert step_notes(["a", "b", "c", "d"], 2) == ["a ; b", "c ; d"]
+
+
+def test_step_notes_equal():
+    assert step_notes(["a", "b", "c"], 3) == ["a", "b", "c"]
+
+
+def test_step_notes_more_days_than_steps():
+    notes = step_notes(["a", "b"], 5)
+    assert notes == ["a", "Poursuite : a", "b", "Poursuite : b", "Poursuite : b"]
+
+
+def test_worklogs_walk_the_steps_and_done_comment_lists_them(contract):
+    timeline = expand(load_fixture(), contract, seed=1, start_date=START)
+    ev = [e for e in timeline.events if e.ticket_key == "BANK-5"]
+    notes = [e.payload["note"] for e in ev if e.type == "worklog"]
+    steps = next(t.steps for t in load_fixture().tickets if t.key == "BANK-5")
+    assert all(any(s in n for n in notes) for s in steps)  # every step appears
+    done = [e for e in ev if e.type == "comment" and e.payload["text"].startswith("Terminé. Étapes réalisées : ")]
+    assert len(done) == 1 and all(s in done[0].payload["text"] for s in steps)
+
+
+def test_dates_unchanged_by_step_notes(contract):
+    # Same seed -> same real_start/real_end as the committed dev snapshot (draw order untouched).
+    snapshot = Path(__file__).resolve().parents[2] / "frontend" / "src" / "test-fixtures" / "dev-snapshot.json"
+    committed = {t["key"]: (t["real_start"], t["real_end"]) for t in json.loads(snapshot.read_text(encoding="utf-8"))["diff"]["tickets"]}
+    timeline = expand(load_fixture(), contract, seed=42, start_date=START)  # the snapshot is built with seed 42
+    assert {t.key: (t.real_start, t.real_end) for t in timeline.tickets} == committed

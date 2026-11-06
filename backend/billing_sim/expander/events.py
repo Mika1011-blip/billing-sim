@@ -17,7 +17,6 @@ Blocks never overlap and lie within `[real_start + 1, real_end - review_len]`, w
 from __future__ import annotations
 
 import random
-import re
 from dataclasses import dataclass
 
 from billing_sim.billing.policy import Contract
@@ -30,12 +29,10 @@ TODO, DOING, BLOCKED, IN_REVIEW, DONE = "À faire", "En cours", "Bloqué", "En r
 # Order of events inside one day (ties keep creation order).
 _R_START, _R_STATE, _R_WORKLOG, _R_COMMENT, _R_REVIEW, _R_DONE = range(6)
 
-_COMMENTS = (
-    "Point d'avancement sur « {title} » : ça avance comme prévu.",
-    "Je fais un premier retour sur « {title} », pas de difficulté particulière.",
-    "Mise à jour sur « {title} » : les cas limites sont en cours de traitement.",
-    "« {title} » : j'ai échangé avec l'équipe, on garde cette approche.",
-)
+_PROGRESS = "Point d'avancement : "
+_DONE_SUMMARY = "Terminé. Étapes réalisées : "
+_CONTINUED = "Poursuite : "
+_JOINER = " ; "
 
 
 @dataclass
@@ -47,10 +44,18 @@ class _Pending:
     payload: dict
 
 
-def _notes(ticket: TicketPlan) -> list[str]:
-    sentences = [s for s in re.split(r"(?<=[.!?])\s+", ticket.description.strip()) if s]
-    scope_notes = [b.text for b in ticket.beats if b.kind == "scope_note"]
-    return sentences + scope_notes or [ticket.title]
+def step_notes(steps: list[str], work_days: int) -> list[str]:
+    """One worklog note per work day: the work steps spread over the days, in order.
+
+    Work day `d` (0-based) takes `steps[ceil(d*n/D) : ceil((d+1)*n/D)]`, joined. With more days than steps, a
+    step is logged on the first day of its stretch and the days after it continue it instead.
+    """
+    n = len(steps)
+    notes: list[str] = []
+    for d in range(work_days):
+        first, after = -(-d * n // work_days), -(-(d + 1) * n // work_days)  # ceil(d*n/D), ceil((d+1)*n/D)
+        notes.append(_JOINER.join(steps[first:after]) if first < after else _CONTINUED + steps[d * n // work_days])
+    return notes
 
 
 def _reviewer(team: list[TeamMember], assignee: str) -> str:
@@ -112,23 +117,21 @@ def ticket_events(
         move(end - 1, _R_STATE, reviewer, DOING)
         add(end, _R_REVIEW, "review_approved", reviewer, {"text": "OK pour moi"})
 
-    notes = _notes(ticket)
+    work_days = [day for day in range(start, end + 1) if day not in blocked_set]  # no rng: draws stay put
+    notes = step_notes(ticket.steps, len(work_days))
     comment_every = rng.choice([2, 3])
-    worked = since_comment = comments = 0
-    for day in range(start, end + 1):
-        if day in blocked_set:
-            continue
+    since_comment = 0
+    for worked, day in enumerate(work_days):
         hours = round(contract.hours_per_day * rng.uniform(0.5, 1.0), 1)
-        add(day, _R_WORKLOG, "worklog", assignee, {"hours": hours, "note": notes[worked % len(notes)]})
-        worked += 1
+        add(day, _R_WORKLOG, "worklog", assignee, {"hours": hours, "note": notes[worked]})
         since_comment += 1
         if since_comment == comment_every:
-            text = _COMMENTS[comments % len(_COMMENTS)].format(title=ticket.title)
+            text = _PROGRESS + ticket.steps[worked * len(ticket.steps) // len(work_days)]
             add(day, _R_COMMENT, "comment", assignee, {"text": text})
-            comments += 1
             comment_every = rng.choice([2, 3])
             since_comment = 0
 
+    add(end, _R_COMMENT, "comment", assignee, {"text": _DONE_SUMMARY + _JOINER.join(ticket.steps)})
     move(end, _R_DONE, reviewer if review_beat else assignee, DONE)
 
     pending.sort(key=lambda p: (p.day, p.rank))  # stable: creation order breaks ties
