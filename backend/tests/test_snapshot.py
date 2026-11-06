@@ -19,6 +19,7 @@ from billing_sim.engine.payments import pay_invoice
 from billing_sim.expander.expand import expand
 from billing_sim.scenario.fixture import load_fixture
 from billing_sim.store.db import connect
+from billing_sim.store.dev_queries import full_timeline
 from billing_sim.store.load import load_scenario
 from billing_sim.store.queries import (
     list_invoices,
@@ -50,6 +51,7 @@ def client_snapshot_data() -> dict:
             set_day(conn, day)
             pay_invoice(conn, number)
         day = set_day(conn, end)
+        mid = next(i for i in full_timeline(conn)["invoices"] if i["number"] == second)["issued_day"]
         return {
             "day": day,
             "today": today(conn, day),
@@ -58,6 +60,14 @@ def client_snapshot_data() -> dict:
             "tickets": list_tickets(conn, day),
             "lots": list_lots(conn, day),
             "history": {"BANK-5": ticket_history(conn, day, "BANK-5")},
+            # the day the second invoice is issued: one invoice paid, one to pay, a lot still to invoice
+            "mid": {
+                "day": mid,
+                "today": today(conn, mid),
+                "summary": summary(conn, mid),
+                "invoices": list_invoices(conn, mid),
+                "lots": list_lots(conn, mid),
+            },
         }
     finally:
         conn.close()
@@ -89,6 +99,14 @@ def test_client_snapshot_exercises_what_the_client_page_draws():
     assert data["day"] == data["today"]["jour"]
     assert data["summary"]["en_retard_nombre"] == statuses.count("En retard") + statuses.count("Très en retard")
     assert data["history"]["BANK-5"] and all(t["etapes"] for t in data["tickets"])
+    mid = data["mid"]
+    assert mid["day"] < data["day"] and mid["day"] == mid["today"]["jour"]
+    to_pay = [i for i in mid["invoices"] if i["statut"] == "À payer"]
+    assert len(to_pay) == 1 and to_pay[0]["jours_restants"] > 0
+    assert [i["statut"] for i in mid["invoices"]].count("Payée") == 1
+    assert mid["summary"]["a_payer"] == to_pay[0]["montant_ttc"] > 0
+    upcoming = mid["summary"]["prochaine_facture"]
+    assert upcoming is not None and set(upcoming) == {"lot", "nom", "date_prevue", "montant_ht"}
 
 
 def test_snapshot_exercises_what_the_dev_page_draws():

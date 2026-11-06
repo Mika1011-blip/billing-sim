@@ -262,6 +262,19 @@ def test_lot_has_resume_livraison(conn, plan):
     assert get_lot(conn, last_day(conn), "L1")["statut_facture"] == "Très en retard"
 
 
+def test_lot_actual_days_match_its_invoice_calcul(conn):
+    for day in (30, last_day(conn)):
+        invoices = {i["lot"]: i for i in list_invoices(conn, day) if i["lot"] is not None}
+        for lot in list_lots(conn, day):
+            tickets = list_tickets(conn, day, lot_key=lot["cle"])
+            own = [t for t in tickets if not t["facture_separement"]]
+            assert lot["jours_reels"] == round(sum(t["jours_reels"] for t in own), 2)
+            if lot["cle"] in invoices:
+                assert lot["jours_reels"] == invoices[lot["cle"]]["calcul"]["jours_reels"]
+    end = last_day(conn)
+    assert get_lot(conn, end, "L3")["jours_reels"] == get_invoice(conn, end, "F-2026-004")["calcul"]["jours_reels"]
+
+
 def test_explain_price_ticket(conn):
     e = explain_price(conn, last_day(conn), "BANK-1")
     assert e["taille"] == "M" and e["jours"] == 3 and e["tjm"] == 600 and e["montant"] == 1800

@@ -135,6 +135,15 @@ async def test_invoice_tools_return_the_extended_records(server, shared):
     assert all("resume_livraison" in lot for lot in payload(await call(server, "list_lots")))
 
 
+async def test_invoice_tool_descriptions_name_what_they_return(server):
+    descriptions = {t.name: t.description for t in await server.list_tools()}
+    for name in ("list_invoices", "get_invoice"):
+        text = descriptions[name]
+        for word in ("À payer", "Très en retard", "days late", "payment", "delivery summary"):
+            assert word in text, (name, word)
+    assert "tickets" in descriptions["get_invoice"] and "price calculation" in descriptions["get_invoice"]
+
+
 async def test_tools_read_the_clock(server, shared):
     set_day(shared, 10)
     first = payload(await call(server, "get_today"))

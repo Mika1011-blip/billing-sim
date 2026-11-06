@@ -271,7 +271,7 @@ class _Ctx:
                     "tickets_termines": len(done),
                     "tickets_total": len(own),
                     "jours_factures": sum(t["jours_factures"] for t in own),
-                    "jours_reels": round(sum(self.state[t["_id"]]["heures"] for t in own) / self.hours_per_day, 2),
+                    "jours_reels": round(sum(t["jours_reels"] for t in own), 2),  # same rule as an invoice's calcul
                     "approuve_le": self.iso(approved.get(lot["key"])),
                     "statut_facture": invoice["statut"] if invoice else "À venir",
                     "facture": invoice["numero"] if invoice else None,
