@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from billing_sim.api.deps import get_conn
 from billing_sim.engine.clock import get_day
+from billing_sim.engine.payments import AlreadyPaid, pay_invoice
 from billing_sim.store import queries
 from billing_sim.store.db import NotFound
 
@@ -69,6 +70,14 @@ async def invoices(conn: sqlite3.Connection = Depends(get_conn)):
 @router.get("/invoices/{number}")
 async def invoice(number: str, conn: sqlite3.Connection = Depends(get_conn)):
     return _lookup(conn, queries.get_invoice, number)
+
+
+@router.post("/invoices/{number}/payer")
+async def pay(number: str, conn: sqlite3.Connection = Depends(get_conn)):
+    try:
+        return pay_invoice(conn, number)
+    except AlreadyPaid as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.get("/payments")

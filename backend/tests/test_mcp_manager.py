@@ -11,6 +11,7 @@ TOOLS = {
     "get_clock",
     "set_day",
     "step",
+    "pay_invoice",
     "get_plan",
     "get_timeline",
     "get_ticket_full",
@@ -63,3 +64,16 @@ async def test_reset_wipes():
     await mcp.call_tool("reset", {})
     with pytest.raises(Exception):
         await mcp.call_tool("get_plan", {})
+
+
+async def test_pay_invoice_tool():
+    await mcp.call_tool("generate", {"request_text": "x", "fallback": True})
+    await mcp.call_tool("set_day", {"d": 20})
+    out = unwrap(await mcp.call_tool("pay_invoice", {"number": "F-2026-001"}))
+    assert out["facture"] == "F-2026-001"
+    assert out["reference"] == "VIR-F-2026-001-1"
+    assert out["montant"] == 3600
+    with pytest.raises(Exception, match="déjà payée"):
+        await mcp.call_tool("pay_invoice", {"number": "F-2026-001"})
+    with pytest.raises(Exception, match="Enregistrement introuvable : F-9999-999"):
+        await mcp.call_tool("pay_invoice", {"number": "F-9999-999"})

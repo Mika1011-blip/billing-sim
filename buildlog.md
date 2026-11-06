@@ -61,3 +61,4 @@ Every change to this repo gets an entry here: date, branch, what changed, how it
 | 2026-11-06 | develop | Merged task/14-ui-shell: App shell with nav + Réinitialiser, French dev page, visual refresh (buildlog conflict resolved by keeping both rows) | bash scripts/test.sh green on develop |
 | 2026-11-06 | main | Merged develop (task/14-ui-shell): App shell with nav + Réinitialiser, French dev page, visual refresh | bash scripts/test.sh green on main |
 | 2026-11-06 | main | Live check of tasks 13+14 on the rebuilt Compose stack: new shell on /dev and /client, POST /sim/reset empties both pages (badge hidden, link to Dev), Playwright e2e 1 passed | docker compose up --build + e2e green |
+| 2026-11-06 | task/23-payments | Participant payment: engine/payments.py pay_invoice (full TTC at clock day, rule-3 rewrite of future payment), POST /client/invoices/{number}/payer (200/404/409), manager MCP pay_invoice tool (not on the client server) | bash scripts/test.sh green |
