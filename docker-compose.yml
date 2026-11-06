@@ -1,0 +1,24 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      SIM_DB_PATH: /data/sim.sqlite
+    volumes:
+      - ./data:/data
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: frontend
+    environment:
+      VITE_API_TARGET: http://api:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api

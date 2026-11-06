@@ -1,0 +1,16 @@
+data/
+.env
+.env.*
+!.env.example
+**/__pycache__/
+**/.venv/
+.git/
+.worktrees/
+.superpowers/
+*.sqlite
+*.sqlite3
+**/node_modules/
+**/dist/
+**/.pytest_cache/
+**/.ruff_cache/
+**/*.egg-info/
