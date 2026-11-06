@@ -152,3 +152,79 @@ export interface AgentTool {
   description: string
   input_schema: unknown
 }
+
+// ---- /client/* (French-keyed dicts from the backend store) ----
+
+export interface ClientToday {
+  jour: number
+  date: string // YYYY-MM-DD
+  date_longue: string // "lundi 2 mars 2026"
+}
+
+export type LotInvoiceStatus = 'À venir' | 'Émise' | 'Payée partiellement' | 'Payée' | 'En retard'
+export type InvoiceStatus = 'Émise' | 'Payée partiellement' | 'Payée' | 'En retard'
+export type TicketStatus = 'À faire' | 'En cours' | 'Bloqué' | 'En revue' | 'Terminé'
+
+export interface ClientLot {
+  cle: string
+  nom: string
+  description: string
+  prix: number
+  livraison_prevue: string
+  livre_le: string | null
+  tickets_termines: number
+  tickets_total: number
+  jours_factures: number
+  jours_reels: number
+  approuve_le: string | null
+  statut_facture: LotInvoiceStatus
+  facture: string | null
+}
+
+export interface ClientTicket {
+  cle: string
+  titre: string
+  description: string
+  lot: string | null
+  facture_separement: boolean
+  taille: 'S' | 'M' | 'L' | 'XL'
+  jours_factures: number
+  tjm: number
+  montant: number
+  statut: TicketStatus
+  assigne: string
+  debut_reel: string | null
+  fin_reel: string | null
+  jours_reels: number
+}
+
+export interface ClientInvoice {
+  numero: string
+  lot: string | null
+  couvre: string[]
+  emise_le: string
+  echeance: string
+  montant_ht: number
+  tva: number
+  montant_ttc: number
+  paye: number
+  reste: number
+  statut: InvoiceStatus
+  en_retard: boolean
+}
+
+export interface ClientPayment {
+  date: string
+  montant: number
+  reference: string
+  facture: string
+}
+
+export interface ClientSummary {
+  contracte: number // HT
+  facture: number // TTC
+  paye: number // TTC
+  reste_a_payer: number // TTC
+  en_retard: number // TTC
+  lots: ClientLot[]
+}
