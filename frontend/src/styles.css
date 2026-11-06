@@ -1,0 +1,101 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #1f2937;
+  background: #fff;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.panel {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 16px 16px;
+  margin-bottom: 16px;
+}
+
+.panel h2 {
+  margin: 8px 0;
+  font-size: 1.1rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+label {
+  display: block;
+}
+
+textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.output {
+  max-height: 320px;
+  overflow: auto;
+  background: #f3f4f6;
+  padding: 8px;
+  white-space: pre-wrap;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.gantt-scroll {
+  overflow-x: auto;
+}
+
+.gantt text {
+  font-size: 11px;
+  fill: #374151;
+}
+
+.gantt .lot-label {
+  font-weight: 600;
+}
+
+.legend .swatch {
+  display: inline-block;
+  width: 14px;
+  height: 8px;
+  margin: 0 4px 0 12px;
+}
+.legend .planned { background: #b8bec6; }
+.legend .real { background: #2563eb; }
+.legend .blocked { background: repeating-linear-gradient(45deg, #b45309 0 2px, #fff 2px 5px); }
+.legend .today { background: #dc2626; width: 3px; height: 12px; }
+
+.ledger table {
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.ledger th,
+.ledger td {
+  border: 1px solid #d1d5db;
+  padding: 3px 8px;
+  text-align: right;
+}
+
+.ledger th:first-child,
+.ledger td:first-child {
+  text-align: left;
+}
+
+.ledger tr.future {
+  opacity: 0.45;
+  font-style: italic;
+}
