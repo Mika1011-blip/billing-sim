@@ -10,17 +10,20 @@
     {
       "key": "L1",
       "name": "Tableau de bord factures",
-      "description": "Vue d'ensemble des factures avec filtres, tris et exports pour les équipes comptables."
+      "description": "Vue d'ensemble des factures avec filtres, tris et exports pour les équipes comptables.",
+      "delivery_summary": "Vos équipes comptables disposent d'une vue d'ensemble de toutes les factures. Elles peuvent les filtrer par période, fournisseur, montant ou statut, et partager une vue filtrée avec un collègue. La liste affichée s'exporte en un clic vers un tableur ou en document imprimable."
     },
     {
       "key": "L2",
       "name": "Suivi des paiements",
-      "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement."
+      "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement.",
+      "delivery_summary": "Les relevés de votre banque sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû."
     },
     {
       "key": "L3",
       "name": "Exports et notifications",
-      "description": "Alertes e-mail, centre de notifications et exports destinés à la comptabilité."
+      "description": "Alertes e-mail, centre de notifications et exports destinés à la comptabilité.",
+      "delivery_summary": "Les gestionnaires reçoivent chaque matin un e-mail qui liste les factures en retard, et un centre de notifications regroupe ces alertes dans l'application. Les factures payées s'exportent directement vers votre outil de comptabilité. Une documentation explique comment faire fonctionner le service au quotidien."
     }
   ],
   "tickets": [
@@ -28,6 +31,12 @@
       "key": "BANK-1",
       "title": "Filtres du tableau de bord",
       "description": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut. Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue.",
+      "steps": [
+        "Recenser avec l'équipe comptable les critères de filtre attendus.",
+        "Créer les filtres par période, fournisseur, montant et statut sur la liste des factures.",
+        "Conserver les filtres actifs dans l'adresse de la page pour pouvoir partager une vue.",
+        "Tester les combinaisons de filtres sur un jeu de factures réel."
+      ],
       "lot_key": "L1",
       "size": "M",
       "profile": "dev",
@@ -40,6 +49,11 @@
       "key": "BANK-2",
       "title": "Export CSV",
       "description": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel.",
+      "steps": [
+        "Générer le fichier CSV à partir de la liste filtrée, avec les colonnes visibles.",
+        "Régler l'encodage pour que le fichier s'ouvre correctement dans Excel.",
+        "Vérifier l'export sur une longue liste de factures filtrées."
+      ],
       "lot_key": "L1",
       "size": "S",
       "profile": "dev",
@@ -52,6 +66,11 @@
       "key": "BANK-3",
       "title": "Export PDF",
       "description": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition.",
+      "steps": [
+        "Mettre en page la liste filtrée des factures avec l'en-tête de la banque.",
+        "Ajouter la pagination et la date d'édition sur chaque page.",
+        "Contrôler le rendu du PDF sur une liste longue."
+      ],
       "lot_key": "L1",
       "size": "S",
       "profile": "dev",
@@ -62,6 +81,13 @@
       "key": "BANK-4",
       "title": "Architecture du rapprochement bancaire",
       "description": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels.",
+      "steps": [
+        "Analyser le format des relevés bancaires et des factures existantes.",
+        "Concevoir le modèle de données du rapprochement.",
+        "Définir les règles de correspondance entre une ligne de relevé et une facture.",
+        "Prévoir le traitement des écarts et des paiements partiels.",
+        "Documenter l'architecture et la faire valider par l'équipe."
+      ],
       "lot_key": "L2",
       "size": "XL",
       "profile": "architect",
@@ -72,6 +98,12 @@
       "key": "BANK-5",
       "title": "Import des relevés bancaires",
       "description": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.",
+      "steps": [
+        "Brancher le connecteur sur l'API bancaire de recette.",
+        "Récupérer automatiquement les relevés de compte chaque jour.",
+        "Convertir les relevés au format interne et les enregistrer.",
+        "Tester l'import sur les relevés d'un mois complet."
+      ],
       "lot_key": "L2",
       "size": "M",
       "profile": "senior",
@@ -84,6 +116,11 @@
       "key": "BANK-6",
       "title": "Statut de paiement des factures",
       "description": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés.",
+      "steps": [
+        "Calculer le statut de paiement de chaque facture à partir des paiements rapprochés.",
+        "Afficher le statut dans la liste et sur la fiche de la facture.",
+        "Tester les cas payée, partiellement payée et en retard."
+      ],
       "lot_key": "L2",
       "size": "M",
       "profile": "dev",
@@ -94,6 +131,12 @@
       "key": "BANK-7",
       "title": "Détail des paiements partiels",
       "description": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance.",
+      "steps": [
+        "Ajouter sur la fiche de la facture l'historique des paiements reçus.",
+        "Afficher le solde restant dû et la date d'échéance.",
+        "Afficher la référence du virement bancaire de chaque paiement.",
+        "Vérifier l'affichage sur des factures réglées en plusieurs fois."
+      ],
       "lot_key": "L2",
       "size": "S",
       "profile": "dev",
@@ -106,6 +149,13 @@
       "key": "BANK-8",
       "title": "Alertes e-mail pour factures en retard",
       "description": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée.",
+      "steps": [
+        "Sélectionner chaque matin les factures dont l'échéance est dépassée.",
+        "Rédiger le modèle de l'e-mail récapitulatif.",
+        "Envoyer l'e-mail aux gestionnaires concernés par chaque facture.",
+        "Planifier l'envoi automatique chaque matin.",
+        "Tester l'envoi avec des factures en retard de plusieurs fournisseurs."
+      ],
       "lot_key": "L3",
       "size": "L",
       "profile": "senior",
@@ -116,6 +166,11 @@
       "key": "BANK-9",
       "title": "Export comptable",
       "description": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées.",
+      "steps": [
+        "Reprendre le format d'écritures attendu par l'outil de comptabilité de la banque.",
+        "Produire le fichier d'écritures à partir des factures payées.",
+        "Faire valider un fichier d'essai par le service comptabilité."
+      ],
       "lot_key": "L3",
       "size": "M",
       "profile": "dev",
@@ -128,6 +183,12 @@
       "key": "BANK-10",
       "title": "Centre de notifications",
       "description": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés.",
+      "steps": [
+        "Créer le centre de notifications dans l'interface.",
+        "Y afficher les alertes de retard de paiement et les imports de relevés terminés.",
+        "Permettre de marquer une notification comme lue.",
+        "Tester l'affichage avec un grand nombre de notifications."
+      ],
       "lot_key": "L3",
       "size": "M",
       "profile": "dev",
@@ -138,6 +199,11 @@
       "key": "BANK-11",
       "title": "Documentation d'exploitation",
       "description": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement.",
+      "steps": [
+        "Décrire la procédure de déploiement.",
+        "Expliquer comment surveiller l'import des relevés.",
+        "Rédiger la procédure à suivre en cas d'échec du rapprochement."
+      ],
       "lot_key": "L3",
       "size": "S",
       "profile": "senior",
@@ -148,6 +214,11 @@
       "key": "BANK-12",
       "title": "Correctif urgent — calcul de TVA",
       "description": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable.",
+      "steps": [
+        "Reproduire l'erreur d'arrondi sur une facture à taux multiples.",
+        "Corriger le calcul de l'arrondi de la TVA.",
+        "Vérifier le correctif sur les factures signalées par l'équipe comptable."
+      ],
       "lot_key": null,
       "charged_separately": true,
       "size": "S",
@@ -155,10 +226,5 @@
       "depends_on": [],
       "beats": []
     }
-  ],
-  "client_behaviour": [
-    {"invoice_index": 1, "pays_fraction": 0.3333, "days_late": 0},
-    {"invoice_index": 2, "pays_fraction": 1.0, "days_late": 12},
-    {"invoice_index": 3, "pays_fraction": 0.5, "days_late": 20}
   ]
 }

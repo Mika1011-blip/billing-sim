@@ -10,8 +10,7 @@ CREATE TABLE IF NOT EXISTS scenario (
     start_date       TEXT NOT NULL,                 -- ISO date of day 0 (a Monday)
     signed_day       INTEGER NOT NULL DEFAULT 0,
     last_day         INTEGER NOT NULL,
-    warnings         TEXT NOT NULL DEFAULT '[]',    -- JSON list of strings
-    client_behaviour TEXT NOT NULL DEFAULT '[]'     -- JSON, as in the plan
+    warnings         TEXT NOT NULL DEFAULT '[]'     -- JSON list of strings
 );
 
 CREATE TABLE IF NOT EXISTS contract (
@@ -43,6 +42,7 @@ CREATE TABLE IF NOT EXISTS lot (
     key                   TEXT NOT NULL UNIQUE,
     name                  TEXT NOT NULL,
     description           TEXT NOT NULL,
+    delivery_summary      TEXT NOT NULL,            -- client-language summary of what the lot delivers
     price                 INTEGER NOT NULL,         -- sum of the fees of the tickets charged with the lot
     planned_delivery_day  INTEGER                   -- NULL when no ticket is charged with the lot
 );
@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS ticket (
     key                TEXT NOT NULL UNIQUE,
     title              TEXT NOT NULL,
     description        TEXT NOT NULL,
+    steps              TEXT NOT NULL,               -- JSON list of the ordered work steps from the plan
     lot_id             INTEGER REFERENCES lot(id),
     charged_separately INTEGER NOT NULL,
     size               TEXT NOT NULL,

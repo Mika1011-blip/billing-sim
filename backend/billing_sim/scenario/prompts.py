@@ -22,7 +22,8 @@ Règles du plan (kind = "plan") :
 - depends_on ne référence que des tickets précédents (clé plus petite), jamais de cycle.
 - 3 à 5 membres d'équipe, avec un prénom et un nom français et un profil (dev, senior ou architect).
 - Aléas (beats d'un ticket) : au moins deux beats "blocked" sur l'ensemble du plan (duration_days entre 1 et 3, text = une raison concrète en français, par exemple un accès à l'environnement de recette en attente) et au moins un beat "review_changes" (le client demande des modifications après revue). Des beats "scope_note" sont possibles mais facultatifs.
-- client_behaviour : exactement une entrée par lot, invoice_index de 1 à n (n = nombre de lots), avec des pays_fraction variés dans [0, 1] (1 = payé en entier) et des days_late >= 0 (retard de paiement en jours).
+- steps : pour chaque ticket, 2 à 8 étapes de travail concrètes, dans l'ordre, une phrase courte chacune (ce que le développeur fait réellement : créer, brancher, tester, documenter…), sans chiffre de jours ni de prix.
+- delivery_summary : pour chaque lot, 2 à 4 phrases que le client, non technique, comprend : ce qu'il peut désormais faire grâce à ce lot ; pas de vocabulaire technique, pas de prix.
 - Titres et descriptions en français, dans le domaine bancaire et financier de la demande ; product_summary résume le produit en une ou deux phrases.
 
 Refus : si la demande ne contient aucun projet logiciel identifiable (salutations, charabia, intention vide), renvoie kind = "rejection" avec reason = une seule phrase en français qui explique pourquoi, et pas de plan.

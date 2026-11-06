@@ -1,4 +1,7 @@
-"""Invoices, purchasing approvals and client payments, all derived from the real schedule."""
+"""Invoices and purchasing approvals, derived from the real schedule.
+
+Nobody pays by script: payments are recorded by the participant at runtime.
+"""
 
 from __future__ import annotations
 
@@ -15,7 +18,6 @@ from billing_sim.expander.models import (
 from billing_sim.scenario.schema import ScenarioPlan, TicketPlan
 
 APPROVER = "Direction des achats"
-REMAINDER_DELAY_DAYS = 15
 
 
 def _invoiced_on_its_own(ticket: TicketPlan) -> bool:
@@ -73,17 +75,8 @@ def build_invoices(
         invoice.number = f"F-{start_date.year}-{n:03d}"
         invoices.append(invoice)
 
-    lot_position = {lot.key: i for i, lot in enumerate(plan.lots, start=1)}
-    behaviour = {b.invoice_index: b for b in plan.client_behaviour}
     approvals = [Approval(i.lot_key, i.issued_day, APPROVER) for i in invoices if i.lot_key is not None]
-    payments: list[Payment] = []
-    for invoice in invoices:
-        if invoice.lot_key is None:
-            payments.append(Payment(invoice.number, invoice.due_day, invoice.amount_ttc, f"VIR-{invoice.number}-1"))
-        else:
-            b = behaviour[lot_position[invoice.lot_key]]
-            payments.extend(_lot_payments(invoice, b.pays_fraction, b.days_late))
-    return invoices, approvals, payments
+    return invoices, approvals, []
 
 
 def _invoice(
@@ -96,21 +89,3 @@ def _invoice(
 ) -> Invoice:
     vat, ttc = invoice_total(contract, amount_ht)
     return Invoice("", lot_key, ticket_key, issued, due_day(contract, issued), amount_ht, vat, ttc, covers)
-
-
-def _lot_payments(invoice: Invoice, fraction: float, days_late: int) -> list[Payment]:
-    """First instalment `fraction` of the total on the late due day, the rest 15 working days later.
-
-    Zero-amount rows are never emitted: a fraction of 0 gives only the remainder (as reference -1)
-    and a fraction that rounds to the full amount gives only the first row.
-    """
-    first_day = invoice.due_day + days_late
-    first = round(fraction * invoice.amount_ttc)
-    remainder = invoice.amount_ttc - first
-    rows: list[Payment] = []
-    if first > 0:
-        rows.append(Payment(invoice.number, first_day, first, f"VIR-{invoice.number}-1"))
-    if remainder > 0:
-        day = first_day + REMAINDER_DELAY_DAYS
-        rows.append(Payment(invoice.number, day, remainder, f"VIR-{invoice.number}-{len(rows) + 1}"))
-    return rows
