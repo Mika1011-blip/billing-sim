@@ -12,7 +12,7 @@ interface Props {
 }
 
 /** The status pill text: the tier with its calendar-day count, or the payment date. */
-function statusText(invoice: ClientInvoice): string {
+export function statusText(invoice: ClientInvoice): string {
   const t = fr.invoiceStatus
   switch (invoice.statut) {
     case 'Très en retard':

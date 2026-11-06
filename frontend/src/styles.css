@@ -968,6 +968,125 @@ td.num {
   min-width: 0;
 }
 
+/* ---- invoice drawer (spec §9) ---- */
+
+.drawer-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50; /* above the sticky top bar */
+}
+
+.drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+}
+
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(720px, 100vw);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px 24px 32px;
+  background: var(--card);
+  box-shadow: -8px 0 24px rgba(16, 24, 40, 0.18);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.drawer-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.drawer-close {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  line-height: 1;
+}
+
+.drawer-status {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.drawer-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.drawer-section h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.drawer-section > p {
+  margin: 0 0 6px;
+}
+
+.drawer-tickets {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+.calc-lines {
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.calc-lines li {
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.calc-totals {
+  font-variant-numeric: tabular-nums;
+}
+
+.calc-ttc strong {
+  font-size: 1.05rem;
+}
+
+.calc-days,
+.calc-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.calc-note {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--neutral-soft);
+  color: var(--neutral);
+}
+
+.drawer-section .error {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .drawer {
+    padding: 16px;
+  }
+}
+
 /* ---- responsive ---- */
 
 @media (max-width: 1000px) {

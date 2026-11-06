@@ -13,8 +13,9 @@ import {
   setClock,
 } from '../api'
 import { AlertLine } from '../components/client/AlertLine'
-import { Assistant } from '../components/client/Assistant'
+import { Assistant, invoiceHash, REVEAL_EVENT } from '../components/client/Assistant'
 import { Header } from '../components/client/Header'
+import { InvoiceDetail } from '../components/client/InvoiceDetail'
 import { InvoiceGallery } from '../components/client/InvoiceGallery'
 import { LotsEnCours } from '../components/client/LotsEnCours'
 import { PendingApprovals } from '../components/client/PendingApprovals'
@@ -47,6 +48,28 @@ async function fetchAll(): Promise<Loaded> {
   return { lastDay: clock.last_day, today, summary, lots, tickets, invoices, approvals }
 }
 
+/** The invoice number the URL hash names (`#facture-F-2026-002`), if any. */
+function hashInvoice(): string | null {
+  const match = /^#facture-(.+)$/.exec(window.location.hash)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
+/** The invoice whose drawer shows a cited ticket or lot, unless the record is visible in *Lots en cours*. */
+function invoiceFor(key: string, data: Loaded): ClientInvoice | undefined {
+  const lot = data.lots.find((l) => l.cle === key)
+  if (lot) return lot.facture === null ? undefined : data.invoices.find((i) => i.lot === key)
+  const ticket = data.tickets.find((tk) => tk.cle === key)
+  if (!ticket) return undefined
+  const inProgress = ticket.lot !== null && data.lots.some((l) => l.cle === ticket.lot && l.facture === null)
+  return inProgress ? undefined : data.invoices.find((i) => i.couvre.includes(key))
+}
+
+interface OpenInvoice {
+  numero: string
+  /** The ticket row to expand inside, when a citation of that ticket opened the drawer. */
+  revealKey: string | null
+}
+
 export function ClientPage() {
   const [data, setData] = useState<Loaded | null>(null)
   const [message, setMessage] = useState<string>(fr.page.loading)
@@ -54,6 +77,23 @@ export function ClientPage() {
   const latest = useRef(0)
   const hasData = useRef(false)
   const shownDay = useRef<number | null>(null) // the clock day the dashboard was last loaded at
+  // The invoice drawer follows the URL hash, so a citation link (or a reload) opens it too.
+  const [open, setOpen] = useState<OpenInvoice | null>(() => {
+    const numero = hashInvoice()
+    return numero ? { numero, revealKey: null } : null
+  })
+  const opener = useRef<HTMLElement | null>(null) // where the focus goes back when the drawer closes
+  const openRef = useRef(open) // the hash listener reads it without re-subscribing
+  useEffect(() => {
+    openRef.current = open
+  })
+
+  const closeInvoice = useCallback(() => {
+    setOpen(null)
+    // Drop the hash without a new history entry; Back after closing does not reopen the drawer.
+    if (hashInvoice() === null) return
+    window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search)
+  }, [])
 
   const refresh = useCallback(async () => {
     const id = ++latest.current
@@ -83,6 +123,7 @@ export function ClientPage() {
 
   // A reset empties the backend: forget the dashboard so the refetch lands on the empty state, not an error banner.
   useOnSimReset(() => {
+    closeInvoice() // the new simulation's invoices are other records, even under the same numbers
     hasData.current = false
     shownDay.current = null
     setData(null)
@@ -110,6 +151,58 @@ export function ClientPage() {
       window.removeEventListener('focus', onShow)
     }
   }, [refresh])
+
+  const rememberOpener = () => {
+    const active = document.activeElement
+    opener.current = active instanceof HTMLElement && active !== document.body ? active : null
+  }
+
+  function openInvoice(numero: string, revealKey: string | null = null) {
+    rememberOpener()
+    setOpen({ numero, revealKey })
+    if (hashInvoice() !== numero) window.location.hash = invoiceHash(numero)
+  }
+
+  // Back/forward, a citation link or a typed URL change the hash: the drawer follows.
+  useEffect(() => {
+    const onHash = () => {
+      const numero = hashInvoice()
+      if (numero && !openRef.current) rememberOpener()
+      // Our own hash change names the open invoice: keep its row to reveal.
+      setOpen((prev) => (prev?.numero === numero ? prev : numero ? { numero, revealKey: null } : null))
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  // A ticket or lot citation: once its lot is invoiced it is no longer in *Lots en cours*, so the drawer of the
+  // invoice that covers it opens with the row expanded. Rows already on screen reveal themselves.
+  useEffect(() => {
+    if (!data) return
+    const onReveal = (e: Event) => {
+      const key = (e as CustomEvent<string>).detail
+      const invoice = invoiceFor(key, data)
+      if (invoice && invoice.numero !== open?.numero) openInvoice(invoice.numero, key)
+      else if (!invoice && open) closeInvoice() // the record is on the page, under the drawer
+    }
+    window.addEventListener(REVEAL_EVENT, onReveal)
+    return () => window.removeEventListener(REVEAL_EVENT, onReveal)
+  }, [data, open, closeInvoice]) // openInvoice only sets state and the hash: no stale value to miss
+
+  const shown = open && data ? data.invoices.find((i) => i.numero === open.numero) : undefined
+
+  // Focus goes back where it was when the drawer opened: the card, or the citation link; else the card.
+  const lastShown = useRef<string | null>(null)
+  useEffect(() => {
+    const was = lastShown.current
+    lastShown.current = shown?.numero ?? null
+    if (!was || shown) return
+    const target = opener.current?.isConnected
+      ? opener.current
+      : document.getElementById(`rec-${was}`)?.querySelector<HTMLElement>('.invoice-card-title')
+    opener.current = null
+    target?.focus()
+  }, [shown])
 
   // The client view depends on the clock, so every move refetches everything.
   async function moveTo(day: number) {
@@ -153,28 +246,40 @@ export function ClientPage() {
   const { today, lastDay } = data
 
   return (
-    <div className="client-layout">
-      <main className="client-page">
-        <Header
-          today={today}
-          lastDay={lastDay}
-          onStep={(delta) => void moveTo(today.jour + delta)}
-          onPickDate={(iso) => void moveTo(dayForDate(today, iso, lastDay))}
+    <>
+      <div className="client-layout" inert={shown !== undefined}>
+        <main className="client-page">
+          <Header
+            today={today}
+            lastDay={lastDay}
+            onStep={(delta) => void moveTo(today.jour + delta)}
+            onPickDate={(iso) => void moveTo(dayForDate(today, iso, lastDay))}
+          />
+          {error && <p className="error">{error}</p>}
+          <SummaryTiles summary={data.summary} />
+          <AlertLine summary={data.summary} invoices={data.invoices} />
+          {/* The invoice dashboard: invoices, then the lots still to invoice. */}
+          <section className="panel invoices">
+            <h2>{fr.invoiceCard.title}</h2>
+            <InvoiceGallery invoices={data.invoices} onPay={pay} onOpen={(numero) => openInvoice(numero)} />
+          </section>
+          <LotsEnCours lots={data.lots} tickets={data.tickets} day={today.jour} />
+          <PendingApprovals lots={data.approvals} />
+        </main>
+        <aside className="assistant">
+          <Assistant />
+        </aside>
+      </div>
+      {shown && (
+        <InvoiceDetail
+          key={shown.numero}
+          invoice={shown}
+          day={today.jour}
+          onClose={closeInvoice}
+          onPay={pay}
+          revealKey={open?.revealKey}
         />
-        {error && <p className="error">{error}</p>}
-        <SummaryTiles summary={data.summary} />
-        <AlertLine summary={data.summary} invoices={data.invoices} />
-        {/* The invoice dashboard: invoices, then the lots still to invoice. */}
-        <section className="panel invoices">
-          <h2>{fr.invoiceCard.title}</h2>
-          <InvoiceGallery invoices={data.invoices} onPay={pay} onOpen={() => {}} />
-        </section>
-        <LotsEnCours lots={data.lots} tickets={data.tickets} day={today.jour} />
-        <PendingApprovals lots={data.approvals} />
-      </main>
-      <aside className="assistant">
-        <Assistant />
-      </aside>
-    </div>
+      )}
+    </>
   )
 }

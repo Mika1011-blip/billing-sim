@@ -120,7 +120,7 @@ describe('Assistant', () => {
     })
     expect(strongs[0].textContent).toBe('2 400 €')
     expect(within(strongs[1] as HTMLElement).getByRole('link', { name: '[BANK-1]' })).toHaveAttribute('href', '#rec-BANK-1')
-    expect(screen.getByRole('link', { name: '[F-2026-001]' })).toHaveAttribute('href', '#rec-F-2026-001')
+    expect(screen.getByRole('link', { name: '[F-2026-001]' })).toHaveAttribute('href', '#facture-F-2026-001')
     const reply = container.querySelector('.assistant-reply p')!
     expect(reply.textContent).toBe('Le total est 2 400 € pour [BANK-1] et [F-2026-001], **non clos.') // an unclosed ** stays as typed
   })
@@ -147,7 +147,7 @@ describe('Assistant', () => {
     await ask()
     const link = await screen.findByRole('link', { name: '[BANK-1]' })
     expect(link).toHaveAttribute('href', '#rec-BANK-1')
-    expect(screen.getByRole('link', { name: '[F-2026-001]' })).toHaveAttribute('href', '#rec-F-2026-001')
+    expect(screen.getByRole('link', { name: '[F-2026-001]' })).toHaveAttribute('href', '#facture-F-2026-001')
     expect(screen.getByRole('link', { name: '[L2]' })).toHaveAttribute('href', '#rec-L2')
   })
 
@@ -169,6 +169,23 @@ describe('Assistant', () => {
     } finally {
       window.removeEventListener('reveal-record', listener)
       target.remove()
+    }
+  })
+
+  it('opens the invoice drawer through the URL hash when an invoice citation is clicked', async () => {
+    mockChat([sse({ type: 'text', text: 'Voir [F-2026-001].' }), sse({ type: 'done' })])
+    const revealed: string[] = []
+    const listener = (e: Event) => revealed.push((e as CustomEvent<string>).detail)
+    window.addEventListener('reveal-record', listener)
+    try {
+      render(<Assistant />)
+      await ask()
+      await userEvent.click(await screen.findByRole('link', { name: '[F-2026-001]' }))
+      expect(window.location.hash).toBe('#facture-F-2026-001')
+      expect(revealed).toEqual([]) // the page opens the drawer from the hash, nothing to reveal in place
+    } finally {
+      window.removeEventListener('reveal-record', listener)
+      window.history.replaceState(null, '', '/')
     }
   })
 
