@@ -18,7 +18,7 @@ const ticketRow = (key: string, ps: number, pe: number) => ({
 })
 const diff = {
   tickets: [ticketRow('T-1', 0, 2), ticketRow('T-2', 3, 5)],
-  lots: [{ key: 'L1', name: 'Lot one', planned_delivery: 5, real_delivery: 6, slip_days: 1, days_charged: 2, actual_days: 6 }],
+  lots: [{ key: 'L1', name: 'Lot one', planned_delivery_day: 5, real_delivery_day: 6, slip_days: 1, days_charged: 2, actual_days: 6 }],
 }
 const timeline = {
   events: [

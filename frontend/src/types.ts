@@ -135,8 +135,8 @@ export interface DiffTicketRow {
 export interface DiffLotRow {
   key: string
   name: string
-  planned_delivery: number | null
-  real_delivery: number | null
+  planned_delivery_day: number | null
+  real_delivery_day: number | null
   slip_days: number | null
   days_charged: number
   actual_days: number | null

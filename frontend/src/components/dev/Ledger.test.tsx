@@ -25,8 +25,8 @@ const diff: Diff = {
     {
       key: 'L1',
       name: 'Lot one',
-      planned_delivery: 8,
-      real_delivery: 10,
+      planned_delivery_day: 8,
+      real_delivery_day: 10,
       slip_days: 2,
       days_charged: 5,
       actual_days: 7,
@@ -57,5 +57,12 @@ describe('Ledger', () => {
     render(<Ledger invoices={invoices} payments={payments} diff={diff} today={5} />)
     const row = screen.getByText('Lot one').closest('tr')!
     expect(within(row).getAllByRole('cell').map((c) => c.textContent)).toContain('+2')
+  })
+
+  it('shows delivery days in the lot diff and never prints "undefined"', () => {
+    const { container } = render(<Ledger invoices={invoices} payments={payments} diff={diff} today={5} />)
+    const row = screen.getByText('Lot one').closest('tr')!
+    expect(within(row).getAllByRole('cell').map((c) => c.textContent).slice(0, 3)).toEqual(['Lot one', '8', '10'])
+    expect(container.textContent).not.toContain('undefined')
   })
 })

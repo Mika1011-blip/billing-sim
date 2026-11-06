@@ -7,7 +7,7 @@ interface Props {
   today: number
 }
 
-const fmtDay = (d: number | null) => (d === null ? '—' : String(d))
+const fmtDay = (d: number | null | undefined) => (d == null ? '—' : String(d))
 const fmtSlip = (s: number | null) => (s === null ? '—' : s > 0 ? `+${s}` : String(s))
 
 export function Ledger({ invoices, payments, diff, today }: Props) {
@@ -65,8 +65,8 @@ export function Ledger({ invoices, payments, diff, today }: Props) {
           {diff.lots.map((l) => (
             <tr key={l.key}>
               <td>{l.name}</td>
-              <td>{fmtDay(l.planned_delivery)}</td>
-              <td>{fmtDay(l.real_delivery)}</td>
+              <td>{fmtDay(l.planned_delivery_day)}</td>
+              <td>{fmtDay(l.real_delivery_day)}</td>
               <td>{fmtSlip(l.slip_days)}</td>
               <td>{l.days_charged}</td>
               <td>{fmtDay(l.actual_days)}</td>
