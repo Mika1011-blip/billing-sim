@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -72,6 +72,8 @@ function installFetch() {
       if (url === '/client/lots') return reply(view.lots)
       if (url === '/client/tickets') return reply(snapshot.tickets)
       if (url === '/client/invoices') return reply(view.invoices)
+      const history = /^\/client\/tickets\/(.+)\/history$/.exec(url)
+      if (history) return reply((snapshot.history as Record<string, unknown[]>)[history[1]] ?? [])
       if (url === '/client/approvals/pending') return reply([{ ...lot, statut_facture: 'À venir' }])
       return reply({}, 404)
     }),
@@ -91,6 +93,7 @@ afterEach(() => {
   view = lastDay
   payReply = null
   vi.unstubAllGlobals()
+  window.history.replaceState(null, '', '/')
 })
 
 describe('ClientPage', () => {
@@ -167,6 +170,190 @@ describe('ClientPage', () => {
       await shownDay(2)
       await userEvent.click(payButton())
       expect(await within(card()).findByRole('alert')).toHaveTextContent("Le paiement n'a pas pu être enregistré.")
+    })
+  })
+
+  describe('the invoice drawer', () => {
+    const drawer = (name: RegExp) => screen.findByRole('dialog', { name })
+    // A citation click comes long after the page loaded: let the mount effects (the listeners) run first, since
+    // findBy resolves on the DOM change, before React flushes them.
+    const reveal = async (key: string) => {
+      await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+      await act(async () => void window.dispatchEvent(new CustomEvent('reveal-record', { detail: key })))
+    }
+
+    it('opens on load when the URL hash names an invoice', async () => {
+      window.history.replaceState(null, '', '/client#facture-F-2026-001')
+      installFetch()
+      renderPage()
+      const dialog = await drawer(/^F-2026-001 · Lot L1/)
+      expect(within(dialog).getByText('Payée le 30/03/2026 (réf. VIR-F-2026-001-1)')).toBeInTheDocument()
+      expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    })
+
+    it('ignores a hash that names no visible invoice', async () => {
+      window.history.replaceState(null, '', '/client#facture-F-2026-099')
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(window.location.hash).toBe('') // forgotten: a later refetch cannot pop it open
+    })
+
+    it('forgets an open invoice that is no longer visible after a refetch', async () => {
+      const calls = installFetch()
+      renderPage()
+      await shownDay(2)
+      await userEvent.click(within(document.getElementById('rec-F-2026-004')!).getByRole('button', { name: /^F-2026-004/ }))
+      await drawer(/^F-2026-004/)
+      view = midRun // the clock moved back from /dev: F-2026-004 is not issued yet
+      await act(async () => void window.dispatchEvent(new Event('focus')))
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+      await waitFor(() => expect(window.location.hash).toBe(''))
+      view = lastDay // and forward again: the drawer stays closed
+      await act(async () => void window.dispatchEvent(new Event('focus')))
+      await waitFor(() => expect(summaryFetches(calls)).toBe(3))
+      expect(await screen.findByText(/^F-2026-004/)).toBeInTheDocument()
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+
+    describe('history', () => {
+      // Mark the entry the page was loaded on: Back from the page must land before it.
+      const loadedOn = (url: string) => window.history.replaceState({ mark: 'loaded' }, '', url)
+      const onLoadedEntry = () =>
+        waitFor(() => expect((window.history.state as { mark?: string } | null)?.mark).toBe('loaded'))
+
+      it('leaves no history entry behind once a drawer opened from a card is closed', async () => {
+        loadedOn('/client')
+        const before = window.history.length
+        installFetch()
+        renderPage()
+        await shownDay(2)
+        for (const numero of ['F-2026-004', 'F-2026-003']) {
+          await userEvent.click(within(document.getElementById(`rec-${numero}`)!).getByRole('button', { name: new RegExp(`^${numero}`) }))
+          await drawer(new RegExp(`^${numero}`))
+          expect(window.location.hash).toBe(`#facture-${numero}`)
+          await userEvent.keyboard('{Escape}')
+          await onLoadedEntry() // closing went back to the entry the drawer pushed onto
+          expect(window.location.hash).toBe('')
+          expect(screen.queryByRole('dialog')).toBeNull()
+        }
+        // Each opening reuses the one entry above the page's (jsdom may or may not still count it after Back);
+        // a close that only rewrote the entry would leave one more per cycle.
+        expect(window.history.length).toBeLessThanOrEqual(before + 1)
+      })
+
+      it('closes in place a drawer opened by the URL it was loaded with', async () => {
+        loadedOn('/client#facture-F-2026-001')
+        const before = window.history.length
+        installFetch()
+        renderPage()
+        await userEvent.click(within(await drawer(/^F-2026-001/)).getByRole('button', { name: 'Fermer' }))
+        expect(screen.queryByRole('dialog')).toBeNull()
+        expect(window.location.hash).toBe('')
+        expect(window.history.length).toBe(before)
+        await onLoadedEntry() // the same entry, rewritten without the hash
+      })
+
+      it('closes when Back is pressed', async () => {
+        loadedOn('/client')
+        installFetch()
+        renderPage()
+        await shownDay(2)
+        const cardButton = within(document.getElementById('rec-F-2026-003')!).getByRole('button', { name: /^F-2026-003/ })
+        await userEvent.click(cardButton)
+        await drawer(/^F-2026-003/)
+        await act(async () => window.history.back())
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+        await onLoadedEntry()
+        expect(cardButton).toHaveFocus()
+      })
+    })
+
+    it('opens from a card, sets the hash, and Escape closes it, clears the hash and refocuses the card', async () => {
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      const card = document.getElementById('rec-F-2026-004')!
+      const cardButton = within(card).getByRole('button', { name: /^F-2026-004/ })
+      await userEvent.click(cardButton)
+      const dialog = await drawer(/^F-2026-004 · Lot L3/)
+      expect(window.location.hash).toBe('#facture-F-2026-004')
+      expect(within(dialog).getByRole('button', { name: 'Fermer' })).toHaveFocus()
+      expect(document.body.style.overflow).toBe('hidden')
+      await userEvent.keyboard('{Escape}')
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(window.location.hash).toBe('')
+      expect(cardButton).toHaveFocus()
+      expect(document.body.style.overflow).toBe('')
+    })
+
+    it('closes with ✕ and refocuses the card', async () => {
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      const cardButton = within(document.getElementById('rec-F-2026-003')!).getByRole('button', { name: /^F-2026-003/ })
+      await userEvent.click(cardButton)
+      await userEvent.click(within(await drawer(/^F-2026-003/)).getByRole('button', { name: 'Fermer' }))
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(window.location.hash).toBe('')
+      expect(cardButton).toHaveFocus()
+    })
+
+    it('opens when the hash changes, as an invoice citation link does', async () => {
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      await act(async () => {
+        window.location.hash = 'facture-F-2026-003'
+        await new Promise((resolve) => window.addEventListener('hashchange', resolve, { once: true }))
+      })
+      expect(await drawer(/^F-2026-003 · BANK-12/)).toBeInTheDocument()
+    })
+
+    it('pays from the drawer and shows the new payment after the refetch', async () => {
+      view = midRun
+      const calls = installFetch()
+      window.history.replaceState(null, '', '/client#facture-F-2026-002')
+      renderPage()
+      const dialog = await drawer(/^F-2026-002/)
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Marquer comme payée' }))
+      expect(await within(dialog).findByText('Payée le 15/06/2026 (réf. VIR-F-2026-002-1)')).toBeInTheDocument()
+      expect(calls).toContain('POST /client/invoices/F-2026-002/payer')
+      expect(summaryFetches(calls)).toBe(2)
+      expect(within(dialog).queryByRole('button', { name: 'Marquer comme payée' })).toBeNull()
+    })
+
+    it('opens the invoice that covers a cited ticket whose lot is invoiced, with its row expanded', async () => {
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      await reveal('BANK-5')
+      const dialog = await drawer(/^F-2026-002 · Lot L2/)
+      expect(window.location.hash).toBe('#facture-F-2026-002')
+      expect(within(dialog).getByRole('button', { name: /^BANK-5/ })).toHaveAttribute('aria-expanded', 'true')
+      expect(await within(dialog).findByText("En attente des accès à l'API bancaire")).toBeInTheDocument()
+    })
+
+    it('opens the invoice of a cited separately charged ticket, and of a cited invoiced lot', async () => {
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      await reveal('BANK-12')
+      expect(await drawer(/^F-2026-003 · BANK-12/)).toBeInTheDocument()
+      await reveal('L1')
+      expect(await drawer(/^F-2026-001 · Lot L1/)).toBeInTheDocument()
+      expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    })
+
+    it('leaves a cited ticket of a lot in progress to Lots en cours', async () => {
+      view = midRun
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      await reveal('BANK-9')
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(document.getElementById('rec-BANK-9')).toBeVisible()
     })
   })
 
@@ -322,6 +509,17 @@ describe('ClientPage', () => {
       expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
       expect(screen.queryByText('Impossible de charger les données.')).toBeNull()
       expect(screen.getByRole('link', { name: 'Aller à la page Dev' })).toHaveAttribute('href', '/dev')
+    })
+
+    it('closes the invoice drawer and clears its hash', async () => {
+      window.history.replaceState(null, '', '/client#facture-F-2026-001')
+      installFetch()
+      renderPage()
+      await screen.findByRole('dialog')
+      await act(async () => void window.dispatchEvent(new Event(SIM_RESET_EVENT)))
+      expect(await shownDay(2)).toBeInTheDocument() // the new simulation has an F-2026-001 too
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(window.location.hash).toBe('')
     })
 
     it('loads the new simulation when a plan exists again', async () => {

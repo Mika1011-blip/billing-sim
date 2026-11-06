@@ -17,7 +17,10 @@ type AgentEvent =
   | { type: 'error'; message?: string }
   | { type: 'done' }
 
-/** Event name a citation click announces; `LotsEnCours` and `TicketDetail` listen and expand when they hold the record. */
+/**
+ * Event name a ticket or lot citation click announces; `LotsEnCours` and `TicketDetail` listen and expand when they
+ * hold the record, and the client page opens the invoice drawer of a ticket or lot that is already invoiced.
+ */
 export const REVEAL_EVENT = 'reveal-record'
 
 const CITATION = /\[(BANK-\d+|F-\d{4}-\d{3}|L\d)\]/g
@@ -45,20 +48,28 @@ function toolLabel(name: string, input: ToolInput | undefined): string {
   return `${fr.assistant.consulting} ${name}…`
 }
 
-/** Text with each `[KEY]` citation turned into a link to the record's anchor on the page. */
+/** URL hash of an invoice's drawer; the client page opens the drawer while the hash names a visible invoice. */
+export const invoiceHash = (numero: string) => `#facture-${numero}`
+
+/**
+ * Text with each `[KEY]` citation turned into a link: an invoice opens its drawer through the URL hash, a ticket
+ * or lot points at the record's anchor on the page and is revealed there.
+ */
 function withCitations(text: string, keyPrefix = ''): ReactNode[] {
   const nodes: ReactNode[] = []
   let last = 0
   for (const match of text.matchAll(CITATION)) {
     const key = match[1]
+    const isInvoice = key.startsWith('F-')
     if (match.index > last) nodes.push(text.slice(last, match.index))
     nodes.push(
       <a
         key={`${keyPrefix}${match.index}`}
-        href={`#rec-${key}`}
+        href={isInvoice ? invoiceHash(key) : `#rec-${key}`}
         onClick={(e) => {
           e.preventDefault()
-          reveal(key)
+          if (isInvoice) window.location.hash = invoiceHash(key)
+          else reveal(key)
         }}
       >
         {match[0]}

@@ -14,9 +14,9 @@ The simulation connects what the team delivered, what the client was charged and
 
 ## How it works
 
-1. **Setup (one LLM call).** The participant writes a request in plain language. Claude Haiku is called once to turn it into a `ScenarioPlan`: lots, tickets with sizes (S, M, L, XL), a team, story beats (blockers, reviews, slips) and the client's payment behaviour. The model never writes a price.
+1. **Setup (one LLM call).** The participant writes a request in plain language. Claude Haiku is called once to turn it into a `ScenarioPlan`: lots, tickets with sizes (S, M, L, XL) and their ordered work steps, a plain-language delivery summary per lot, a team and story beats (blockers, reviews, slips). The model never writes a price.
 2. **Pricing is code.** The policy is [`contract_template.json`](contract_template.json): daily rates per profile (TJM), a rate card mapping sizes to days, 8 hours per day, 30 days payment terms and 20% VAT. Code computes every amount: `ticket fee = days x TJM`, `lot price = sum of its ticket fees`, VAT on top.
-3. **A deterministic timeline.** A seeded expander turns the plan into a day-by-day timeline: worklogs, status changes, comments, blockers, reviews, invoices, approvals and payments. The same plan and seed always give the same timeline.
+3. **A deterministic timeline.** A seeded expander turns the plan into a day-by-day timeline: worklogs (each day's note says which work step was done), status changes, comments, blockers, reviews, invoices and approvals. The same plan and seed always give the same timeline. Payments are not scripted: nothing is paid until the participant marks an invoice paid on the client page.
 4. **One scenario in SQLite.** The database holds a single scenario. The clock moves a `day <= D` boundary over it: "today" is whatever the clock says.
 5. **Two MCP servers** expose the simulation (see below), and a **client agent** (Claude, model from `BILLING_SIM_MODEL`) answers the client in French using only the past-only tools.
 
@@ -32,8 +32,18 @@ docker compose up --build
 ```
 
 - Open <http://localhost:5173/dev> (English developer page): describe a request and press **Generate** (tick **Use fallback** if you have no key), then move the clock.
-- Open <http://localhost:5173/client> (French client dashboard): summary tiles, lots, invoices with status pills, pending approvals.
+- Open <http://localhost:5173/client> (French client dashboard, see [The client dashboard](#the-client-dashboard)): pay invoices, open their detail, ask the assistant.
 - The API listens on <http://localhost:8000> (interactive docs at `/docs`). The SQLite file lives in `./data/sim.sqlite` on the host (`data/` is git-ignored); delete it to start over.
+
+### Upgrading an existing install
+
+Existing databases are not migrated (the schema gained work steps and delivery summaries and lost the scripted payment behaviour). Start from an empty database:
+
+```bash
+docker compose down -v
+rm -f data/sim.sqlite    # the database is a bind mount (./data), which `down -v` does not remove
+docker compose up --build
+```
 
 ### API key
 
@@ -46,6 +56,31 @@ BILLING_SIM_MODEL=claude-haiku-5-5
 ```
 
 Other optional settings: `SIM_DB_PATH` (default `./sim.sqlite`, `/data/sim.sqlite` in Docker), `SIM_START_DATE` (default `2026-03-02`, day 0), `CONTRACT_TEMPLATE_PATH`, and `BILLING_SIM_ENV_FILE` to read another env file. Real environment variables override `.env`. Never commit `.env`.
+
+## The client dashboard
+
+`/client` is what the bank manager sees, in French, as of the simulation clock ("today"). Top to bottom:
+
+- **Tiles**: `Contracté` (TTC, with the HT amount underneath), `Facturé`, `Payé`, `Reste à payer` and `En retard` (amount and number of overdue invoices; red when there is any).
+- **Alert line**, when there is something to do: overdue invoices, the next invoice to pay before its due date, and the next invoice expected (lot, promised date, amount HT).
+- **Factures**: one card per issued invoice, newest first, with filter pills `Toutes · À payer · En retard · Payées` (`En retard` includes `Très en retard`). A card shows the number, the lot (or the ticket charged separately), the amount TTC, the issue and due dates and the status.
+- **Lots en cours**: the lots not invoiced yet, with their promised delivery date, progress and amount to come, expandable to their tickets.
+- **Lots à valider** and the **assistant** (right column).
+
+Every invoice has one of four statuses, computed as of today; the day counts are calendar days:
+
+| Status | When |
+|---|---|
+| `À payer` | issued, unpaid, today is on or before the due date (the pill shows the days left) |
+| `En retard` | unpaid, past the due date by 1 to 30 days (the pill shows the days late) |
+| `Très en retard` | unpaid, more than 30 days past the due date |
+| `Payée` | a payment was recorded on or before today (the pill shows its date) |
+
+**Paying.** Press **Marquer comme payée** on a card or in the invoice detail. The payment is recorded at today's date, always in full (the amount TTC, reference `VIR-<number>-1`), then the whole page reloads: the card turns `Payée le …`, the tiles and the alert line follow. Paying an invoice twice shows the server's message under the button. If you move the clock back before the payment date the invoice is unpaid again, and paying it then replaces the later payment. The assistant only reads: it reports what is due and late but cannot pay.
+
+**Invoice detail.** Clicking a card opens a drawer (its URL is `/client#facture-<number>`, so it can be linked or reloaded): the delivery summary in plain language, the tickets delivered (each expands to its description, planned steps and day-by-day journal), the price calculation (each ticket's size → days × daily rate, total HT, VAT, total TTC, days charged against days really spent, and why a fixed price does not change), and the payment. Close it with ✕, Escape or a click outside.
+
+In the assistant's answers, `[F-2026-001]` opens that invoice's drawer, `[BANK-5]` expands the ticket where it is shown (in *Lots en cours*, or inside the drawer of the invoice that billed it) and `[L2]` expands that lot in *Lots en cours*, or opens its invoice once it is billed.
 
 ## The two MCP servers
 
@@ -119,7 +154,7 @@ The `/client` page tests render the same way from `frontend/src/test-fixtures/cl
 
 ### End-to-end test
 
-The Playwright test drives the real stack in a browser using the fallback scenario (no key needed): it generates a plan on `/dev`, moves the clock to the last day, then checks that `/client` shows the "Reste à payer" tile and an "En retard" or "Payée" pill.
+The Playwright test drives the real stack in a browser using the fallback scenario (no key needed): it generates a plan on `/dev`, moves the clock to the last day and checks that the ledger shows no payment yet, then on `/client` marks a `Très en retard` invoice paid (its card turns `Payée le …` and the `En retard` tile counts one invoice fewer), opens its detail (total TTC equals the card amount) and closes it with Escape.
 
 ```bash
 docker compose up --build -d
@@ -128,7 +163,7 @@ E2E=1 bash scripts/test.sh                          # or: cd frontend && npx pla
 docker compose down
 ```
 
-`E2E_BASE_URL` overrides the target (default `http://localhost:5173`).
+`E2E_BASE_URL` overrides the target (default `http://localhost:5173`). Without Docker, run the backend with uvicorn and the built frontend with `npm run build && npm run preview` (it proxies the API to `VITE_API_TARGET`, default `http://localhost:8000`), then point `E2E_BASE_URL` at the preview.
 
 ## Build log
 
