@@ -38,7 +38,9 @@ def generate(request_text: str, *, seed: int | None, fallback: bool, settings: S
     if fallback:
         plan = load_fixture()
     else:
-        result = haiku.generate_plan(request_text, contract, model=settings.model)
+        result = haiku.generate_plan(
+            request_text, contract, model=settings.model, api_key=settings.anthropic_api_key
+        )
         if result.kind == "rejection" or result.plan is None:
             return GenerateOutcome("rejection", None, result.reason or "request rejected", seed, [])
         plan = result.plan

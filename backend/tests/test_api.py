@@ -1,8 +1,10 @@
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
 from billing_sim.api.app import create_app
-from billing_sim.api.deps import Settings, get_settings
+from billing_sim.api.deps import Settings, get_settings, settings_from
 from billing_sim.scenario import haiku
 
 
@@ -41,12 +43,24 @@ def test_blank_request_422_without_haiku(client, monkeypatch):
     assert "empty" in r.json()["reason"]
 
 
-def test_generate_without_key_400(client, monkeypatch):
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    monkeypatch.delenv("CLAUDE_API_KEY", raising=False)
+def test_generate_without_key_400(client):
     r = client.post("/setup/generate", json={"request_text": "un tableau de bord", "fallback": False})
     assert r.status_code == 400
-    assert "ANTHROPIC_API_KEY" in r.json()["detail"]
+    assert "API key" in r.json()["detail"]
+
+
+def test_settings_key_reaches_haiku(tmp_path, monkeypatch):
+    seen = {}
+
+    def fake(request_text, contract, *, client=None, model, api_key=None):
+        seen["api_key"] = api_key
+        raise haiku.GenerationFailed("{oops")
+
+    monkeypatch.setattr(haiku, "generate_plan", fake)
+    settings = Settings(db_path=tmp_path / "sim.sqlite", anthropic_api_key="dummy")
+    with TestClient(create_app(settings)) as c:
+        assert c.post("/setup/generate", json={"request_text": "x"}).status_code == 502
+    assert seen["api_key"] == "dummy"
 
 
 def test_rejection_is_422_with_reason_and_keeps_store(client, monkeypatch):
@@ -64,9 +78,7 @@ def test_rejection_is_422_with_reason_and_keeps_store(client, monkeypatch):
 
 def test_generation_failed_is_502_with_raw(client, monkeypatch):
     def fail(*args, **kwargs):
-        error = haiku.GenerationFailed("bad json")
-        error.raw = "{oops"
-        raise error
+        raise haiku.GenerationFailed("{oops", "bad json")
 
     monkeypatch.setattr(haiku, "generate_plan", fail)
     r = client.post("/setup/generate", json={"request_text": "x"})
@@ -87,9 +99,32 @@ def test_invalid_plan_is_422(client, monkeypatch):
 
 
 def test_claude_api_key_accepted(monkeypatch):
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.setenv("CLAUDE_API_KEY", "sk-test")
     assert get_settings().anthropic_api_key == "sk-test"
+
+
+def test_anthropic_key_wins_over_claude_key():
+    env = {"ANTHROPIC_API_KEY": "a", "CLAUDE_API_KEY": "c"}
+    assert settings_from(env).anthropic_api_key == "a"
+    assert settings_from({}).anthropic_api_key is None
+
+
+def test_env_file_is_read_without_touching_os_environ(tmp_path, monkeypatch):
+    env_file = tmp_path / "repo.env"
+    env_file.write_text("CLAUDE_API_KEY=dummy" + chr(10) + "SIM_DB_PATH=from-env-file.sqlite" + chr(10), encoding="utf-8")
+    monkeypatch.setenv("BILLING_SIM_ENV_FILE", str(env_file))
+    settings = get_settings()
+    assert settings.anthropic_api_key == "dummy"
+    assert settings.db_path.name == "from-env-file.sqlite"
+    assert "CLAUDE_API_KEY" not in os.environ
+
+
+def test_real_environment_beats_env_file(tmp_path, monkeypatch):
+    env_file = tmp_path / "repo.env"
+    env_file.write_text("CLAUDE_API_KEY=from-file" + chr(10), encoding="utf-8")
+    monkeypatch.setenv("BILLING_SIM_ENV_FILE", str(env_file))
+    monkeypatch.setenv("CLAUDE_API_KEY", "from-env")
+    assert get_settings().anthropic_api_key == "from-env"
 
 
 def test_clock_before_generate_is_404(client):
