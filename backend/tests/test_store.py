@@ -127,10 +127,11 @@ def test_invoice_very_late_after_30_calendar_days(conn):
     due = _invoice(conn, INV1)["due_day"]
     due_date = date_for_day(START, due)
     first = next(d for d in range(due, last_day(conn) + 1) if (date_for_day(START, d) - due_date).days > 30)
-    assert (date_for_day(START, first - 1) - due_date).days == 30  # the fixture has a day exactly 30 days late
+    # Due Thu 2026-04-09 (30 calendar days after Tue 03-10): day 49 = Fri 05-08 is 29 days late, day 50 = Mon 05-11 is 32.
+    assert (date_for_day(START, first - 1) - due_date).days == 29
     before, after = get_invoice(conn, first - 1, INV1), get_invoice(conn, first, INV1)
-    assert (before["statut"], before["jours_de_retard"]) == ("En retard", 30)
-    assert (after["statut"], after["jours_de_retard"]) == ("Très en retard", 31)
+    assert (before["statut"], before["jours_de_retard"]) == ("En retard", 29)
+    assert (after["statut"], after["jours_de_retard"]) == ("Très en retard", 32)
 
 
 def test_invoice_paid_status_and_paiement_block(conn):
@@ -146,13 +147,13 @@ def test_invoice_paid_status_and_paiement_block(conn):
 
 def test_days_late_and_remaining_are_calendar_days(conn):
     due = _invoice(conn, INV1)["due_day"]
-    assert date_for_day(START, due).weekday() == 1  # due on a Tuesday
-    friday, monday = due - 2, due + 4
+    assert date_for_day(START, due).weekday() == 3  # due on a Thursday (Thu 2026-04-09)
+    friday, monday = due - 4, due + 2
     assert date_for_day(START, friday).weekday() == 4 and date_for_day(START, monday).weekday() == 0
     remaining = get_invoice(conn, friday, INV1)
-    assert (remaining["jours_restants"], remaining["jours_de_retard"]) == (4, 0)  # 2 working days, 4 calendar days
+    assert (remaining["jours_restants"], remaining["jours_de_retard"]) == (6, 0)  # 4 working days, 6 calendar days
     late = get_invoice(conn, monday, INV1)
-    assert (late["jours_de_retard"], late["jours_restants"]) == (6, 0)  # 4 working days, 6 calendar days
+    assert (late["jours_de_retard"], late["jours_restants"]) == (4, 0)  # 2 working days, 4 calendar days
     assert get_invoice(conn, due, INV1)["jours_restants"] == 0
 
 
@@ -161,8 +162,10 @@ def test_invoice_due_after_last_day_is_a_payer(conn):
     with conn:  # the separate ticket's invoice issued late in the run, due after its end
         conn.execute("UPDATE invoice SET issued_day = ?, due_day = ? WHERE ticket_id IS NOT NULL", (end - 2, end + 28))
     separate = next(i for i in list_invoices(conn, end) if i["ticket"] is not None)
+    # 28 working days = 5 weeks + 3 working days: 38 calendar days from a Monday or Tuesday (the last day is one).
+    assert date_for_day(START, end).weekday() in (0, 1)
     expected = (date_for_day(START, end + 28) - date_for_day(START, end)).days
-    assert separate["statut"] == "À payer" and separate["jours_restants"] == expected == 40
+    assert separate["statut"] == "À payer" and separate["jours_restants"] == expected == 38
     assert separate["echeance_le"] == _d(end + 28) and separate["jours_de_retard"] == 0
 
 

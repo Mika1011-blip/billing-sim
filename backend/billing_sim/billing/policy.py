@@ -5,9 +5,12 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import asdict, dataclass
+from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import Iterable, Literal
+
+from billing_sim.expander.calendar import date_for_day, first_working_day_on_or_after
 
 Profile = Literal["dev", "senior", "architect"]
 Size = Literal["S", "M", "L", "XL"]
@@ -73,5 +76,7 @@ def invoice_total(contract: Contract, amount_ht: int) -> tuple[int, int]:
     return vat, amount_ht + vat
 
 
-def due_day(contract: Contract, issued_day: int) -> int:
-    return issued_day + contract.payment_terms_days
+def due_day(contract: Contract, issued_day: int, start_date: date) -> int:
+    """Working-day index of the due date: issue date + `payment_terms_days` CALENDAR days, a weekend rolled to Monday."""
+    due = date_for_day(start_date, issued_day) + timedelta(days=contract.payment_terms_days)
+    return first_working_day_on_or_after(start_date, due)
