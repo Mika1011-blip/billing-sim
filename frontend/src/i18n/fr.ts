@@ -126,8 +126,6 @@ export const fr = {
     ht: 'HT',
     vat: 'TVA',
     ttc: 'TTC',
-    paid: 'Payé',
-    remaining: 'Reste',
     status: 'Statut',
     drawerTitle: 'Détail de la facture',
     close: 'Fermer',
@@ -137,6 +135,86 @@ export const fr = {
     paymentDate: 'Date',
     paymentAmount: 'Montant',
     paymentReference: 'Référence',
+  },
+  // Invoice statuses (spec §2) and the day counts their pill shows (§8.4).
+  invoiceStatus: {
+    aPayer: 'À payer',
+    enRetard: 'En retard',
+    tresEnRetard: 'Très en retard',
+    payee: 'Payée',
+    joursDeRetard: (n: number) => `(${n} j)`,
+    joursRestants: (n: number) => `(${n} j ${n > 1 ? 'restants' : 'restant'})`,
+    payeeLe: 'Payée le',
+  },
+  // Invoice cards and their filters (spec §8.4).
+  invoiceCard: {
+    title: 'Factures',
+    filters: {
+      toutes: 'Toutes',
+      aPayer: 'À payer',
+      enRetard: 'En retard', // includes Très en retard
+      payees: 'Payées',
+    },
+    emiseLe: 'Émise le',
+    echeanceLe: 'Échéance le',
+    separately: 'facturée séparément',
+    markPaid: 'Marquer comme payée',
+    payError: "Le paiement n'a pas pu être enregistré.",
+    empty: 'Aucune facture émise pour le moment.',
+  },
+  // Invoice drawer (spec §9).
+  invoiceDetail: {
+    lot: 'Lot',
+    echeanceLe: 'Échéance le',
+    resume: 'Résumé de la livraison',
+    delivered: 'Ce qui a été livré',
+    calcul: 'Calcul',
+    ht: 'HT',
+    totalHt: 'Total HT',
+    tva: 'TVA',
+    totalTtc: 'Total TTC',
+    joursFactures: 'Jours facturés',
+    joursReels: 'jours réellement passés',
+    // `ecart` is already formatted ("2,2").
+    ecartAbsorbe: (ecart: string) =>
+      `L'écart de ${ecart} j est absorbé par le prestataire : le prix du forfait ne change pas.`,
+    moinsDeJours: 'Le lot a demandé moins de jours que prévu : le prix du forfait ne change pas.',
+    paiement: 'Paiement',
+    payeeLe: (date: string, reference: string) => `Payée le ${date} (réf. ${reference})`,
+    close: 'Fermer',
+  },
+  // Ticket row and its journal (spec §10).
+  ticketDetail: {
+    reels: 'réels',
+    evenements: (n: number) => `${n} ${n > 1 ? 'événements' : 'événement'}`,
+    assigneA: 'Assigné à',
+    du: 'Du',
+    au: 'au',
+    depuis: 'Depuis le',
+    nonCommence: 'Non commencé',
+    etapes: 'Étapes prévues',
+    etapeFaite: 'réalisée',
+    journal: 'Journal',
+    journalLoading: 'Chargement du journal…',
+    journalEmpty: 'Aucun événement pour le moment.',
+    journalError: 'Impossible de charger le journal.',
+  },
+  // Alert line above the invoices (spec §8.3); dates and amounts come formatted.
+  alert: {
+    enRetard: (n: number) => `${n} ${n > 1 ? 'factures' : 'facture'} en retard`,
+    aPayerAvant: (n: number, date: string) => `${n} ${n > 1 ? 'factures' : 'facture'} à payer avant le ${date}`,
+    prochaineFacture: (lot: string, nom: string, date: string, montantHt: string) =>
+      `Prochaine facture : ${lot} · ${nom}, prévue vers le ${date} (${montantHt} HT)`,
+    nombreFactures: (n: number) => `${n} ${n > 1 ? 'factures' : 'facture'}`, // under the En retard tile
+  },
+  // Lots not invoiced yet (spec §8.5).
+  lotsEnCours: {
+    title: 'Lots en cours',
+    livraisonPrevue: 'livraison prévue le',
+    ticketsTermines: 'tickets terminés',
+    aVenir: 'montant HT à venir',
+    expand: 'Afficher les tickets',
+    collapse: 'Masquer les tickets',
   },
   approvals: {
     title: 'Lots à valider',

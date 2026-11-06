@@ -168,8 +168,8 @@ export interface ClientToday {
   date_longue: string // "lundi 2 mars 2026"
 }
 
-export type LotInvoiceStatus = 'À venir' | 'Émise' | 'Payée partiellement' | 'Payée' | 'En retard'
-export type InvoiceStatus = 'Émise' | 'Payée partiellement' | 'Payée' | 'En retard'
+export type InvoiceStatus = 'À payer' | 'En retard' | 'Très en retard' | 'Payée'
+export type LotInvoiceStatus = 'À venir' | InvoiceStatus
 export type TicketStatus = 'À faire' | 'En cours' | 'Bloqué' | 'En revue' | 'Terminé'
 
 export interface ClientLot {
@@ -186,8 +186,10 @@ export interface ClientLot {
   approuve_le: string | null
   statut_facture: LotInvoiceStatus
   facture: string | null
+  resume_livraison: string
 }
 
+/** `GET /client/tickets` and `/client/tickets/{key}` rows; an invoice's `tickets` are the same records. */
 export interface ClientTicket {
   cle: string
   titre: string
@@ -203,28 +205,77 @@ export interface ClientTicket {
   debut_reel: string | null
   fin_reel: string | null
   jours_reels: number
+  etapes: string[]
+  journal_nombre: number // events as of today
+}
+
+export type HistoryType =
+  | 'Changement de statut'
+  | 'Temps passé'
+  | 'Blocage'
+  | 'Déblocage'
+  | 'Commentaire'
+  | 'Revue demandée'
+  | 'Revue validée'
+  | 'Retour de revue'
+
+/** One row of `GET /client/tickets/{key}/history`, oldest first. */
+export interface ClientHistoryEntry {
+  date: string
+  type: HistoryType
+  acteur: string
+  contenu: string
+}
+
+export interface ClientPaiement {
+  date: string
+  reference: string
+  montant: number // TTC, always in full
+}
+
+export interface InvoiceCalcul {
+  total_ht: number
+  tva: number
+  taux_tva: number // 0.2
+  total_ttc: number
+  jours_factures: number
+  jours_reels: number
+  ecart_jours: number // jours_reels − jours_factures
 }
 
 export interface ClientInvoice {
   numero: string
   lot: string | null
+  lot_nom: string | null
+  ticket: string | null // the ticket key of a separately charged ticket
   couvre: string[]
   emise_le: string
-  echeance: string
+  echeance_le: string
   montant_ht: number
   tva: number
   montant_ttc: number
-  paye: number
-  reste: number
   statut: InvoiceStatus
-  en_retard: boolean
+  jours_de_retard: number // calendar days, 0 unless overdue
+  jours_restants: number // calendar days, 0 unless À payer
+  paiement: ClientPaiement | null
+  resume_livraison: string
+  tickets: ClientTicket[]
+  calcul: InvoiceCalcul
 }
 
+/** `GET /client/payments` rows, and the answer of `POST /client/invoices/{number}/payer`. */
 export interface ClientPayment {
   date: string
   montant: number
   reference: string
   facture: string
+}
+
+export interface ProchaineFacture {
+  lot: string
+  nom: string
+  date_prevue: string // plan data: the promised delivery date
+  montant_ht: number
 }
 
 export interface ClientSummary {
@@ -233,6 +284,9 @@ export interface ClientSummary {
   facture: number // TTC
   paye: number // TTC
   reste_a_payer: number // TTC
-  en_retard: number // TTC
+  en_retard: number // TTC, En retard + Très en retard
+  en_retard_nombre: number
+  a_payer: number // TTC of the À payer invoices
+  prochaine_facture: ProchaineFacture | null
   lots: ClientLot[]
 }
