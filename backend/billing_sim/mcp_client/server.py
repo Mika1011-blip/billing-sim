@@ -73,11 +73,17 @@ def build_server(conn_factory: Callable[[], sqlite3.Connection]) -> FastMCP:
     def get_ticket_history(key: str) -> str:
         return _run(conn_factory, queries.ticket_history, key, key=key)
 
-    @tool("List the invoices issued with their amounts, paid and overdue state, as of today.")
+    @tool(
+        "List the invoices issued with their amounts, status (À payer, En retard, Très en retard, Payée), days late "
+        "or remaining, payment and delivery summary, as of today."
+    )
     def list_invoices() -> str:
         return _run(conn_factory, queries.list_invoices)
 
-    @tool("Get one invoice by its number with its lines and payments, as of today.")
+    @tool(
+        "Get one invoice by its number with its amounts, status (À payer, En retard, Très en retard, Payée), days "
+        "late or remaining, payment, delivery summary, delivered tickets and price calculation, as of today."
+    )
     def get_invoice(number: str) -> str:
         return _run(conn_factory, queries.get_invoice, number, key=number)
 

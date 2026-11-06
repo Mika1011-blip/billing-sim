@@ -151,6 +151,14 @@ async def test_model_call_arguments(agent):
     assert "tool_choice" not in call
 
 
+def test_prompt_says_the_client_pays_and_names_the_overdue_tiers():
+    assert (
+        "Le client règle ses factures depuis son tableau de bord ; tu ne peux pas payer à sa place. Une facture est "
+        "*En retard* après sa date d'échéance et *Très en retard* 30 jours après ; rappelle les montants et les dates."
+    ) in SYSTEM_PROMPT_FR
+    assert "Très en retard" in SYSTEM_PROMPT_FR
+
+
 async def test_tool_dispatched_against_clock(agent):
     await run(agent)
     second = agent.client.calls[1]["messages"]

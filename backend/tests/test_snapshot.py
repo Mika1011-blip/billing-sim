@@ -1,14 +1,76 @@
-"""The dev-page contract: the frontend renders from `frontend/src/test-fixtures/dev-snapshot.json`, which is the
-backend's own output for the fallback scenario. If a dev route's shape changes this fails until the file is
-regenerated: `python -m billing_sim.cli snapshot ../frontend/src/test-fixtures/dev-snapshot.json` (from backend/),
-or run pytest with `--update-snapshot`."""
+"""The frontend contracts: the dev and client pages render from `frontend/src/test-fixtures/dev-snapshot.json` and
+`client-snapshot.json`, which are the backend's own output for the fallback scenario. If a route's shape changes these
+fail until the files are regenerated: run pytest with `--update-snapshot` (rewrites both), or for the dev snapshot
+alone `python -m billing_sim.cli snapshot ../frontend/src/test-fixtures/dev-snapshot.json` (from backend/)."""
 
 import json
+from datetime import date
 from pathlib import Path
 
-from billing_sim.cli import snapshot_data, write_snapshot
+from billing_sim.billing.policy import load_contract
+from billing_sim.cli import (
+    DEFAULT_START,
+    FIXTURE_REQUEST,
+    snapshot_data,
+    write_snapshot,
+)
+from billing_sim.engine.clock import last_day, set_day
+from billing_sim.engine.payments import pay_invoice
+from billing_sim.expander.expand import expand
+from billing_sim.scenario.fixture import load_fixture
+from billing_sim.store.db import connect
+from billing_sim.store.dev_queries import full_timeline
+from billing_sim.store.load import load_scenario
+from billing_sim.store.queries import (
+    list_invoices,
+    list_lots,
+    list_tickets,
+    summary,
+    ticket_history,
+    today,
+)
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "frontend" / "src" / "test-fixtures" / "dev-snapshot.json"
+CLIENT_SNAPSHOT = SNAPSHOT.with_name("client-snapshot.json")
+
+
+def client_snapshot_data() -> dict:
+    """The client page at the end of the fallback run (seed 42), after the participant paid the first invoice on day
+    20 and the second on the last day; the others stay unpaid."""
+    plan, contract = load_fixture(), load_contract()
+    start = date.fromisoformat(DEFAULT_START)
+    conn = connect(":memory:")
+    try:
+        load_scenario(
+            conn, plan=plan, contract=contract, timeline=expand(plan, contract, seed=42, start_date=start),
+            request_text=FIXTURE_REQUEST, seed=42, start_date=start,
+        )  # fmt: skip
+        end = last_day(conn)
+        first, second = (i["numero"] for i in list_invoices(conn, end)[:2])
+        for day, number in ((20, first), (end, second)):
+            set_day(conn, day)
+            pay_invoice(conn, number)
+        day = set_day(conn, end)
+        mid = next(i for i in full_timeline(conn)["invoices"] if i["number"] == second)["issued_day"]
+        return {
+            "day": day,
+            "today": today(conn, day),
+            "summary": summary(conn, day),
+            "invoices": list_invoices(conn, day),
+            "tickets": list_tickets(conn, day),
+            "lots": list_lots(conn, day),
+            "history": {"BANK-5": ticket_history(conn, day, "BANK-5")},
+            # the day the second invoice is issued: one invoice paid, one to pay, a lot still to invoice
+            "mid": {
+                "day": mid,
+                "today": today(conn, mid),
+                "summary": summary(conn, mid),
+                "invoices": list_invoices(conn, mid),
+                "lots": list_lots(conn, mid),
+            },
+        }
+    finally:
+        conn.close()
 
 
 def test_frontend_snapshot_matches_the_backend(request):
@@ -17,6 +79,34 @@ def test_frontend_snapshot_matches_the_backend(request):
     assert SNAPSHOT.exists(), "run: python -m billing_sim.cli snapshot " + str(SNAPSHOT)
     on_disk = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
     assert on_disk == snapshot_data(), "dev-snapshot.json is stale: re-run pytest with --update-snapshot"
+
+
+def test_client_snapshot_matches(request):
+    data = client_snapshot_data()
+    if request.config.getoption("--update-snapshot", default=False):
+        text = json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+        CLIENT_SNAPSHOT.write_bytes(text.encode("utf-8"))
+    assert CLIENT_SNAPSHOT.exists(), "run pytest with --update-snapshot to write " + str(CLIENT_SNAPSHOT)
+    on_disk = json.loads(CLIENT_SNAPSHOT.read_text(encoding="utf-8"))
+    assert on_disk == data, "client-snapshot.json is stale: re-run pytest with --update-snapshot"
+
+
+def test_client_snapshot_exercises_what_the_client_page_draws():
+    data = client_snapshot_data()
+    statuses = [i["statut"] for i in data["invoices"]]
+    assert statuses.count("Payée") == 2 and "Très en retard" in statuses
+    assert set(statuses) <= {"À payer", "En retard", "Très en retard", "Payée"}
+    assert data["day"] == data["today"]["jour"]
+    assert data["summary"]["en_retard_nombre"] == statuses.count("En retard") + statuses.count("Très en retard")
+    assert data["history"]["BANK-5"] and all(t["etapes"] for t in data["tickets"])
+    mid = data["mid"]
+    assert mid["day"] < data["day"] and mid["day"] == mid["today"]["jour"]
+    to_pay = [i for i in mid["invoices"] if i["statut"] == "À payer"]
+    assert len(to_pay) == 1 and to_pay[0]["jours_restants"] > 0
+    assert [i["statut"] for i in mid["invoices"]].count("Payée") == 1
+    assert mid["summary"]["a_payer"] == to_pay[0]["montant_ttc"] > 0
+    upcoming = mid["summary"]["prochaine_facture"]
+    assert upcoming is not None and set(upcoming) == {"lot", "nom", "date_prevue", "montant_ht"}
 
 
 def test_snapshot_exercises_what_the_dev_page_draws():
