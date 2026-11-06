@@ -1,3 +1,5 @@
+import type { ClientTicket } from '../types'
+
 const EURO_WHOLE = new Intl.NumberFormat('fr-FR', {
   style: 'currency',
   currency: 'EUR',
@@ -16,3 +18,12 @@ export const fmtDate = (iso: string | null | undefined) => {
   const [y, m, d] = iso.slice(0, 10).split('-')
   return `${d}/${m}/${y}`
 }
+
+const DAYS = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 })
+
+/** `6,4 j`: a day count with the French decimal comma, glued to its unit by a no-break space. */
+export const fmtDays = (n: number) => `${DAYS.format(n)} j`
+
+/** A ticket's fixed price: `L → 5 j × 750 € = 3 750 €` (taille → jours facturés × TJM = montant). */
+export const fmtCalcul = (t: Pick<ClientTicket, 'taille' | 'jours_factures' | 'tjm' | 'montant'>) =>
+  `${t.taille} → ${fmtDays(t.jours_factures)} × ${fmtEuro(t.tjm)} = ${fmtEuro(t.montant)}`

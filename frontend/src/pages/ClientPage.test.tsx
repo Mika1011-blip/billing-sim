@@ -4,6 +4,7 @@ import { act } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AppShell, CLOCK_POLL_MS } from '../components/AppShell'
 import { SIM_RESET_EVENT } from '../sim'
+import snapshot from '../test-fixtures/client-snapshot.json'
 import { ClientPage } from './ClientPage'
 
 /** The page alone (inside a router, for its links). */
@@ -25,22 +26,12 @@ const renderInShell = () =>
 const DATES = ['2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05', '2026-03-06', '2026-03-09']
 const LONG = ['lundi 2 mars 2026', 'mardi 3 mars 2026', 'mercredi 4 mars 2026', 'jeudi 5 mars 2026', 'vendredi 6 mars 2026', 'lundi 9 mars 2026']
 
-const lot = {
-  cle: 'L1', nom: 'Tableau de bord', description: 'Vue des factures', prix: 2000, livraison_prevue: '2026-03-06',
-  livre_le: '2026-03-05', tickets_termines: 1, tickets_total: 1, jours_factures: 2, jours_reels: 3,
-  approuve_le: null, statut_facture: 'À venir', facture: null,
-}
-const ticket = {
-  cle: 'BANK-12', titre: 'Écran des factures', description: '', lot: 'L1', facture_separement: false, taille: 'M',
-  jours_factures: 2, tjm: 1000, montant: 2000, statut: 'Terminé', assigne: 'Léa', debut_reel: '2026-03-02',
-  fin_reel: '2026-03-05', jours_reels: 3,
-}
-const loose = { ...ticket, cle: 'BANK-99', titre: 'Correctif isolé', lot: null, facture_separement: true }
-const invoice = {
-  numero: 'F-2026-001', lot: 'L1', couvre: ['BANK-12'], emise_le: '2026-03-05', echeance: '2026-04-04',
-  montant_ht: 2000, tva: 400, montant_ttc: 2400, paye: 0, reste: 2400, statut: 'Émise', en_retard: false,
-}
-const summary = { contracte: 2000, contracte_ttc: 2400, facture: 2400, paye: 0, reste_a_payer: 2400, en_retard: 0, lots: [lot] }
+// Records exactly as the client API sends them (snapshot); the dates and the clock are this test's own.
+const lot = snapshot.lots.find((l) => l.cle === 'L1')! // tickets BANK-1..3, invoice F-2026-001
+const ticket = snapshot.tickets.find((t) => t.cle === 'BANK-1')!
+const loose = snapshot.tickets.find((t) => t.cle === 'BANK-12')! // charged separately, no lot
+const invoice = snapshot.invoices.find((i) => i.numero === 'F-2026-001')!
+const summary = { ...snapshot.summary, lots: [lot] }
 
 const reply = (body: unknown, status = 200) => ({ ok: status < 300, status, statusText: '', json: async () => body })
 
@@ -92,12 +83,12 @@ describe('ClientPage', () => {
     expect(screen.getByText('Lots à valider')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Assistant' })).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Posez une question…')).toBeInTheDocument()
-    for (const id of ['rec-L1', 'rec-BANK-12', 'rec-BANK-99', 'rec-F-2026-001']) {
+    for (const id of ['rec-L1', 'rec-BANK-1', 'rec-BANK-12', 'rec-F-2026-001']) {
       expect(document.getElementById(id), id).not.toBeNull()
     }
     // the ticket without a lot is listed on its own, the other one inside its lot card
-    expect(within(document.getElementById('rec-L1')!).getByText('Écran des factures')).toBeInTheDocument()
-    expect(within(document.getElementById('rec-L1')!).queryByText('Correctif isolé')).toBeNull()
+    expect(within(document.getElementById('rec-L1')!).getByText(ticket.titre)).toBeInTheDocument()
+    expect(within(document.getElementById('rec-L1')!).queryByText(loose.titre)).toBeNull()
   })
 
   describe('when the clock is moved elsewhere', () => {

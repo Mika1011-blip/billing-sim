@@ -27,8 +27,6 @@ export function InvoiceList({ invoices, payments, onSelect }: Props) {
             <th>{t.issued}</th>
             <th>{t.due}</th>
             <th className="num">{t.ttc}</th>
-            <th className="num">{t.paid}</th>
-            <th className="num">{t.remaining}</th>
             <th>{t.status}</th>
           </tr>
         </thead>
@@ -49,10 +47,8 @@ export function InvoiceList({ invoices, payments, onSelect }: Props) {
               </td>
               <td>{inv.lot ?? '—'}</td>
               <td>{fmtDate(inv.emise_le)}</td>
-              <td>{fmtDate(inv.echeance)}</td>
+              <td>{fmtDate(inv.echeance_le)}</td>
               <td className="num">{fmtEuro(inv.montant_ttc)}</td>
-              <td className="num">{fmtEuro(inv.paye)}</td>
-              <td className="num">{fmtEuro(inv.reste)}</td>
               <td>
                 <Pill statut={inv.statut} />
               </td>
