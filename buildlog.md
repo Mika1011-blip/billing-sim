@@ -58,3 +58,4 @@ Every change to this repo gets an entry here: date, branch, what changed, how it
 | 2026-11-06 | develop | Merged task/13-reset-route: POST /sim/reset route | bash scripts/test.sh green on develop |
 | 2026-11-06 | main | Merged develop (task/13-reset-route): POST /sim/reset route | bash scripts/test.sh green on main |
 | 2026-11-06 | task/14-ui-shell | App shell with nav (Dev/Client) + Réinitialiser, dev page translated to French, visual refresh (tokens, cards, pills, tiles, chat bubbles) | npm test 98 passed, build green |
+| 2026-11-06 | develop | Merged task/14-ui-shell: App shell with nav + Réinitialiser, French dev page, visual refresh (buildlog conflict resolved by keeping both rows) | bash scripts/test.sh green on develop |
