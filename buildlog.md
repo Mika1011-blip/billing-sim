@@ -12,3 +12,4 @@ Every change to this repo gets an entry here: date, branch, what changed, how it
 | 2026-11-06 | main | Merged develop (task/01-billing): billing policy, contract template, test runner | bash scripts/test.sh green on main |
 | 2026-11-06 | task/02-scenario | Scenario schema (`scenario/schema.py`), plan validator (`validate.py`: duplicate keys, lots, dependencies, cycles via Kahn, client behaviour, blocked beats) and French `invoice_dashboard` fallback fixture | `bash scripts/test.sh` -> 22 passed, exit 0 |
 | 2026-11-06 | develop | Merged task/02-scenario: scenario schema, validation, fallback fixture | bash scripts/test.sh green on develop |
+| 2026-11-06 | main | Merged develop (task/02-scenario): scenario schema, validation, fallback fixture | bash scripts/test.sh green on main |
