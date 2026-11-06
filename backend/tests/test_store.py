@@ -69,6 +69,7 @@ def test_as_of_never_leaks_future(conn):
 def test_day_zero_summary(conn, timeline):
     s = summary(conn, 0)
     assert s["contracte"] == sum(t.fee for t in timeline.tickets)
+    assert s["contracte_ttc"] == 30600 == round(s["contracte"] * 1.2)  # HT 25 500 + 20 % VAT
     assert s["facture"] == 0 == s["paye"]
     assert s["reste_a_payer"] == 0 and s["en_retard"] == 0
     assert list_invoices(conn, 0) == []
@@ -164,6 +165,8 @@ def test_diff_has_every_ticket(conn, plan):
     diff = diff_plan_vs_real(conn)
     assert len(diff["tickets"]) == len(plan.tickets) >= 12
     assert len(diff["lots"]) == len(plan.lots)
+    assert {lot["key"]: lot["name"] for lot in diff["lots"]} == {lot.key: lot.name for lot in plan.lots}
+    assert {t["key"]: t["assignee"] for t in diff["tickets"]} == {t["key"]: t["assignee"] for t in full_plan(conn)["tickets"]}
     for t in diff["tickets"]:
         assert t["slip_days"] == t["real_end"] - t["planned_end"]
         assert t["planned_start"] <= t["planned_end"] and t["real_start"] <= t["real_end"]
@@ -178,6 +181,11 @@ def test_today_is_french_without_locale(conn):
     assert today(conn, 5)["date_longue"] == "lundi 9 mars 2026"
     assert today(conn, 21 * 5)["date_longue"] == "lundi 27 juillet 2026"
     assert today(conn, 5 * 43 + 2)["date_longue"] == "mercredi 30 décembre 2026"
+
+
+def test_first_of_the_month_is_written_1er(conn):
+    assert today(conn, 22) == {"jour": 22, "date": "2026-04-01", "date_longue": "mercredi 1er avril 2026"}
+    assert today(conn, 23)["date_longue"] == "jeudi 2 avril 2026"
 
 
 def test_get_contract_explains_each_profile(conn, contract):

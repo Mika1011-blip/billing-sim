@@ -186,6 +186,21 @@ textarea {
   font-size: 0.8rem;
 }
 
+.chat-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.chat-divider::before,
+.chat-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #d1d5db;
+}
+
 .chat-form {
   display: flex;
   gap: 8px;
@@ -226,6 +241,12 @@ textarea {
   font-weight: 600;
   margin-top: 4px;
   white-space: nowrap;
+}
+
+.tile-sub {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 2px;
 }
 
 .tile.alert {

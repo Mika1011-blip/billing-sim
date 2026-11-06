@@ -4,6 +4,7 @@ import type { ClientSummary } from '../../types'
 
 const summary = (over: Partial<ClientSummary> = {}): ClientSummary => ({
   contracte: 10000,
+  contracte_ttc: 12000,
   facture: 6000,
   paye: 3600,
   reste_a_payer: 2400,
@@ -21,9 +22,16 @@ describe('SummaryTiles', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(5)
     const tile = screen.getByText('Reste à payer').closest('li')!
     expect(plain(tile.textContent)).toContain('2 400 €')
-    expect(screen.getByText('Contracté')).toBeInTheDocument()
-    expect(screen.getByText('(HT)')).toBeInTheDocument()
-    expect(screen.getAllByText('(TTC)')).toHaveLength(4)
+    expect(screen.getAllByText('(TTC)')).toHaveLength(5)
+    expect(screen.queryByText('(HT)')).toBeNull()
+  })
+
+  it('shows the contracted amount with VAT and its HT amount underneath', () => {
+    render(<SummaryTiles summary={summary()} />)
+    const tile = screen.getByText('Contracté').closest('li')!
+    expect(plain(tile.querySelector('.tile-value')!.textContent)).toBe('12 000 €')
+    expect(plain(tile.textContent)).toContain('Contracté (TTC)')
+    expect(plain(tile.textContent)).toContain('soit 10 000 € HT')
   })
 
   it('marks the late tile with the alert class when en_retard > 0', () => {

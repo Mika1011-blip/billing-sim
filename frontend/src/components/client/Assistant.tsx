@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { fr } from '../../i18n/fr'
 
-type Part = { kind: 'text'; text: string } | { kind: 'tool'; name: string }
+type ToolInput = Record<string, unknown>
+type Part = { kind: 'text'; text: string } | { kind: 'tool'; name: string; input: ToolInput }
 
 type Message =
   | { role: 'user'; text: string }
+  | { role: 'info'; text: string }
   | { role: 'assistant'; parts: Part[]; error?: string }
 
 type AgentEvent =
   | { type: 'text'; text: string }
-  | { type: 'tool_call'; name: string }
+  | { type: 'tool_call'; name: string; input?: ToolInput }
+  | { type: 'info'; message?: string }
   | { type: 'tool_result'; name: string }
   | { type: 'error'; message?: string }
   | { type: 'done' }
@@ -18,6 +21,7 @@ type AgentEvent =
 export const REVEAL_EVENT = 'reveal-record'
 
 const CITATION = /\[(BANK-\d+|F-\d{4}-\d{3}|L\d)\]/g
+const BOLD = /\*\*(.+?)\*\*/g
 
 function reveal(key: string) {
   window.dispatchEvent(new CustomEvent(REVEAL_EVENT, { detail: key }))
@@ -25,8 +29,24 @@ function reveal(key: string) {
   setTimeout(() => document.getElementById(`rec-${key}`)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }), 0)
 }
 
+/** French chip text for a tool call, from the call's input where the label needs one ("consulte BANK-12…"). */
+function toolLabel(name: string, input: ToolInput | undefined): string {
+  const template = fr.assistant.tools[name]
+  if (template) {
+    let complete = true
+    const text = template.replace(/\{(\w+)\}/g, (_, field: string) => {
+      const value = input?.[field]
+      if (typeof value === 'string' || typeof value === 'number') return String(value)
+      complete = false
+      return ''
+    })
+    if (complete) return text
+  }
+  return `${fr.assistant.consulting} ${name}…`
+}
+
 /** Text with each `[KEY]` citation turned into a link to the record's anchor on the page. */
-function withCitations(text: string): ReactNode[] {
+function withCitations(text: string, keyPrefix = ''): ReactNode[] {
   const nodes: ReactNode[] = []
   let last = 0
   for (const match of text.matchAll(CITATION)) {
@@ -34,7 +54,7 @@ function withCitations(text: string): ReactNode[] {
     if (match.index > last) nodes.push(text.slice(last, match.index))
     nodes.push(
       <a
-        key={match.index}
+        key={`${keyPrefix}${match.index}`}
         href={`#rec-${key}`}
         onClick={(e) => {
           e.preventDefault()
@@ -47,6 +67,19 @@ function withCitations(text: string): ReactNode[] {
     last = match.index + match[0].length
   }
   if (last < text.length) nodes.push(text.slice(last))
+  return nodes
+}
+
+/** The model's `**bold**` as <strong>, citations linked inside and outside it. Text nodes only: no HTML is parsed. */
+function withMarkdown(text: string): ReactNode[] {
+  const nodes: ReactNode[] = []
+  let last = 0
+  for (const match of text.matchAll(BOLD)) {
+    if (match.index > last) nodes.push(...withCitations(text.slice(last, match.index), `t${last}-`))
+    nodes.push(<strong key={`b${match.index}`}>{withCitations(match[1], `b${match.index}-`)}</strong>)
+    last = match.index + match[0].length
+  }
+  if (last < text.length) nodes.push(...withCitations(text.slice(last), `t${last}-`))
   return nodes
 }
 
@@ -76,7 +109,7 @@ async function readEvents(body: ReadableStream<Uint8Array>, onEvent: (event: Age
 }
 
 function appendPart(parts: Part[], event: AgentEvent): Part[] {
-  if (event.type === 'tool_call') return [...parts, { kind: 'tool', name: event.name }]
+  if (event.type === 'tool_call') return [...parts, { kind: 'tool', name: event.name, input: event.input ?? {} }]
   if (event.type === 'text') {
     const last = parts[parts.length - 1]
     if (last?.kind === 'text') return [...parts.slice(0, -1), { kind: 'text', text: last.text + event.text }]
@@ -126,7 +159,10 @@ export function Assistant() {
       let finished = false
       await readEvents(res.body, (event) => {
         if (event.type === 'done') finished = true
-        if (event.type === 'error') updateLast((m) => ({ ...m, error: event.message || t.error }))
+        if (event.type === 'info') {
+          // A divider ahead of the reply being streamed: the conversation restarted because the date moved.
+          setMessages((all) => [...all.slice(0, -1), { role: 'info', text: t.newDate }, ...all.slice(-1)])
+        } else if (event.type === 'error') updateLast((m) => ({ ...m, error: event.message || t.error }))
         else updateLast((m) => ({ ...m, parts: appendPart(m.parts, event) }))
       })
       // A stream that ends without `done` was cut short: say so, unless an error line is already there.
@@ -145,7 +181,11 @@ export function Assistant() {
       <div className="chat-log" aria-live="polite">
         {messages.length === 0 && <p className="empty">{t.hint}</p>}
         {messages.map((m, i) =>
-          m.role === 'user' ? (
+          m.role === 'info' ? (
+            <div key={i} className="chat-divider" role="separator">
+              {m.text}
+            </div>
+          ) : m.role === 'user' ? (
             <p key={i} className="bubble user">
               {m.text}
             </p>
@@ -154,10 +194,10 @@ export function Assistant() {
               {m.parts.map((part, j) =>
                 part.kind === 'tool' ? (
                   <span key={j} className="chip">
-                    {t.consulting} {part.name}…
+                    {toolLabel(part.name, part.input)}
                   </span>
                 ) : (
-                  <p key={j}>{withCitations(part.text)}</p>
+                  <p key={j}>{withMarkdown(part.text)}</p>
                 ),
               )}
               {m.error && <p className="error">{m.error}</p>}

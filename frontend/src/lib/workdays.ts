@@ -32,3 +32,14 @@ export function dayForDate(
   }
   return Math.min(Math.max(today.jour + delta, 0), lastDay)
 }
+
+/** Calendar date (`YYYY-MM-DD`) of simulation day `day`, counting working days from today's date and day. */
+export function dateForDay(today: { date: string; jour: number }, day: number): string {
+  let t = toUtc(today.date)
+  const step = day >= today.jour ? DAY_MS : -DAY_MS
+  for (let left = Math.abs(day - today.jour); left > 0; ) {
+    t += step
+    if (isWorkingDay(t)) left--
+  }
+  return new Date(t).toISOString().slice(0, 10)
+}

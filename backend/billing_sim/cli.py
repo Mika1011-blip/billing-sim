@@ -1,4 +1,4 @@
-"""Command line: `python -m billing_sim.cli load | day N | summary [--day N]`. Every command prints JSON."""
+"""Command line: `python -m billing_sim.cli load | day N | summary [--day N] | snapshot PATH`. Every command prints JSON."""
 
 from __future__ import annotations
 
@@ -6,18 +6,48 @@ import argparse
 import json
 import sys
 from datetime import date
+from pathlib import Path
 
 from billing_sim.billing.policy import load_contract
-from billing_sim.engine.clock import get_day, last_day, set_day
+from billing_sim.engine.clock import get_day, last_day, set_day, state
 from billing_sim.expander.expand import expand
 from billing_sim.scenario.fixture import load_fixture
 from billing_sim.store.db import NotFound, connect
+from billing_sim.store.dev_queries import diff_plan_vs_real, full_plan, full_timeline
 from billing_sim.store.load import load_scenario
 from billing_sim.store.queries import summary, today
 
 DEFAULT_DB = "./sim.sqlite"
 DEFAULT_START = "2026-03-02"
 FIXTURE_REQUEST = "Scénario de démonstration : tableau de bord de factures (fixture)."
+
+
+def snapshot_data() -> dict:
+    """What the dev page loads from the real backend, for the fallback scenario (seed 42) with the clock on its last
+    day. The frontend tests render from this, so a change to a dev route's keys cannot go unnoticed there."""
+    plan, contract = load_fixture(), load_contract()
+    start = date.fromisoformat(DEFAULT_START)
+    timeline = expand(plan, contract, seed=42, start_date=start)
+    conn = connect(":memory:")
+    try:
+        load_scenario(
+            conn, plan=plan, contract=contract, timeline=timeline, request_text=FIXTURE_REQUEST,
+            seed=42, start_date=start,
+        )  # fmt: skip
+        set_day(conn, last_day(conn))
+        return {
+            "plan": full_plan(conn),
+            "timeline": full_timeline(conn),
+            "diff": diff_plan_vs_real(conn),
+            "clock": state(conn),
+        }
+    finally:
+        conn.close()
+
+
+def write_snapshot(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes((json.dumps(snapshot_data(), ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -37,12 +67,18 @@ def _parser() -> argparse.ArgumentParser:
     day = command("day", "set the clock (clamped to the run)")
     day.add_argument("n", type=int)
 
+    snap = sub.add_parser("snapshot", help="write the dev-page snapshot the frontend tests render from")
+    snap.add_argument("path", type=Path)
+
     show = command("summary", "print the as-of summary")
     show.add_argument("--day", type=int, default=None, help="default: the clock's day")
     return parser
 
 
 def _run(args: argparse.Namespace) -> dict:
+    if args.command == "snapshot":
+        write_snapshot(args.path)
+        return {"snapshot": str(args.path)}
     conn = connect(args.db)
     try:
         if args.command == "load":

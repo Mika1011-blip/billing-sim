@@ -17,6 +17,7 @@ import sqlite3
 from collections import defaultdict
 from datetime import date
 
+from billing_sim.billing.policy import Contract, invoice_total
 from billing_sim.expander.calendar import date_for_day
 from billing_sim.store.db import NotFound, contract_data, start_date
 
@@ -207,10 +208,11 @@ def _public(rows: list[dict]) -> list[dict]:
 
 def today(conn: sqlite3.Connection, day: int) -> dict:
     d: date = date_for_day(start_date(conn), day)
+    number = "1er" if d.day == 1 else str(d.day)
     return {
         "jour": day,
         "date": d.isoformat(),
-        "date_longue": f"{_WEEKDAYS[d.weekday()]} {d.day} {_MONTHS[d.month - 1]} {d.year}",
+        "date_longue": f"{_WEEKDAYS[d.weekday()]} {number} {_MONTHS[d.month - 1]} {d.year}",
     }
 
 
@@ -228,8 +230,10 @@ def summary(conn: sqlite3.Connection, day: int) -> dict:
     invoices = ctx.invoices()
     invoiced = sum(i["montant_ttc"] for i in invoices)
     paid = sum(i["paye"] for i in invoices)
+    contracted_ht = conn.execute("SELECT COALESCE(SUM(fee), 0) FROM ticket").fetchone()[0]
     return {
-        "contracte": conn.execute("SELECT COALESCE(SUM(fee), 0) FROM ticket").fetchone()[0],  # HT
+        "contracte": contracted_ht,  # HT
+        "contracte_ttc": invoice_total(Contract(**ctx.contract), contracted_ht)[1],
         "facture": invoiced,  # TTC, like payments and balances
         "paye": paid,
         "reste_a_payer": invoiced - paid,

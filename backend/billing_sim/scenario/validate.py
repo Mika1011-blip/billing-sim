@@ -17,6 +17,13 @@ def validate_plan(plan: ScenarioPlan) -> list[str]:
         if count > 1:
             errors.append(f"duplicate ticket key {key} ({count} tickets)")
 
+    for key, count in Counter(lot.key for lot in plan.lots).items():
+        if count > 1:
+            errors.append(f"duplicate lot key {key} ({count} lots)")
+    for name, count in Counter(member.name for member in plan.team).items():
+        if count > 1:
+            errors.append(f"duplicate team member name {name} ({count} members)")
+
     edges: dict[str, set[str]] = {key: set() for key in ticket_keys}  # ticket -> its dependencies
     for ticket in plan.tickets:
         if ticket.lot_key is not None and ticket.lot_key not in lot_keys:

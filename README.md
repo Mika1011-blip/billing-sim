@@ -104,7 +104,16 @@ backend/.venv/bin/python -m pip install -e "backend[dev]"   # Windows: backend/.
 bash scripts/test.sh     # backend pytest, then frontend vitest
 ```
 
-A command line is available for quick checks: `python -m billing_sim.cli load`, `day N`, `summary`.
+A command line is available for quick checks: `python -m billing_sim.cli load`, `day N`, `summary`, `snapshot PATH`.
+
+#### Dev-page snapshot
+
+The `/dev` page tests render from `frontend/src/test-fixtures/dev-snapshot.json`, the backend's own `full_plan`, `full_timeline`, `diff_plan_vs_real` and clock output for the fallback scenario, so the frontend can only read keys the API really sends. `backend/tests/test_snapshot.py` fails when the file is out of date with the backend. Regenerate it after changing a dev route or the fixture:
+
+```bash
+cd backend && .venv/bin/python -m pytest tests/test_snapshot.py --update-snapshot
+# or: .venv/bin/python -m billing_sim.cli snapshot ../frontend/src/test-fixtures/dev-snapshot.json
+```
 
 ### End-to-end test
 

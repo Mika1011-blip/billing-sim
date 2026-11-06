@@ -1,42 +1,17 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { snapshot } from '../test-fixtures/snapshot'
 import { DevPage } from './DevPage'
 
-const plan = {
-  scenario: { request_text: '', product_summary: '', seed: 1, start_date: '2026-01-05', warnings: [] },
-  contract: {},
-  team: [],
-  sprints: [{ number: 1, start_day: 0, end_day: 9 }],
-  lots: [{ key: 'L1', name: 'Lot one', description: '', price: 1000, planned_delivery_day: 5 }],
-  tickets: [
-    { key: 'T-1', title: 'a', lot_key: 'L1', charged_separately: false, size: 'S', profile: 'dev', days_charged: 1, fee: 500, assignee: 'x', sprint_number: 1, planned_start_day: 0, planned_end_day: 2, depends_on: [] },
-    { key: 'T-2', title: 'b', lot_key: 'L1', charged_separately: false, size: 'S', profile: 'dev', days_charged: 1, fee: 500, assignee: 'x', sprint_number: 1, planned_start_day: 3, planned_end_day: 5, depends_on: ['T-1'] },
-  ],
-}
-const ticketRow = (key: string, ps: number, pe: number) => ({
-  key, lot_key: 'L1', assignee: 'x', planned_start: ps, planned_end: pe, real_start: ps, real_end: pe + 1, slip_days: 1, days_charged: 1, actual_days: 3,
-})
-const diff = {
-  tickets: [ticketRow('T-1', 0, 2), ticketRow('T-2', 3, 5)],
-  lots: [{ key: 'L1', name: 'Lot one', planned_delivery_day: 5, real_delivery_day: 6, slip_days: 1, days_charged: 2, actual_days: 6 }],
-}
-const timeline = {
-  events: [
-    { ticket_key: 'T-2', day: 4, seq: 0, type: 'blocked', actor: 'x', payload: { reason: 'waiting' } },
-    { ticket_key: 'T-2', day: 5, seq: 0, type: 'unblocked', actor: 'x', payload: {} },
-  ],
-  invoices: [{ number: 'F-1', lot_key: 'L1', ticket_key: null, issued_day: 7, due_day: 37, amount_ht: 1000, vat: 200, amount_ttc: 1200, covers: [] }],
-  payments: [],
-  approvals: [],
-}
+const { plan, timeline, diff, clock: lastClock } = snapshot
 
 function reply(body: unknown, status = 200) {
   return { ok: status < 300, status, statusText: '', json: async () => body }
 }
 
 function installFetch(withPlan: boolean) {
-  let day = 3
-  const clock = () => ({ day, last_day: 20, date: `2026-01-${String(5 + day).padStart(2, '0')}` })
+  let day = lastClock.day
+  const clock = () => ({ ...lastClock, day })
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
@@ -58,6 +33,8 @@ function installFetch(withPlan: boolean) {
 
 afterEach(() => vi.unstubAllGlobals())
 
+const cellsOf = (table: HTMLElement) => within(table).getAllByRole('cell')
+
 describe('DevPage', () => {
   it('shows a hint instead of the charts when there is no plan yet', async () => {
     installFetch(false)
@@ -67,19 +44,54 @@ describe('DevPage', () => {
     expect(await screen.findByText('get_ticket')).toBeInTheDocument()
   })
 
-  it('renders gantt rows and ledger, and moves "today" when the clock moves', async () => {
+  it('renders the backend snapshot: gantt grouped by lot with blocked spans, paid invoices, filled diff tables', async () => {
     installFetch(true)
     const { container } = render(<DevPage />)
     expect(await screen.findByRole('img', { name: /gantt/i })).toBeInTheDocument()
-    expect(container.querySelectorAll('g.ticket-row')).toHaveLength(2)
-    expect(container.querySelectorAll('rect.blocked')).toHaveLength(1)
-    expect(container.querySelectorAll('path.dependency')).toHaveLength(1)
-    expect(screen.getByText('F-1').closest('tr')).toHaveClass('future')
+
+    // Gantt: one row per ticket, one group per lot (plus the ticket priced outside any lot), hatched blocked spans.
+    expect(container.querySelectorAll('g.ticket-row')).toHaveLength(plan.tickets.length)
+    expect(container.querySelectorAll('.lot-label').length).toBeGreaterThanOrEqual(2)
+    for (const lot of plan.lots) expect(container.querySelector('svg.gantt')).toHaveTextContent(lot.name)
+    expect(container.querySelectorAll('rect.blocked').length).toBeGreaterThanOrEqual(1)
+    expect(container.querySelectorAll('path.dependency').length).toBeGreaterThan(0)
+
+    // Ledger at the last day: money has been paid, every invoice names its lot or ticket.
+    const invoices = screen.getByRole('heading', { name: 'Invoices' }).nextElementSibling as HTMLElement
+    const rows = within(invoices).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(timeline.invoices.length)
+    const paid = rows.map((r) => Number(within(r).getAllByRole('cell')[5].textContent))
+    expect(paid.some((p) => p > 0)).toBe(true)
+    const lotCells = rows.map((r) => within(r).getAllByRole('cell')[1].textContent)
+    expect(lotCells).not.toContain('—')
+    expect(lotCells).toContain('L1')
+
+    // Plan vs real tables: every cell is filled with the backend's names.
+    for (const heading of ['Plan vs real: lots', 'Plan vs real: tickets']) {
+      const table = screen.getByRole('heading', { name: heading }).nextElementSibling as HTMLElement
+      for (const cell of cellsOf(table)) {
+        expect(cell.textContent?.trim(), heading).toBeTruthy()
+        expect(cell.textContent).not.toContain('undefined')
+      }
+    }
+    const lotTable = screen.getByRole('heading', { name: 'Plan vs real: lots' }).nextElementSibling as HTMLElement
+    expect(lotTable).toHaveTextContent(plan.lots[0].name)
+    const ticketTable = screen.getByRole('heading', { name: 'Plan vs real: tickets' }).nextElementSibling as HTMLElement
+    expect(ticketTable).toHaveTextContent(plan.tickets[0].assignee)
+  })
+
+  it('moves "today" when the clock moves', async () => {
+    installFetch(true)
+    const { container } = render(<DevPage />)
+    expect(await screen.findByRole('img', { name: /gantt/i })).toBeInTheDocument()
+    const futureAt = (day: number) => timeline.invoices.filter((i) => i.issued_day > day).length
+    expect(container.querySelectorAll('tr.future')).toHaveLength(0)
 
     const before = container.querySelector('line.today')!.getAttribute('x1')
-    await userEvent.click(screen.getByRole('button', { name: '+5' }))
-    expect(await screen.findByText(/Day 8 \/ 20/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '−5' }))
+    const day = lastClock.day - 5
+    expect(await screen.findByText(new RegExp(`Day ${day} / ${lastClock.last_day}`))).toBeInTheDocument()
     expect(container.querySelector('line.today')!.getAttribute('x1')).not.toBe(before)
-    expect(screen.getByText('F-1').closest('tr')).not.toHaveClass('future')
+    expect(container.querySelectorAll('tr.future')).toHaveLength(futureAt(day))
   })
 })
