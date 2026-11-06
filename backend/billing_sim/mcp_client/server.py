@@ -61,11 +61,11 @@ def build_server(conn_factory: Callable[[], sqlite3.Connection]) -> FastMCP:
     def get_lot(key: str) -> str:
         return _run(conn_factory, queries.get_lot, key, key=key)
 
-    @tool("List tickets, optionally filtered by lot key and by status, as of today.")
+    @tool("List tickets (with status and planned dates), optionally filtered by lot key and by status, as of today.")
     def list_tickets(lot: str | None = None, status: str | None = None) -> str:
         return _run(conn_factory, lambda conn, day: queries.list_tickets(conn, day, lot_key=lot, status=status))
 
-    @tool("Get one ticket by its key with its status, time spent and fee, as of today.")
+    @tool("Get one ticket by its key with its status, planned dates, time spent and fee, as of today.")
     def get_ticket(key: str) -> str:
         return _run(conn_factory, queries.get_ticket, key, key=key)
 

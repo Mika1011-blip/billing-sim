@@ -147,6 +147,8 @@ class _Ctx:
                     "montant": r["fee"],
                     "statut": s["statut"],
                     "assigne": r["assignee"],
+                    "debut_prevu": self.iso(r["planned_start_day"]),
+                    "fin_prevu": self.iso(r["planned_end_day"]),
                     "debut_reel": self.iso(s["debut"]),
                     "fin_reel": self.iso(s["fin"]),
                     "jours_reels": round(s["heures"] / self.hours_per_day, 2),

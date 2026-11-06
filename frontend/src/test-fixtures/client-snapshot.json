@@ -95,6 +95,7 @@
         {
           "assigne": "Camille Roux",
           "cle": "BANK-1",
+          "debut_prevu": "2026-03-02",
           "debut_reel": "2026-03-02",
           "description": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut. Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue.",
           "etapes": [
@@ -104,6 +105,7 @@
             "Tester les combinaisons de filtres sur un jeu de factures réel."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-03-04",
           "fin_reel": "2026-03-04",
           "journal_nombre": 7,
           "jours_factures": 3,
@@ -118,6 +120,7 @@
         {
           "assigne": "Yanis Benali",
           "cle": "BANK-2",
+          "debut_prevu": "2026-03-05",
           "debut_reel": "2026-03-05",
           "description": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel.",
           "etapes": [
@@ -126,6 +129,7 @@
             "Vérifier l'export sur une longue liste de factures filtrées."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-03-05",
           "fin_reel": "2026-03-09",
           "journal_nombre": 12,
           "jours_factures": 1,
@@ -140,6 +144,7 @@
         {
           "assigne": "Camille Roux",
           "cle": "BANK-3",
+          "debut_prevu": "2026-03-05",
           "debut_reel": "2026-03-05",
           "description": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition.",
           "etapes": [
@@ -148,6 +153,7 @@
             "Contrôler le rendu du PDF sur une liste longue."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-03-05",
           "fin_reel": "2026-03-05",
           "journal_nombre": 4,
           "jours_factures": 1,
@@ -199,6 +205,7 @@
         {
           "assigne": "Marc Delorme",
           "cle": "BANK-4",
+          "debut_prevu": "2026-03-05",
           "debut_reel": "2026-03-05",
           "description": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels.",
           "etapes": [
@@ -209,6 +216,7 @@
             "Documenter l'architecture et la faire valider par l'équipe."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-03-18",
           "fin_reel": "2026-03-18",
           "journal_nombre": 17,
           "jours_factures": 10,
@@ -223,6 +231,7 @@
         {
           "assigne": "Sophie Lambert",
           "cle": "BANK-5",
+          "debut_prevu": "2026-03-19",
           "debut_reel": "2026-03-19",
           "description": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.",
           "etapes": [
@@ -232,6 +241,7 @@
             "Tester l'import sur les relevés d'un mois complet."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-03-23",
           "fin_reel": "2026-03-24",
           "journal_nombre": 9,
           "jours_factures": 3,
@@ -246,6 +256,7 @@
         {
           "assigne": "Camille Roux",
           "cle": "BANK-6",
+          "debut_prevu": "2026-03-24",
           "debut_reel": "2026-03-25",
           "description": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés.",
           "etapes": [
@@ -254,6 +265,7 @@
             "Tester les cas payée, partiellement payée et en retard."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-03-26",
           "fin_reel": "2026-03-27",
           "journal_nombre": 7,
           "jours_factures": 3,
@@ -268,6 +280,7 @@
         {
           "assigne": "Yanis Benali",
           "cle": "BANK-7",
+          "debut_prevu": "2026-03-27",
           "debut_reel": "2026-03-30",
           "description": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance.",
           "etapes": [
@@ -277,6 +290,7 @@
             "Afficher la référence du virement bancaire de chaque paiement."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-03-27",
           "fin_reel": "2026-04-01",
           "journal_nombre": 12,
           "jours_factures": 1,
@@ -321,6 +335,7 @@
         {
           "assigne": "Sophie Lambert",
           "cle": "BANK-12",
+          "debut_prevu": "2026-04-03",
           "debut_reel": "2026-04-06",
           "description": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable.",
           "etapes": [
@@ -329,6 +344,7 @@
             "Vérifier le correctif sur les factures signalées par l'équipe comptable."
           ],
           "facture_separement": true,
+          "fin_prevu": "2026-04-03",
           "fin_reel": "2026-04-07",
           "journal_nombre": 5,
           "jours_factures": 1,
@@ -376,6 +392,7 @@
         {
           "assigne": "Sophie Lambert",
           "cle": "BANK-8",
+          "debut_prevu": "2026-03-27",
           "debut_reel": "2026-03-30",
           "description": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée.",
           "etapes": [
@@ -386,6 +403,7 @@
             "Tester l'envoi avec des factures en retard de plusieurs fournisseurs."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-04-02",
           "fin_reel": "2026-04-03",
           "journal_nombre": 9,
           "jours_factures": 5,
@@ -400,6 +418,7 @@
         {
           "assigne": "Yanis Benali",
           "cle": "BANK-9",
+          "debut_prevu": "2026-03-30",
           "debut_reel": "2026-04-02",
           "description": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées.",
           "etapes": [
@@ -408,6 +427,7 @@
             "Faire valider un fichier d'essai par le service comptabilité."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-04-01",
           "fin_reel": "2026-04-07",
           "journal_nombre": 9,
           "jours_factures": 3,
@@ -422,6 +442,7 @@
         {
           "assigne": "Camille Roux",
           "cle": "BANK-10",
+          "debut_prevu": "2026-04-03",
           "debut_reel": "2026-04-06",
           "description": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés.",
           "etapes": [
@@ -431,6 +452,7 @@
             "Tester l'affichage avec un grand nombre de notifications."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-04-07",
           "fin_reel": "2026-04-09",
           "journal_nombre": 8,
           "jours_factures": 3,
@@ -445,6 +467,7 @@
         {
           "assigne": "Sophie Lambert",
           "cle": "BANK-11",
+          "debut_prevu": "2026-03-24",
           "debut_reel": "2026-03-25",
           "description": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement.",
           "etapes": [
@@ -453,6 +476,7 @@
             "Rédiger la procédure à suivre en cas d'échec du rapprochement."
           ],
           "facture_separement": false,
+          "fin_prevu": "2026-03-24",
           "fin_reel": "2026-03-26",
           "journal_nombre": 5,
           "jours_factures": 1,
@@ -557,6 +581,7 @@
           {
             "assigne": "Camille Roux",
             "cle": "BANK-1",
+            "debut_prevu": "2026-03-02",
             "debut_reel": "2026-03-02",
             "description": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut. Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue.",
             "etapes": [
@@ -566,6 +591,7 @@
               "Tester les combinaisons de filtres sur un jeu de factures réel."
             ],
             "facture_separement": false,
+            "fin_prevu": "2026-03-04",
             "fin_reel": "2026-03-04",
             "journal_nombre": 7,
             "jours_factures": 3,
@@ -580,6 +606,7 @@
           {
             "assigne": "Yanis Benali",
             "cle": "BANK-2",
+            "debut_prevu": "2026-03-05",
             "debut_reel": "2026-03-05",
             "description": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel.",
             "etapes": [
@@ -588,6 +615,7 @@
               "Vérifier l'export sur une longue liste de factures filtrées."
             ],
             "facture_separement": false,
+            "fin_prevu": "2026-03-05",
             "fin_reel": "2026-03-09",
             "journal_nombre": 12,
             "jours_factures": 1,
@@ -602,6 +630,7 @@
           {
             "assigne": "Camille Roux",
             "cle": "BANK-3",
+            "debut_prevu": "2026-03-05",
             "debut_reel": "2026-03-05",
             "description": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition.",
             "etapes": [
@@ -610,6 +639,7 @@
               "Contrôler le rendu du PDF sur une liste longue."
             ],
             "facture_separement": false,
+            "fin_prevu": "2026-03-05",
             "fin_reel": "2026-03-05",
             "journal_nombre": 4,
             "jours_factures": 1,
@@ -657,6 +687,7 @@
           {
             "assigne": "Marc Delorme",
             "cle": "BANK-4",
+            "debut_prevu": "2026-03-05",
             "debut_reel": "2026-03-05",
             "description": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels.",
             "etapes": [
@@ -667,6 +698,7 @@
               "Documenter l'architecture et la faire valider par l'équipe."
             ],
             "facture_separement": false,
+            "fin_prevu": "2026-03-18",
             "fin_reel": "2026-03-18",
             "journal_nombre": 17,
             "jours_factures": 10,
@@ -681,6 +713,7 @@
           {
             "assigne": "Sophie Lambert",
             "cle": "BANK-5",
+            "debut_prevu": "2026-03-19",
             "debut_reel": "2026-03-19",
             "description": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.",
             "etapes": [
@@ -690,6 +723,7 @@
               "Tester l'import sur les relevés d'un mois complet."
             ],
             "facture_separement": false,
+            "fin_prevu": "2026-03-23",
             "fin_reel": "2026-03-24",
             "journal_nombre": 9,
             "jours_factures": 3,
@@ -704,6 +738,7 @@
           {
             "assigne": "Camille Roux",
             "cle": "BANK-6",
+            "debut_prevu": "2026-03-24",
             "debut_reel": "2026-03-25",
             "description": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés.",
             "etapes": [
@@ -712,6 +747,7 @@
               "Tester les cas payée, partiellement payée et en retard."
             ],
             "facture_separement": false,
+            "fin_prevu": "2026-03-26",
             "fin_reel": "2026-03-27",
             "journal_nombre": 7,
             "jours_factures": 3,
@@ -726,6 +762,7 @@
           {
             "assigne": "Yanis Benali",
             "cle": "BANK-7",
+            "debut_prevu": "2026-03-27",
             "debut_reel": "2026-03-30",
             "description": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance.",
             "etapes": [
@@ -735,6 +772,7 @@
               "Afficher la référence du virement bancaire de chaque paiement."
             ],
             "facture_separement": false,
+            "fin_prevu": "2026-03-27",
             "fin_reel": "2026-04-01",
             "journal_nombre": 12,
             "jours_factures": 1,
@@ -937,6 +975,7 @@
     {
       "assigne": "Camille Roux",
       "cle": "BANK-1",
+      "debut_prevu": "2026-03-02",
       "debut_reel": "2026-03-02",
       "description": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut. Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue.",
       "etapes": [
@@ -946,6 +985,7 @@
         "Tester les combinaisons de filtres sur un jeu de factures réel."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-03-04",
       "fin_reel": "2026-03-04",
       "journal_nombre": 7,
       "jours_factures": 3,
@@ -960,6 +1000,7 @@
     {
       "assigne": "Yanis Benali",
       "cle": "BANK-2",
+      "debut_prevu": "2026-03-05",
       "debut_reel": "2026-03-05",
       "description": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel.",
       "etapes": [
@@ -968,6 +1009,7 @@
         "Vérifier l'export sur une longue liste de factures filtrées."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-03-05",
       "fin_reel": "2026-03-09",
       "journal_nombre": 12,
       "jours_factures": 1,
@@ -982,6 +1024,7 @@
     {
       "assigne": "Camille Roux",
       "cle": "BANK-3",
+      "debut_prevu": "2026-03-05",
       "debut_reel": "2026-03-05",
       "description": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition.",
       "etapes": [
@@ -990,6 +1033,7 @@
         "Contrôler le rendu du PDF sur une liste longue."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-03-05",
       "fin_reel": "2026-03-05",
       "journal_nombre": 4,
       "jours_factures": 1,
@@ -1004,6 +1048,7 @@
     {
       "assigne": "Marc Delorme",
       "cle": "BANK-4",
+      "debut_prevu": "2026-03-05",
       "debut_reel": "2026-03-05",
       "description": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels.",
       "etapes": [
@@ -1014,6 +1059,7 @@
         "Documenter l'architecture et la faire valider par l'équipe."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-03-18",
       "fin_reel": "2026-03-18",
       "journal_nombre": 17,
       "jours_factures": 10,
@@ -1028,6 +1074,7 @@
     {
       "assigne": "Sophie Lambert",
       "cle": "BANK-5",
+      "debut_prevu": "2026-03-19",
       "debut_reel": "2026-03-19",
       "description": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.",
       "etapes": [
@@ -1037,6 +1084,7 @@
         "Tester l'import sur les relevés d'un mois complet."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-03-23",
       "fin_reel": "2026-03-24",
       "journal_nombre": 9,
       "jours_factures": 3,
@@ -1051,6 +1099,7 @@
     {
       "assigne": "Camille Roux",
       "cle": "BANK-6",
+      "debut_prevu": "2026-03-24",
       "debut_reel": "2026-03-25",
       "description": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés.",
       "etapes": [
@@ -1059,6 +1108,7 @@
         "Tester les cas payée, partiellement payée et en retard."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-03-26",
       "fin_reel": "2026-03-27",
       "journal_nombre": 7,
       "jours_factures": 3,
@@ -1073,6 +1123,7 @@
     {
       "assigne": "Yanis Benali",
       "cle": "BANK-7",
+      "debut_prevu": "2026-03-27",
       "debut_reel": "2026-03-30",
       "description": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance.",
       "etapes": [
@@ -1082,6 +1133,7 @@
         "Afficher la référence du virement bancaire de chaque paiement."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-03-27",
       "fin_reel": "2026-04-01",
       "journal_nombre": 12,
       "jours_factures": 1,
@@ -1096,6 +1148,7 @@
     {
       "assigne": "Sophie Lambert",
       "cle": "BANK-8",
+      "debut_prevu": "2026-03-27",
       "debut_reel": "2026-03-30",
       "description": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée.",
       "etapes": [
@@ -1106,6 +1159,7 @@
         "Tester l'envoi avec des factures en retard de plusieurs fournisseurs."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-04-02",
       "fin_reel": "2026-04-03",
       "journal_nombre": 9,
       "jours_factures": 5,
@@ -1120,6 +1174,7 @@
     {
       "assigne": "Yanis Benali",
       "cle": "BANK-9",
+      "debut_prevu": "2026-03-30",
       "debut_reel": "2026-04-02",
       "description": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées.",
       "etapes": [
@@ -1128,6 +1183,7 @@
         "Faire valider un fichier d'essai par le service comptabilité."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-04-01",
       "fin_reel": "2026-04-07",
       "journal_nombre": 9,
       "jours_factures": 3,
@@ -1142,6 +1198,7 @@
     {
       "assigne": "Camille Roux",
       "cle": "BANK-10",
+      "debut_prevu": "2026-04-03",
       "debut_reel": "2026-04-06",
       "description": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés.",
       "etapes": [
@@ -1151,6 +1208,7 @@
         "Tester l'affichage avec un grand nombre de notifications."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-04-07",
       "fin_reel": "2026-04-09",
       "journal_nombre": 8,
       "jours_factures": 3,
@@ -1165,6 +1223,7 @@
     {
       "assigne": "Sophie Lambert",
       "cle": "BANK-11",
+      "debut_prevu": "2026-03-24",
       "debut_reel": "2026-03-25",
       "description": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement.",
       "etapes": [
@@ -1173,6 +1232,7 @@
         "Rédiger la procédure à suivre en cas d'échec du rapprochement."
       ],
       "facture_separement": false,
+      "fin_prevu": "2026-03-24",
       "fin_reel": "2026-03-26",
       "journal_nombre": 5,
       "jours_factures": 1,
@@ -1187,6 +1247,7 @@
     {
       "assigne": "Sophie Lambert",
       "cle": "BANK-12",
+      "debut_prevu": "2026-04-03",
       "debut_reel": "2026-04-06",
       "description": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable.",
       "etapes": [
@@ -1195,6 +1256,7 @@
         "Vérifier le correctif sur les factures signalées par l'équipe comptable."
       ],
       "facture_separement": true,
+      "fin_prevu": "2026-04-03",
       "fin_reel": "2026-04-07",
       "journal_nombre": 5,
       "jours_factures": 1,
