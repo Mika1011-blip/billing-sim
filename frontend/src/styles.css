@@ -163,6 +163,7 @@ textarea {
 
 .bubble p {
   margin: 0 0 6px;
+  white-space: pre-wrap;
 }
 
 .bubble.user {

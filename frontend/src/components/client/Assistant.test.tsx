@@ -107,6 +107,22 @@ describe('Assistant', () => {
     expect(await screen.findByText('Aucune clé API configurée.')).toBeInTheDocument()
   })
 
+  it('shows the error line when the stream ends without a done event', async () => {
+    mockChat([sse({ type: 'text', text: 'Début de répon' })])
+    render(<Assistant />)
+    await ask()
+    expect(await screen.findByText("L'assistant n'a pas pu répondre.")).toBeInTheDocument()
+    expect(screen.getByText('Début de répon')).toBeInTheDocument()
+  })
+
+  it('shows the error line only once when an error event ends the stream without done', async () => {
+    mockChat([sse({ type: 'error', message: 'Panne.' })])
+    render(<Assistant />)
+    await ask()
+    expect(await screen.findByText('Panne.')).toBeInTheDocument()
+    expect(screen.queryByText("L'assistant n'a pas pu répondre.")).toBeNull()
+  })
+
   it('shows a French error when the request fails', async () => {
     mockChat([], false)
     render(<Assistant />)

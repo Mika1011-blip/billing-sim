@@ -123,10 +123,14 @@ export function Assistant() {
         signal: controller.signal,
       })
       if (!res.ok || !res.body) throw new Error(`chat failed: ${res.status}`)
+      let finished = false
       await readEvents(res.body, (event) => {
+        if (event.type === 'done') finished = true
         if (event.type === 'error') updateLast((m) => ({ ...m, error: event.message || t.error }))
         else updateLast((m) => ({ ...m, parts: appendPart(m.parts, event) }))
       })
+      // A stream that ends without `done` was cut short: say so, unless an error line is already there.
+      if (!finished) updateLast((m) => ({ ...m, error: m.error ?? t.error }))
     } catch {
       if (!controller.signal.aborted) updateLast((m) => ({ ...m, error: t.error }))
     } finally {

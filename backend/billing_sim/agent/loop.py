@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -12,11 +13,14 @@ from mcp.server.fastmcp import FastMCP
 from billing_sim.agent.prompt import SYSTEM_PROMPT_FR
 from billing_sim.agent.tools import anthropic_tool_defs, call_tool
 
+logger = logging.getLogger(__name__)
+
 AgentEvent = dict  # {"type": "text"|"tool_call"|"tool_result"|"done"|"error", ...}
 
 HISTORY_LIMIT = 40
 ERROR_NO_DATA = "Je n'ai pas pu consulter les données de la simulation."
 ERROR_NO_ANSWER = "Je n'ai pas réussi à terminer ma réponse."
+ERROR_UNUSABLE = "L'assistant n'a pas donné de réponse exploitable."
 ERROR_NO_KEY = "Aucune clé API configurée."
 
 
@@ -54,12 +58,17 @@ class ClientAgent:
             yield {"type": "done"}
             return
         # No scenario loaded (empty database): answer without calling the model.
-        if (await call_tool(self.server, "get_today", {}))[1]:
+        today, failed = await call_tool(self.server, "get_today", {})
+        if failed:
+            logger.error(
+                "get_today precheck failed, answering without the model: %s", today
+            )
             yield {"type": "error", "message": ERROR_NO_DATA}
             yield {"type": "done"}
             return
 
-        history = self.sessions.get(session_id, [])
+        # Work on a copy and store it only at the end, so concurrent requests on one session cannot interleave.
+        history = list(self.sessions.get(session_id, []))
         start = len(history)
         history.append({"role": "user", "content": message})
         defs = await anthropic_tool_defs(self.server)
@@ -73,32 +82,43 @@ class ClientAgent:
                         yield {"type": "text", "text": payload}
                     else:
                         final = payload
-                history.append({"role": "assistant", "content": final.content})
-                if final.stop_reason != "tool_use":
+                blocks = [block for block in final.content if block.type == "tool_use"]
+                if final.stop_reason == "tool_use" and blocks:
+                    history.append({"role": "assistant", "content": final.content})
+                elif final.content and not blocks:
+                    history.append({"role": "assistant", "content": final.content})
                     completed = True
                     break
+                else:  # empty reply, or cut off inside a tool_use block: nothing valid to keep
+                    logger.error(
+                        "unusable model reply (stop_reason=%s, %d blocks)",
+                        final.stop_reason,
+                        len(final.content),
+                    )
+                    failure = ERROR_UNUSABLE
+                    break
                 results = []
-                for block in final.content:
-                    if block.type != "tool_use":
-                        continue
+                for block in blocks:
                     yield {
                         "type": "tool_call",
                         "name": block.name,
                         "input": dict(block.input),
                     }
-                    text, _ = await call_tool(
+                    text, is_error = await call_tool(
                         self.server, block.name, dict(block.input)
                     )
                     yield {"type": "tool_result", "name": block.name}
-                    results.append(
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": text,
-                        }
-                    )
+                    result = {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": text,
+                    }
+                    if is_error:
+                        result["is_error"] = True
+                    results.append(result)
                 history.append({"role": "user", "content": results})
-        except anthropic.APIError:
+        except anthropic.APIError as exc:
+            logger.exception("Anthropic API call failed (%s)", type(exc).__name__)
             failure = ERROR_NO_DATA
         finally:
             if not completed:  # a half-finished exchange (dangling tool_use) would poison the next request

@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from billing_sim.agent.loop import (
     ERROR_NO_DATA,
     ERROR_NO_KEY,
+    ERROR_UNUSABLE,
     ClientAgent,
     trim_history,
 )
@@ -321,3 +322,58 @@ def test_chat_route_without_api_key(tmp_path):
 )
 def test_chat_route_rejects_blank_message(app_client, body):
     assert app_client.post("/client/chat", json=body).status_code == 422
+
+
+async def test_api_error_is_logged_with_its_class_name(server, caplog):
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    agent = make_agent(server, [anthropic.APIConnectionError(request=request)])
+    with caplog.at_level("ERROR", logger="billing_sim.agent.loop"):
+        events = await run(agent)
+    assert events[-2]["type"] == "error"
+    assert any(
+        "APIConnectionError" in r.getMessage() and r.exc_info for r in caplog.records
+    )
+
+
+async def test_precheck_failure_is_logged(caplog):
+    agent = make_agent(build_server(lambda: connect(":memory:")), [])
+    with caplog.at_level("ERROR", logger="billing_sim.agent.loop"):
+        await run(agent)
+    assert any("get_today" in r.getMessage() for r in caplog.records)
+
+
+async def test_empty_end_turn_is_an_error_and_history_unchanged(server):
+    empty = ([], SimpleNamespace(stop_reason="end_turn", content=[]))
+    agent = make_agent(server, [empty])
+    events = await run(agent)
+    assert events == [{"type": "error", "message": ERROR_UNUSABLE}, {"type": "done"}]
+    assert agent.sessions["s1"] == []
+
+
+async def test_max_tokens_inside_tool_use_is_an_error_and_session_still_works(server):
+    cut = tool_use_turn()[1]
+    cut.stop_reason = "max_tokens"
+    agent = make_agent(server, [([], cut), answer_turn()])
+    events = await run(agent)
+    assert events == [{"type": "error", "message": ERROR_UNUSABLE}, {"type": "done"}]
+    assert agent.sessions["s1"] == []
+    agent.client.script.insert(0, tool_use_turn())
+    events = await run(agent)
+    assert events[-1] == {"type": "done"} and "error" not in [e["type"] for e in events]
+    assert len(agent.client.calls[1]["messages"]) == 1
+
+
+async def test_tool_error_result_is_flagged(server):
+    agent = make_agent(
+        server,
+        [tool_use_turn("get_ticket", {"key": "BANK-999"}), answer_turn("Introuvable.")],
+    )
+    await run(agent)
+    (result,) = agent.client.calls[1]["messages"][-1]["content"]
+    assert result["is_error"] is True
+
+
+async def test_successful_tool_result_has_no_error_flag(agent):
+    await run(agent)
+    (result,) = agent.client.calls[1]["messages"][-1]["content"]
+    assert "is_error" not in result
