@@ -1,0 +1,164 @@
+{
+  "product_summary": "Un tableau de bord de suivi des factures pour une banque : les équipes comptables y consultent les factures fournisseurs et clients, suivent l'état des paiements, déclenchent des relances et exportent les données vers les outils de comptabilité.",
+  "team": [
+    {"name": "Camille Roux", "profile": "dev"},
+    {"name": "Yanis Benali", "profile": "dev"},
+    {"name": "Sophie Lambert", "profile": "senior"},
+    {"name": "Marc Delorme", "profile": "architect"}
+  ],
+  "lots": [
+    {
+      "key": "L1",
+      "name": "Tableau de bord factures",
+      "description": "Vue d'ensemble des factures avec filtres, tris et exports pour les équipes comptables."
+    },
+    {
+      "key": "L2",
+      "name": "Suivi des paiements",
+      "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement."
+    },
+    {
+      "key": "L3",
+      "name": "Exports et notifications",
+      "description": "Alertes e-mail, centre de notifications et exports destinés à la comptabilité."
+    }
+  ],
+  "tickets": [
+    {
+      "key": "BANK-1",
+      "title": "Filtres du tableau de bord",
+      "description": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut. Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue.",
+      "lot_key": "L1",
+      "size": "M",
+      "profile": "dev",
+      "depends_on": [],
+      "beats": [
+        {"kind": "scope_note", "text": "Le client aimerait aussi un filtre par centre de coût, à confirmer lors de la prochaine revue.", "duration_days": null}
+      ]
+    },
+    {
+      "key": "BANK-2",
+      "title": "Export CSV",
+      "description": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel.",
+      "lot_key": "L1",
+      "size": "S",
+      "profile": "dev",
+      "depends_on": ["BANK-1"],
+      "beats": [
+        {"kind": "review_changes", "text": "Le séparateur de colonnes doit être le point-virgule et les montants doivent utiliser la virgule décimale.", "duration_days": null}
+      ]
+    },
+    {
+      "key": "BANK-3",
+      "title": "Export PDF",
+      "description": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition.",
+      "lot_key": "L1",
+      "size": "S",
+      "profile": "dev",
+      "depends_on": ["BANK-1"],
+      "beats": []
+    },
+    {
+      "key": "BANK-4",
+      "title": "Architecture du rapprochement bancaire",
+      "description": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels.",
+      "lot_key": "L2",
+      "size": "XL",
+      "profile": "architect",
+      "depends_on": ["BANK-1"],
+      "beats": []
+    },
+    {
+      "key": "BANK-5",
+      "title": "Import des relevés bancaires",
+      "description": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.",
+      "lot_key": "L2",
+      "size": "M",
+      "profile": "senior",
+      "depends_on": ["BANK-4"],
+      "beats": [
+        {"kind": "blocked", "text": "En attente des accès à l'API bancaire", "duration_days": 2}
+      ]
+    },
+    {
+      "key": "BANK-6",
+      "title": "Statut de paiement des factures",
+      "description": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés.",
+      "lot_key": "L2",
+      "size": "M",
+      "profile": "dev",
+      "depends_on": ["BANK-5"],
+      "beats": []
+    },
+    {
+      "key": "BANK-7",
+      "title": "Détail des paiements partiels",
+      "description": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance.",
+      "lot_key": "L2",
+      "size": "S",
+      "profile": "dev",
+      "depends_on": ["BANK-6"],
+      "beats": [
+        {"kind": "review_changes", "text": "Afficher aussi la référence du virement bancaire pour chaque paiement reçu.", "duration_days": null}
+      ]
+    },
+    {
+      "key": "BANK-8",
+      "title": "Alertes e-mail pour factures en retard",
+      "description": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée.",
+      "lot_key": "L3",
+      "size": "L",
+      "profile": "senior",
+      "depends_on": ["BANK-6"],
+      "beats": []
+    },
+    {
+      "key": "BANK-9",
+      "title": "Export comptable",
+      "description": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées.",
+      "lot_key": "L3",
+      "size": "M",
+      "profile": "dev",
+      "depends_on": ["BANK-2", "BANK-6"],
+      "beats": [
+        {"kind": "scope_note", "text": "Le service comptabilité demande d'ajouter le code journal dans le fichier, hors périmètre initial.", "duration_days": null}
+      ]
+    },
+    {
+      "key": "BANK-10",
+      "title": "Centre de notifications",
+      "description": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés.",
+      "lot_key": "L3",
+      "size": "M",
+      "profile": "dev",
+      "depends_on": ["BANK-8"],
+      "beats": []
+    },
+    {
+      "key": "BANK-11",
+      "title": "Documentation d'exploitation",
+      "description": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement.",
+      "lot_key": "L3",
+      "size": "S",
+      "profile": "senior",
+      "depends_on": ["BANK-5"],
+      "beats": []
+    },
+    {
+      "key": "BANK-12",
+      "title": "Correctif urgent — calcul de TVA",
+      "description": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable.",
+      "lot_key": null,
+      "charged_separately": true,
+      "size": "S",
+      "profile": "senior",
+      "depends_on": [],
+      "beats": []
+    }
+  ],
+  "client_behaviour": [
+    {"invoice_index": 1, "pays_fraction": 0.3333, "days_late": 0},
+    {"invoice_index": 2, "pays_fraction": 1.0, "days_late": 12},
+    {"invoice_index": 3, "pays_fraction": 0.5, "days_late": 20}
+  ]
+}
