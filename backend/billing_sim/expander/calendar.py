@@ -26,3 +26,8 @@ def day_for_date(start_date: date, d: date) -> int:
     if d.weekday() >= 5:
         raise ValueError(f"{d.isoformat()} is a weekend, not a working day")
     return ((d - start_date).days // 7) * 5 + d.weekday()
+
+
+def first_working_day_on_or_after(start_date: date, d: date) -> int:
+    """Working-day index of `d`, or of the Monday after it when `d` falls on a weekend."""
+    return day_for_date(start_date, d + timedelta(days=(7 - d.weekday()) % 7 if d.weekday() >= 5 else 0))
