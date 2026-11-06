@@ -7,7 +7,6 @@ export const fr = {
     lotsTitle: 'Lots',
     separateTicketsTitle: 'Tickets facturés séparément',
     invoicesTitle: 'Factures',
-    assistantPlaceholder: 'Assistant — bientôt',
   },
   header: {
     today: "Aujourd'hui",
@@ -73,5 +72,14 @@ export const fr = {
     title: 'Lots à valider',
     empty: 'Aucune validation en attente.',
     deliveredOn: 'livré le',
+  },
+  assistant: {
+    title: 'Assistant',
+    hint: 'Posez une question sur le projet : avancement, factures, prix.',
+    placeholder: 'Posez une question…',
+    send: 'Envoyer',
+    consulting: 'consulte',
+    error: "L'assistant n'a pas pu répondre.",
+    you: 'Vous',
   },
 }
