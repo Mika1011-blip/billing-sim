@@ -6,7 +6,7 @@
       "seed": 42,
       "start_date": "2026-03-02",
       "signed_day": 0,
-      "last_day": 74,
+      "last_day": 84,
       "warnings": []
     },
     "contract": {
@@ -1771,8 +1771,8 @@
     ]
   },
   "clock": {
-    "day": 74,
-    "last_day": 74,
-    "date": "2026-06-12"
+    "day": 84,
+    "last_day": 84,
+    "date": "2026-06-26"
   }
 }

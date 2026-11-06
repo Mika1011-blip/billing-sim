@@ -13,9 +13,10 @@ only happens when the team has nobody of the wanted profile.
 from __future__ import annotations
 
 import random
-from datetime import date
+from datetime import date, timedelta
 
 from billing_sim.billing.policy import Contract, days_for_size, ticket_fee
+from billing_sim.expander.calendar import date_for_day, day_for_date
 from billing_sim.expander.events import ticket_events
 from billing_sim.expander.invoicing import build_invoices
 from billing_sim.expander.models import (  # noqa: F401  (public import path for the records)
@@ -33,6 +34,9 @@ from billing_sim.scenario.validate import validate_plan
 
 SPRINT_DAYS = 10
 TAIL_DAYS = 15
+# The run outlasts the latest due date by this many calendar days, so its invoice can become "Très en retard"
+# (more than 30 calendar days late) before the last day.
+OVERDUE_TAIL_CALENDAR_DAYS = 35
 
 
 def expand(plan: ScenarioPlan, contract: Contract, seed: int, start_date: date) -> Timeline:
@@ -82,7 +86,16 @@ def expand(plan: ScenarioPlan, contract: Contract, seed: int, start_date: date) 
     sprints = _sprints_through(max(last_work_day, *(i.issued_day for i in invoices)))
 
     last_day = max([e.day for e in events] + [i.due_day for i in invoices] + [p.day for p in payments]) + TAIL_DAYS
+    last_due = date_for_day(start_date, max(i.due_day for i in invoices))
+    last_day = max(
+        last_day, first_working_day_on_or_after(start_date, last_due + timedelta(days=OVERDUE_TAIL_CALENDAR_DAYS))
+    )
     return Timeline(sprints, tickets, events, invoices, payments, approvals, last_day, warnings)
+
+
+def first_working_day_on_or_after(start_date: date, d: date) -> int:
+    """Working-day index of `d`, or of the Monday after it when `d` falls on a weekend."""
+    return day_for_date(start_date, d + timedelta(days=(7 - d.weekday()) % 7 if d.weekday() >= 5 else 0))
 
 
 def _sprints_through(day: int) -> list[Sprint]:

@@ -1,7 +1,7 @@
 import itertools
 import random
 from dataclasses import replace
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -424,6 +424,29 @@ def test_build_invoices_returns_no_payments(plan, contract):
     invoices, approvals, payments = build_invoices(plan, contract, timeline.tickets, timeline.sprints, START)
     assert payments == []
     assert invoices == timeline.invoices and approvals == timeline.approvals
+
+
+@pytest.mark.parametrize("seed", range(10))
+def test_last_day_leaves_35_calendar_days_after_last_due_date(plan, contract, seed):
+    """The run lasts long enough for the latest invoice to become "Très en retard" (> 30 calendar days late)."""
+    timeline = expand(plan, contract, seed, START)
+    last_due = max(i.due_day for i in timeline.invoices)
+    gap = date_for_day(START, timeline.last_day) - date_for_day(START, last_due)
+    assert gap >= timedelta(days=35)
+    # The first such working day: one working day earlier is short of 35 calendar days (unless another bound wins).
+    earlier = date_for_day(START, timeline.last_day - 1) - date_for_day(START, last_due)
+    assert earlier < timedelta(days=35) or timeline.last_day == max(e.day for e in timeline.events) + 15
+    # A working-day index on the sprint grid, never before the last sprint ends.
+    assert day_for_date(START, date_for_day(START, timeline.last_day)) == timeline.last_day
+    assert timeline.sprints[0].start_day == 0 and timeline.last_day >= timeline.sprints[-1].end_day
+
+
+def test_last_day_tail_lands_on_a_working_day_when_due_plus_35_is_a_weekend(plan, contract):
+    from billing_sim.expander.expand import first_working_day_on_or_after
+
+    assert first_working_day_on_or_after(START, date(2026, 3, 7)) == 5  # Saturday -> Monday 9 March (day 5)
+    assert first_working_day_on_or_after(START, date(2026, 3, 8)) == 5  # Sunday -> Monday
+    assert first_working_day_on_or_after(START, date(2026, 3, 10)) == 6  # a weekday maps to itself
 
 
 def test_last_day_after_everything(timeline):
