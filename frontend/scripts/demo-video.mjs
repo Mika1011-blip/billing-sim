@@ -1,7 +1,7 @@
 // Records the demo video of the simulation against a running stack (docker compose up).
 // Run from frontend/:  node scripts/demo-video.mjs   → ../docs/demo/demo.webm + timeline.json
 // Deterministic: fallback scenario, seed 42. French captions are injected into the page.
-// Each scene lasts at least its narration segment (docs/demo/seg/segN.mp3, durations below) so the
+// Each scene lasts at least its narration file (docs/demo/voice/narration-fr-0N.mp3, durations below) so the
 // voice-over can be placed at the scene's start time: see docs/demo/mux.sh.
 import { chromium } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
@@ -14,8 +14,8 @@ const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 
 fs.mkdirSync(outDir, { recursive: true })
 for (const f of fs.readdirSync(outDir)) if (f.endsWith('.webm')) fs.unlinkSync(path.join(outDir, f))
 
-// Narration segment lengths in seconds (docs/demo/narration.md, one paragraph per scene) + a breath.
-const SEGMENTS = [10.45, 16.41, 13.15, 12.12, 12.15, 8.11, 9.14, 12.15, 7.36]
+// Narration file lengths in seconds (docs/demo/voice/narration-fr-0N.mp3, one per scene) + a breath.
+const SEGMENTS = [9.98, 15.46, 12.20, 11.15, 11.18, 7.16, 8.18, 11.18, 6.87]
 const BREATH = 0.6
 
 const browser = await chromium.launch()
