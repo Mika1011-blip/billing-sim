@@ -9,3 +9,4 @@ Every change to this repo gets an entry here: date, branch, what changed, how it
 | 2026-11-06 | develop | Created integration branch develop from main | n/a |
 | 2026-11-06 | task/01-billing | Scaffold backend package (pyproject, billing_sim), `billing/policy.py` (ticket fee, lot price, VAT half-up, due day), `contract_template.json`, `scripts/test.sh`; `.superpowers/` gitignored | `bash scripts/test.sh` -> 8 passed, exit 0 |
 | 2026-11-06 | develop | Merged task/01-billing: billing policy, contract template, test runner | bash scripts/test.sh green on develop |
+| 2026-11-06 | main | Merged develop (task/01-billing): billing policy, contract template, test runner | bash scripts/test.sh green on main |
