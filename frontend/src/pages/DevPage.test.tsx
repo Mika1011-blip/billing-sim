@@ -1,5 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { act } from 'react'
+import { SIM_RESET_EVENT } from '../sim'
 import { snapshot } from '../test-fixtures/snapshot'
 import { DevPage } from './DevPage'
 
@@ -8,6 +10,8 @@ const { plan, timeline, diff, clock: lastClock } = snapshot
 function reply(body: unknown, status = 200) {
   return { ok: status < 300, status, statusText: '', json: async () => body }
 }
+
+let wasReset = false // the backend after POST /sim/reset: no plan
 
 function installFetch(withPlan: boolean) {
   let day = lastClock.day
@@ -19,7 +23,7 @@ function installFetch(withPlan: boolean) {
         day = JSON.parse(String(init.body)).day
         return reply(clock())
       }
-      if (!withPlan && url !== '/dev/agent-tools') return reply({ detail: 'no plan' }, 409)
+      if ((!withPlan || wasReset) && url !== '/dev/agent-tools') return reply({ detail: 'no plan' }, 409)
       if (url === '/sim/clock') return reply(clock())
       if (url === '/dev/plan') return reply(plan)
       if (url.startsWith('/dev/timeline')) return reply(timeline)
@@ -31,7 +35,10 @@ function installFetch(withPlan: boolean) {
   )
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  wasReset = false
+  vi.unstubAllGlobals()
+})
 
 const cellsOf = (table: HTMLElement) => within(table).getAllByRole('cell')
 
@@ -39,7 +46,7 @@ describe('DevPage', () => {
   it('shows a hint instead of the charts when there is no plan yet', async () => {
     installFetch(false)
     render(<DevPage />)
-    expect(await screen.findByText(/no simulation yet/i)).toBeInTheDocument()
+    expect(await screen.findByText(/aucune simulation pour le moment/i)).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: /gantt/i })).not.toBeInTheDocument()
     expect(await screen.findByText('get_ticket')).toBeInTheDocument()
   })
@@ -57,7 +64,7 @@ describe('DevPage', () => {
     expect(container.querySelectorAll('path.dependency').length).toBeGreaterThan(0)
 
     // Ledger at the last day: money has been paid, every invoice names its lot or ticket.
-    const invoices = screen.getByRole('heading', { name: 'Invoices' }).nextElementSibling as HTMLElement
+    const invoices = screen.getByRole('heading', { name: 'Factures' }).nextElementSibling as HTMLElement
     const rows = within(invoices).getAllByRole('row').slice(1)
     expect(rows).toHaveLength(timeline.invoices.length)
     const paid = rows.map((r) => Number(within(r).getAllByRole('cell')[5].textContent))
@@ -67,16 +74,16 @@ describe('DevPage', () => {
     expect(lotCells).toContain('L1')
 
     // Plan vs real tables: every cell is filled with the backend's names.
-    for (const heading of ['Plan vs real: lots', 'Plan vs real: tickets']) {
+    for (const heading of ['Prévu / réel : lots', 'Prévu / réel : tickets']) {
       const table = screen.getByRole('heading', { name: heading }).nextElementSibling as HTMLElement
       for (const cell of cellsOf(table)) {
         expect(cell.textContent?.trim(), heading).toBeTruthy()
         expect(cell.textContent).not.toContain('undefined')
       }
     }
-    const lotTable = screen.getByRole('heading', { name: 'Plan vs real: lots' }).nextElementSibling as HTMLElement
+    const lotTable = screen.getByRole('heading', { name: 'Prévu / réel : lots' }).nextElementSibling as HTMLElement
     expect(lotTable).toHaveTextContent(plan.lots[0].name)
-    const ticketTable = screen.getByRole('heading', { name: 'Plan vs real: tickets' }).nextElementSibling as HTMLElement
+    const ticketTable = screen.getByRole('heading', { name: 'Prévu / réel : tickets' }).nextElementSibling as HTMLElement
     expect(ticketTable).toHaveTextContent(plan.tickets[0].assignee)
   })
 
@@ -90,8 +97,32 @@ describe('DevPage', () => {
     const before = container.querySelector('line.today')!.getAttribute('x1')
     await userEvent.click(screen.getByRole('button', { name: '−5' }))
     const day = lastClock.day - 5
-    expect(await screen.findByText(new RegExp(`Day ${day} / ${lastClock.last_day}`))).toBeInTheDocument()
+    expect(await screen.findByText(new RegExp(`Jour ${day} / ${lastClock.last_day}`))).toBeInTheDocument()
     expect(container.querySelector('line.today')!.getAttribute('x1')).not.toBe(before)
     expect(container.querySelectorAll('tr.future')).toHaveLength(futureAt(day))
+  })
+
+  it('is all French: title, panels, legend', async () => {
+    installFetch(true)
+    render(<DevPage />)
+    expect(await screen.findByRole('img', { name: /gantt/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Pilotage de la simulation')
+    for (const name of ['Configuration', "Outils de l'agent", 'Horloge', 'Diagramme de Gantt', 'Grand livre']) {
+      expect(screen.getByRole('heading', { name }), name).toBeInTheDocument()
+    }
+    const legend = document.querySelector('.legend')!
+    for (const word of ['prévu', 'réel', 'bloqué', "aujourd'hui"]) expect(legend).toHaveTextContent(word)
+  })
+
+  it('after a reset shows the setup panel and the empty message again', async () => {
+    installFetch(true)
+    render(<DevPage />)
+    expect(await screen.findByRole('img', { name: /gantt/i })).toBeInTheDocument()
+    wasReset = true
+    await act(async () => void window.dispatchEvent(new Event(SIM_RESET_EVENT)))
+    expect(await screen.findByText(/aucune simulation pour le moment/i)).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /gantt/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Configuration' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Générer' })).toBeInTheDocument()
   })
 })

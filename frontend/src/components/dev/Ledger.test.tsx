@@ -87,4 +87,18 @@ describe('Ledger', () => {
     expect(within(lotTable).getByText(snapshot.plan.lots[0].name)).toBeInTheDocument()
     expect(within(ticketTable).getAllByText(snapshot.plan.tickets[0].assignee).length).toBeGreaterThan(0)
   })
+
+  it('labels every table in French', () => {
+    render(<Ledger invoices={invoices} payments={payments} diff={diff} today={5} />)
+    const [invoiceTable, lotTable, ticketTable] = screen.getAllByRole('table')
+    const headers = (table: HTMLElement) => within(table).getAllByRole('columnheader').map((h) => h.textContent)
+    expect(headers(invoiceTable)).toEqual(['Facture', 'Lot', 'Émise le', 'Échéance', 'Montant TTC', 'Payé', 'Reste dû'])
+    expect(headers(lotTable)).toEqual([
+      'Lot', 'Livraison prévue', 'Livraison réelle', 'Écart (jours)', 'Jours facturés', 'Jours réels',
+    ])
+    expect(headers(ticketTable)).toEqual([
+      'Ticket', 'Lot', 'Assigné à', 'Prévu', 'Réel', 'Écart (jours)', 'Jours facturés', 'Jours réels',
+    ])
+    expect(screen.getByRole('heading', { name: 'Factures' })).toBeInTheDocument()
+  })
 })

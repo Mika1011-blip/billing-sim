@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   ApiError,
   getClientApprovals,
@@ -20,6 +21,7 @@ import { SummaryTiles } from '../components/client/SummaryTiles'
 import { TicketTable } from '../components/client/TicketTable'
 import { fr } from '../i18n/fr'
 import { dayForDate } from '../lib/workdays'
+import { useOnSimReset, useSimClock } from '../sim'
 import type {
   ClientInvoice,
   ClientLot,
@@ -53,9 +55,6 @@ async function fetchAll(): Promise<Loaded> {
   ])
   return { lastDay: clock.last_day, today, summary, lots, tickets, invoices, payments, approvals }
 }
-
-/** How often the page asks the backend whether the clock was moved elsewhere (the dev page, say). */
-export const CLOCK_POLL_MS = 5000
 
 export function ClientPage() {
   const [data, setData] = useState<Loaded | null>(null)
@@ -91,37 +90,31 @@ export function ClientPage() {
     void refresh()
   }, [refresh])
 
-  useEffect(() => {
-    const previous = document.title
-    const previousLang = document.documentElement.lang
-    document.title = fr.page.title
-    document.documentElement.lang = 'fr'
-    return () => {
-      document.title = previous
-      document.documentElement.lang = previousLang
-    }
-  }, [])
+  // A reset empties the backend: forget the dashboard so the refetch lands on the empty state, not an error banner.
+  useOnSimReset(() => {
+    hasData.current = false
+    shownDay.current = null
+    setData(null)
+    setError('')
+    setMessage(fr.page.loading)
+    void refresh()
+  })
 
   // The clock can be moved from /dev while this page is open: the numbers here must follow what the agent sees.
+  // The shell polls the clock; the dashboard reloads when the polled day is not the one it was loaded at.
+  const { clock: polledClock, reportClock } = useSimClock()
+  useEffect(() => {
+    if (polledClock && shownDay.current !== null && polledClock.day !== shownDay.current) void refresh()
+  }, [polledClock, refresh])
+
   useEffect(() => {
     const visible = () => document.visibilityState !== 'hidden'
-    const poll = async () => {
-      if (!visible() || shownDay.current === null) return
-      try {
-        const clock = await getClock()
-        if (clock.day !== shownDay.current) void refresh()
-      } catch {
-        // offline or restarting: the next tick tries again
-      }
-    }
     const onShow = () => {
       if (visible() && hasData.current) void refresh()
     }
-    const timer = setInterval(() => void poll(), CLOCK_POLL_MS)
     document.addEventListener('visibilitychange', onShow)
     window.addEventListener('focus', onShow)
     return () => {
-      clearInterval(timer)
       document.removeEventListener('visibilitychange', onShow)
       window.removeEventListener('focus', onShow)
     }
@@ -131,8 +124,9 @@ export function ClientPage() {
   async function moveTo(day: number) {
     if (!data) return
     try {
-      await setClock(Math.min(Math.max(day, 0), data.lastDay))
+      const moved = await setClock(Math.min(Math.max(day, 0), data.lastDay))
       await refresh()
+      reportClock(moved) // after the refresh, so the shell's badge moves without a second reload here
     } catch {
       setError(fr.page.error)
     }
@@ -141,7 +135,15 @@ export function ClientPage() {
   if (!data) {
     return (
       <main className="client-page">
-        <p className="empty">{message}</p>
+        <p className="empty">
+          {message}
+          {message === fr.page.empty && (
+            <>
+              {' '}
+              <Link to="/dev">{fr.page.goToDev}</Link>
+            </>
+          )}
+        </p>
       </main>
     )
   }
