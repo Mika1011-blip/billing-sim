@@ -55,7 +55,7 @@ async def test_inspection_tools():
     assert unwrap(await mcp.call_tool("get_ticket_full", {"key": key}))
     assert "tickets" in unwrap(await mcp.call_tool("diff_plan_vs_real", {}))
     assert unwrap(await mcp.call_tool("get_timeline", {"from_day": 0, "to_day": 3}))
-    assert unwrap(await mcp.call_tool("get_agent_tools", {})) == []
+    assert len(unwrap(await mcp.call_tool("get_agent_tools", {}))) == 13  # see test_wiring for the names
 
 
 async def test_reset_wipes():

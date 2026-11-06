@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -17,7 +18,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 
 from billing_sim.engine.clock import get_day
 from billing_sim.store import queries
-from billing_sim.store.db import NotFound
+from billing_sim.store.db import NotFound, connect
 
 
 def _run(conn_factory: Callable[[], sqlite3.Connection], query: Callable[..., Any], *args: Any, key: str = "") -> str:
@@ -101,3 +102,8 @@ async def agent_tool_list(server: FastMCP) -> list[dict]:
         {"name": t.name, "description": t.description, "input_schema": t.inputSchema}
         for t in await server.list_tools()
     ]
+
+
+async def agent_tools_for(db_path: Path) -> list[dict]:
+    """The client agent's tool list for the store at `db_path` (listing tools never touches the database)."""
+    return await agent_tool_list(build_server(lambda: connect(db_path)))
