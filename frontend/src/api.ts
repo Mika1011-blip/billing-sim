@@ -1,6 +1,12 @@
 import type {
   AgentTool,
   Clock,
+  ClientInvoice,
+  ClientLot,
+  ClientPayment,
+  ClientSummary,
+  ClientTicket,
+  ClientToday,
   Diff,
   GenerateBody,
   GenerateResult,
@@ -8,9 +14,17 @@ import type {
   Timeline,
 } from './types'
 
+export class ApiError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init)
-  if (!res.ok) throw new Error(`${init?.method ?? 'GET'} ${url} failed: ${res.status}`)
+  if (!res.ok) throw new ApiError(`${init?.method ?? 'GET'} ${url} failed: ${res.status}`, res.status)
   return (await res.json()) as T
 }
 
@@ -48,3 +62,11 @@ export const getTimeline = (fromDay?: number, toDay?: number) => {
 }
 export const getDiff = () => request<Diff>('/dev/diff')
 export const getAgentTools = () => request<AgentTool[]>('/dev/agent-tools')
+
+export const getClientToday = () => request<ClientToday>('/client/today')
+export const getClientSummary = () => request<ClientSummary>('/client/summary')
+export const getClientLots = () => request<ClientLot[]>('/client/lots')
+export const getClientTickets = () => request<ClientTicket[]>('/client/tickets')
+export const getClientInvoices = () => request<ClientInvoice[]>('/client/invoices')
+export const getClientPayments = () => request<ClientPayment[]>('/client/payments')
+export const getClientApprovals = () => request<ClientLot[]>('/client/approvals/pending')
