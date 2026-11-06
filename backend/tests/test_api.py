@@ -149,6 +149,28 @@ def test_clock_and_step(client):
     assert client.post("/sim/step", json={"n": -100}).json()["day"] == 0
 
 
+def test_reset_wipes_scenario(client):
+    generate(client)
+    client.put("/sim/clock", json={"day": 5})
+    r = client.post("/sim/reset")
+    assert r.status_code == 200
+    assert r.json() == {"status": "reset"}
+    assert client.get("/sim/clock").status_code == 404
+    assert client.get("/client/summary").status_code == 404
+
+
+def test_reset_without_scenario_is_ok(client):
+    assert client.post("/sim/reset").status_code == 200
+
+
+def test_reset_then_generate_starts_at_day_zero(client):
+    generate(client)
+    client.put("/sim/clock", json={"day": 7})
+    client.post("/sim/reset")
+    generate(client)
+    assert client.get("/sim/clock").json()["day"] == 0
+
+
 def test_clock_clamps(client):
     generate(client)
     last = client.get("/sim/clock").json()["last_day"]
