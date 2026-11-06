@@ -1,0 +1,1215 @@
+{
+  "day": 84,
+  "history": {
+    "BANK-5": [
+      {
+        "acteur": "Sophie Lambert",
+        "contenu": "À faire → En cours",
+        "date": "2026-03-19",
+        "type": "Changement de statut"
+      },
+      {
+        "acteur": "Sophie Lambert",
+        "contenu": "8,0 h : Brancher le connecteur sur l'API bancaire de recette. ; Récupérer automatiquement les relevés de compte chaque jour.",
+        "date": "2026-03-19",
+        "type": "Temps passé"
+      },
+      {
+        "acteur": "Sophie Lambert",
+        "contenu": "En attente des accès à l'API bancaire",
+        "date": "2026-03-20",
+        "type": "Blocage"
+      },
+      {
+        "acteur": "Sophie Lambert",
+        "contenu": "En cours → Bloqué",
+        "date": "2026-03-20",
+        "type": "Changement de statut"
+      },
+      {
+        "acteur": "Sophie Lambert",
+        "contenu": "Le blocage est levé.",
+        "date": "2026-03-23",
+        "type": "Déblocage"
+      },
+      {
+        "acteur": "Sophie Lambert",
+        "contenu": "Bloqué → En cours",
+        "date": "2026-03-23",
+        "type": "Changement de statut"
+      },
+      {
+        "acteur": "Sophie Lambert",
+        "contenu": "6,6 h : Convertir les relevés au format interne et les enregistrer. ; Tester l'import sur les relevés d'un mois complet.",
+        "date": "2026-03-24",
+        "type": "Temps passé"
+      },
+      {
+        "acteur": "Sophie Lambert",
+        "contenu": "Terminé. Étapes réalisées : Brancher le connecteur sur l'API bancaire de recette. ; Récupérer automatiquement les relevés de compte chaque jour. ; Convertir les relevés au format interne et les enregistrer. ; Tester l'import sur les relevés d'un mois complet.",
+        "date": "2026-03-24",
+        "type": "Commentaire"
+      },
+      {
+        "acteur": "Sophie Lambert",
+        "contenu": "En cours → Terminé",
+        "date": "2026-03-24",
+        "type": "Changement de statut"
+      }
+    ]
+  },
+  "invoices": [
+    {
+      "calcul": {
+        "ecart_jours": 0.74,
+        "jours_factures": 5,
+        "jours_reels": 5.74,
+        "taux_tva": 0.2,
+        "total_ht": 3000,
+        "total_ttc": 3600,
+        "tva": 600
+      },
+      "couvre": [
+        "BANK-1",
+        "BANK-2",
+        "BANK-3"
+      ],
+      "echeance_le": "2026-04-21",
+      "emise_le": "2026-03-10",
+      "jours_de_retard": 0,
+      "jours_restants": 0,
+      "lot": "L1",
+      "lot_nom": "Tableau de bord factures",
+      "montant_ht": 3000,
+      "montant_ttc": 3600,
+      "numero": "F-2026-001",
+      "paiement": {
+        "date": "2026-03-30",
+        "montant": 3600,
+        "reference": "VIR-F-2026-001-1"
+      },
+      "resume_livraison": "Vos équipes comptables disposent d'une vue d'ensemble de toutes les factures. Elles peuvent les filtrer par période, fournisseur, montant ou statut, et partager une vue filtrée avec un collègue. La liste affichée s'exporte en un clic vers un tableur ou en document imprimable.",
+      "statut": "Payée",
+      "ticket": null,
+      "tickets": [
+        {
+          "assigne": "Camille Roux",
+          "cle": "BANK-1",
+          "debut_reel": "2026-03-02",
+          "description": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut. Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue.",
+          "etapes": [
+            "Recenser avec l'équipe comptable les critères de filtre attendus.",
+            "Créer les filtres par période, fournisseur, montant et statut sur la liste des factures.",
+            "Conserver les filtres actifs dans l'adresse de la page pour pouvoir partager une vue.",
+            "Tester les combinaisons de filtres sur un jeu de factures réel."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-03-04",
+          "journal_nombre": 7,
+          "jours_factures": 3,
+          "jours_reels": 2.59,
+          "lot": "L1",
+          "montant": 1800,
+          "statut": "Terminé",
+          "taille": "M",
+          "titre": "Filtres du tableau de bord",
+          "tjm": 600
+        },
+        {
+          "assigne": "Yanis Benali",
+          "cle": "BANK-2",
+          "debut_reel": "2026-03-05",
+          "description": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel.",
+          "etapes": [
+            "Générer le fichier CSV à partir de la liste filtrée, avec les colonnes visibles.",
+            "Régler l'encodage pour que le fichier s'ouvre correctement dans Excel.",
+            "Vérifier l'export sur une longue liste de factures filtrées."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-03-09",
+          "journal_nombre": 12,
+          "jours_factures": 1,
+          "jours_reels": 2.16,
+          "lot": "L1",
+          "montant": 600,
+          "statut": "Terminé",
+          "taille": "S",
+          "titre": "Export CSV",
+          "tjm": 600
+        },
+        {
+          "assigne": "Camille Roux",
+          "cle": "BANK-3",
+          "debut_reel": "2026-03-05",
+          "description": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition.",
+          "etapes": [
+            "Mettre en page la liste filtrée des factures avec l'en-tête de la banque.",
+            "Ajouter la pagination et la date d'édition sur chaque page.",
+            "Contrôler le rendu du PDF sur une liste longue."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-03-05",
+          "journal_nombre": 4,
+          "jours_factures": 1,
+          "jours_reels": 0.99,
+          "lot": "L1",
+          "montant": 600,
+          "statut": "Terminé",
+          "taille": "S",
+          "titre": "Export PDF",
+          "tjm": 600
+        }
+      ],
+      "tva": 600
+    },
+    {
+      "calcul": {
+        "ecart_jours": -3.12,
+        "jours_factures": 17,
+        "jours_reels": 13.88,
+        "taux_tva": 0.2,
+        "total_ht": 13650,
+        "total_ttc": 16380,
+        "tva": 2730
+      },
+      "couvre": [
+        "BANK-4",
+        "BANK-5",
+        "BANK-6",
+        "BANK-7"
+      ],
+      "echeance_le": "2026-05-14",
+      "emise_le": "2026-04-02",
+      "jours_de_retard": 0,
+      "jours_restants": 0,
+      "lot": "L2",
+      "lot_nom": "Suivi des paiements",
+      "montant_ht": 13650,
+      "montant_ttc": 16380,
+      "numero": "F-2026-002",
+      "paiement": {
+        "date": "2026-06-26",
+        "montant": 16380,
+        "reference": "VIR-F-2026-002-1"
+      },
+      "resume_livraison": "Vos relevés bancaires sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû.",
+      "statut": "Payée",
+      "ticket": null,
+      "tickets": [
+        {
+          "assigne": "Marc Delorme",
+          "cle": "BANK-4",
+          "debut_reel": "2026-03-05",
+          "description": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels.",
+          "etapes": [
+            "Analyser le format des relevés bancaires et des factures existantes.",
+            "Concevoir le modèle de données du rapprochement.",
+            "Définir les règles de correspondance entre une ligne de relevé et une facture.",
+            "Prévoir le traitement des écarts et des paiements partiels.",
+            "Documenter l'architecture et la faire valider par l'équipe."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-03-18",
+          "journal_nombre": 17,
+          "jours_factures": 10,
+          "jours_reels": 7.48,
+          "lot": "L2",
+          "montant": 9000,
+          "statut": "Terminé",
+          "taille": "XL",
+          "titre": "Architecture du rapprochement bancaire",
+          "tjm": 900
+        },
+        {
+          "assigne": "Sophie Lambert",
+          "cle": "BANK-5",
+          "debut_reel": "2026-03-19",
+          "description": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.",
+          "etapes": [
+            "Brancher le connecteur sur l'API bancaire de recette.",
+            "Récupérer automatiquement les relevés de compte chaque jour.",
+            "Convertir les relevés au format interne et les enregistrer.",
+            "Tester l'import sur les relevés d'un mois complet."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-03-24",
+          "journal_nombre": 9,
+          "jours_factures": 3,
+          "jours_reels": 1.82,
+          "lot": "L2",
+          "montant": 2250,
+          "statut": "Terminé",
+          "taille": "M",
+          "titre": "Import des relevés bancaires",
+          "tjm": 750
+        },
+        {
+          "assigne": "Camille Roux",
+          "cle": "BANK-6",
+          "debut_reel": "2026-03-25",
+          "description": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés.",
+          "etapes": [
+            "Calculer le statut de paiement de chaque facture à partir des paiements rapprochés.",
+            "Afficher le statut dans la liste et sur la fiche de la facture.",
+            "Tester les cas payée, partiellement payée et en retard."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-03-27",
+          "journal_nombre": 7,
+          "jours_factures": 3,
+          "jours_reels": 2.38,
+          "lot": "L2",
+          "montant": 1800,
+          "statut": "Terminé",
+          "taille": "M",
+          "titre": "Statut de paiement des factures",
+          "tjm": 600
+        },
+        {
+          "assigne": "Yanis Benali",
+          "cle": "BANK-7",
+          "debut_reel": "2026-03-30",
+          "description": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance.",
+          "etapes": [
+            "Ajouter sur la fiche de la facture l'historique des paiements reçus.",
+            "Afficher le solde restant dû et la date d'échéance.",
+            "Vérifier l'affichage sur des factures réglées en plusieurs fois.",
+            "Afficher la référence du virement bancaire de chaque paiement."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-04-01",
+          "journal_nombre": 12,
+          "jours_factures": 1,
+          "jours_reels": 2.2,
+          "lot": "L2",
+          "montant": 600,
+          "statut": "Terminé",
+          "taille": "S",
+          "titre": "Détail des paiements partiels",
+          "tjm": 600
+        }
+      ],
+      "tva": 2730
+    },
+    {
+      "calcul": {
+        "ecart_jours": 0.69,
+        "jours_factures": 1,
+        "jours_reels": 1.69,
+        "taux_tva": 0.2,
+        "total_ht": 750,
+        "total_ttc": 900,
+        "tva": 150
+      },
+      "couvre": [
+        "BANK-12"
+      ],
+      "echeance_le": "2026-05-19",
+      "emise_le": "2026-04-07",
+      "jours_de_retard": 38,
+      "jours_restants": 0,
+      "lot": null,
+      "lot_nom": null,
+      "montant_ht": 750,
+      "montant_ttc": 900,
+      "numero": "F-2026-003",
+      "paiement": null,
+      "resume_livraison": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable.",
+      "statut": "Très en retard",
+      "ticket": "BANK-12",
+      "tickets": [
+        {
+          "assigne": "Sophie Lambert",
+          "cle": "BANK-12",
+          "debut_reel": "2026-04-06",
+          "description": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable.",
+          "etapes": [
+            "Reproduire l'erreur d'arrondi sur une facture à taux multiples.",
+            "Corriger le calcul de l'arrondi de la TVA.",
+            "Vérifier le correctif sur les factures signalées par l'équipe comptable."
+          ],
+          "facture_separement": true,
+          "fin_reel": "2026-04-07",
+          "journal_nombre": 5,
+          "jours_factures": 1,
+          "jours_reels": 1.69,
+          "lot": null,
+          "montant": 750,
+          "statut": "Terminé",
+          "taille": "S",
+          "titre": "Correctif urgent — calcul de TVA",
+          "tjm": 750
+        }
+      ],
+      "tva": 150
+    },
+    {
+      "calcul": {
+        "ecart_jours": -1.12,
+        "jours_factures": 12,
+        "jours_reels": 10.88,
+        "taux_tva": 0.2,
+        "total_ht": 8100,
+        "total_ttc": 9720,
+        "tva": 1620
+      },
+      "couvre": [
+        "BANK-8",
+        "BANK-9",
+        "BANK-10",
+        "BANK-11"
+      ],
+      "echeance_le": "2026-05-22",
+      "emise_le": "2026-04-10",
+      "jours_de_retard": 35,
+      "jours_restants": 0,
+      "lot": "L3",
+      "lot_nom": "Exports et notifications",
+      "montant_ht": 8100,
+      "montant_ttc": 9720,
+      "numero": "F-2026-004",
+      "paiement": null,
+      "resume_livraison": "Les gestionnaires reçoivent chaque matin un e-mail qui liste les factures en retard, et un centre de notifications regroupe ces alertes dans l'application. Les factures payées s'exportent directement vers votre outil de comptabilité. Une documentation explique comment faire fonctionner le service au quotidien.",
+      "statut": "Très en retard",
+      "ticket": null,
+      "tickets": [
+        {
+          "assigne": "Sophie Lambert",
+          "cle": "BANK-8",
+          "debut_reel": "2026-03-30",
+          "description": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée.",
+          "etapes": [
+            "Sélectionner chaque matin les factures dont l'échéance est dépassée.",
+            "Rédiger le modèle de l'e-mail récapitulatif.",
+            "Envoyer l'e-mail aux gestionnaires concernés par chaque facture.",
+            "Planifier l'envoi automatique chaque matin.",
+            "Tester l'envoi avec des factures en retard de plusieurs fournisseurs."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-04-03",
+          "journal_nombre": 9,
+          "jours_factures": 5,
+          "jours_reels": 3.61,
+          "lot": "L3",
+          "montant": 3750,
+          "statut": "Terminé",
+          "taille": "L",
+          "titre": "Alertes e-mail pour factures en retard",
+          "tjm": 750
+        },
+        {
+          "assigne": "Yanis Benali",
+          "cle": "BANK-9",
+          "debut_reel": "2026-04-02",
+          "description": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées.",
+          "etapes": [
+            "Reprendre le format d'écritures attendu par l'outil de comptabilité de la banque.",
+            "Produire le fichier d'écritures à partir des factures payées.",
+            "Faire valider un fichier d'essai par le service comptabilité."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-04-07",
+          "journal_nombre": 9,
+          "jours_factures": 3,
+          "jours_reels": 3.11,
+          "lot": "L3",
+          "montant": 1800,
+          "statut": "Terminé",
+          "taille": "M",
+          "titre": "Export comptable",
+          "tjm": 600
+        },
+        {
+          "assigne": "Camille Roux",
+          "cle": "BANK-10",
+          "debut_reel": "2026-04-06",
+          "description": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés.",
+          "etapes": [
+            "Créer le centre de notifications dans l'interface.",
+            "Y afficher les alertes de retard de paiement et les imports de relevés terminés.",
+            "Permettre de marquer une notification comme lue.",
+            "Tester l'affichage avec un grand nombre de notifications."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-04-09",
+          "journal_nombre": 8,
+          "jours_factures": 3,
+          "jours_reels": 2.8,
+          "lot": "L3",
+          "montant": 1800,
+          "statut": "Terminé",
+          "taille": "M",
+          "titre": "Centre de notifications",
+          "tjm": 600
+        },
+        {
+          "assigne": "Sophie Lambert",
+          "cle": "BANK-11",
+          "debut_reel": "2026-03-25",
+          "description": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement.",
+          "etapes": [
+            "Décrire la procédure de déploiement.",
+            "Expliquer comment surveiller l'import des relevés.",
+            "Rédiger la procédure à suivre en cas d'échec du rapprochement."
+          ],
+          "facture_separement": false,
+          "fin_reel": "2026-03-26",
+          "journal_nombre": 5,
+          "jours_factures": 1,
+          "jours_reels": 1.36,
+          "lot": "L3",
+          "montant": 750,
+          "statut": "Terminé",
+          "taille": "S",
+          "titre": "Documentation d'exploitation",
+          "tjm": 750
+        }
+      ],
+      "tva": 1620
+    }
+  ],
+  "lots": [
+    {
+      "approuve_le": "2026-03-10",
+      "cle": "L1",
+      "description": "Vue d'ensemble des factures avec filtres, tris et exports pour les équipes comptables.",
+      "facture": "F-2026-001",
+      "jours_factures": 5,
+      "jours_reels": 5.74,
+      "livraison_prevue": "2026-03-05",
+      "livre_le": "2026-03-09",
+      "nom": "Tableau de bord factures",
+      "prix": 3000,
+      "resume_livraison": "Vos équipes comptables disposent d'une vue d'ensemble de toutes les factures. Elles peuvent les filtrer par période, fournisseur, montant ou statut, et partager une vue filtrée avec un collègue. La liste affichée s'exporte en un clic vers un tableur ou en document imprimable.",
+      "statut_facture": "Payée",
+      "tickets_termines": 3,
+      "tickets_total": 3
+    },
+    {
+      "approuve_le": "2026-04-02",
+      "cle": "L2",
+      "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement.",
+      "facture": "F-2026-002",
+      "jours_factures": 17,
+      "jours_reels": 13.88,
+      "livraison_prevue": "2026-03-27",
+      "livre_le": "2026-04-01",
+      "nom": "Suivi des paiements",
+      "prix": 13650,
+      "resume_livraison": "Vos relevés bancaires sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû.",
+      "statut_facture": "Payée",
+      "tickets_termines": 4,
+      "tickets_total": 4
+    },
+    {
+      "approuve_le": "2026-04-10",
+      "cle": "L3",
+      "description": "Alertes e-mail, centre de notifications et exports destinés à la comptabilité.",
+      "facture": "F-2026-004",
+      "jours_factures": 12,
+      "jours_reels": 10.88,
+      "livraison_prevue": "2026-04-07",
+      "livre_le": "2026-04-09",
+      "nom": "Exports et notifications",
+      "prix": 8100,
+      "resume_livraison": "Les gestionnaires reçoivent chaque matin un e-mail qui liste les factures en retard, et un centre de notifications regroupe ces alertes dans l'application. Les factures payées s'exportent directement vers votre outil de comptabilité. Une documentation explique comment faire fonctionner le service au quotidien.",
+      "statut_facture": "Très en retard",
+      "tickets_termines": 4,
+      "tickets_total": 4
+    }
+  ],
+  "mid": {
+    "day": 23,
+    "invoices": [
+      {
+        "calcul": {
+          "ecart_jours": 0.74,
+          "jours_factures": 5,
+          "jours_reels": 5.74,
+          "taux_tva": 0.2,
+          "total_ht": 3000,
+          "total_ttc": 3600,
+          "tva": 600
+        },
+        "couvre": [
+          "BANK-1",
+          "BANK-2",
+          "BANK-3"
+        ],
+        "echeance_le": "2026-04-21",
+        "emise_le": "2026-03-10",
+        "jours_de_retard": 0,
+        "jours_restants": 0,
+        "lot": "L1",
+        "lot_nom": "Tableau de bord factures",
+        "montant_ht": 3000,
+        "montant_ttc": 3600,
+        "numero": "F-2026-001",
+        "paiement": {
+          "date": "2026-03-30",
+          "montant": 3600,
+          "reference": "VIR-F-2026-001-1"
+        },
+        "resume_livraison": "Vos équipes comptables disposent d'une vue d'ensemble de toutes les factures. Elles peuvent les filtrer par période, fournisseur, montant ou statut, et partager une vue filtrée avec un collègue. La liste affichée s'exporte en un clic vers un tableur ou en document imprimable.",
+        "statut": "Payée",
+        "ticket": null,
+        "tickets": [
+          {
+            "assigne": "Camille Roux",
+            "cle": "BANK-1",
+            "debut_reel": "2026-03-02",
+            "description": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut. Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue.",
+            "etapes": [
+              "Recenser avec l'équipe comptable les critères de filtre attendus.",
+              "Créer les filtres par période, fournisseur, montant et statut sur la liste des factures.",
+              "Conserver les filtres actifs dans l'adresse de la page pour pouvoir partager une vue.",
+              "Tester les combinaisons de filtres sur un jeu de factures réel."
+            ],
+            "facture_separement": false,
+            "fin_reel": "2026-03-04",
+            "journal_nombre": 7,
+            "jours_factures": 3,
+            "jours_reels": 2.59,
+            "lot": "L1",
+            "montant": 1800,
+            "statut": "Terminé",
+            "taille": "M",
+            "titre": "Filtres du tableau de bord",
+            "tjm": 600
+          },
+          {
+            "assigne": "Yanis Benali",
+            "cle": "BANK-2",
+            "debut_reel": "2026-03-05",
+            "description": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel.",
+            "etapes": [
+              "Générer le fichier CSV à partir de la liste filtrée, avec les colonnes visibles.",
+              "Régler l'encodage pour que le fichier s'ouvre correctement dans Excel.",
+              "Vérifier l'export sur une longue liste de factures filtrées."
+            ],
+            "facture_separement": false,
+            "fin_reel": "2026-03-09",
+            "journal_nombre": 12,
+            "jours_factures": 1,
+            "jours_reels": 2.16,
+            "lot": "L1",
+            "montant": 600,
+            "statut": "Terminé",
+            "taille": "S",
+            "titre": "Export CSV",
+            "tjm": 600
+          },
+          {
+            "assigne": "Camille Roux",
+            "cle": "BANK-3",
+            "debut_reel": "2026-03-05",
+            "description": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition.",
+            "etapes": [
+              "Mettre en page la liste filtrée des factures avec l'en-tête de la banque.",
+              "Ajouter la pagination et la date d'édition sur chaque page.",
+              "Contrôler le rendu du PDF sur une liste longue."
+            ],
+            "facture_separement": false,
+            "fin_reel": "2026-03-05",
+            "journal_nombre": 4,
+            "jours_factures": 1,
+            "jours_reels": 0.99,
+            "lot": "L1",
+            "montant": 600,
+            "statut": "Terminé",
+            "taille": "S",
+            "titre": "Export PDF",
+            "tjm": 600
+          }
+        ],
+        "tva": 600
+      },
+      {
+        "calcul": {
+          "ecart_jours": -3.12,
+          "jours_factures": 17,
+          "jours_reels": 13.88,
+          "taux_tva": 0.2,
+          "total_ht": 13650,
+          "total_ttc": 16380,
+          "tva": 2730
+        },
+        "couvre": [
+          "BANK-4",
+          "BANK-5",
+          "BANK-6",
+          "BANK-7"
+        ],
+        "echeance_le": "2026-05-14",
+        "emise_le": "2026-04-02",
+        "jours_de_retard": 0,
+        "jours_restants": 42,
+        "lot": "L2",
+        "lot_nom": "Suivi des paiements",
+        "montant_ht": 13650,
+        "montant_ttc": 16380,
+        "numero": "F-2026-002",
+        "paiement": null,
+        "resume_livraison": "Vos relevés bancaires sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû.",
+        "statut": "À payer",
+        "ticket": null,
+        "tickets": [
+          {
+            "assigne": "Marc Delorme",
+            "cle": "BANK-4",
+            "debut_reel": "2026-03-05",
+            "description": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels.",
+            "etapes": [
+              "Analyser le format des relevés bancaires et des factures existantes.",
+              "Concevoir le modèle de données du rapprochement.",
+              "Définir les règles de correspondance entre une ligne de relevé et une facture.",
+              "Prévoir le traitement des écarts et des paiements partiels.",
+              "Documenter l'architecture et la faire valider par l'équipe."
+            ],
+            "facture_separement": false,
+            "fin_reel": "2026-03-18",
+            "journal_nombre": 17,
+            "jours_factures": 10,
+            "jours_reels": 7.48,
+            "lot": "L2",
+            "montant": 9000,
+            "statut": "Terminé",
+            "taille": "XL",
+            "titre": "Architecture du rapprochement bancaire",
+            "tjm": 900
+          },
+          {
+            "assigne": "Sophie Lambert",
+            "cle": "BANK-5",
+            "debut_reel": "2026-03-19",
+            "description": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.",
+            "etapes": [
+              "Brancher le connecteur sur l'API bancaire de recette.",
+              "Récupérer automatiquement les relevés de compte chaque jour.",
+              "Convertir les relevés au format interne et les enregistrer.",
+              "Tester l'import sur les relevés d'un mois complet."
+            ],
+            "facture_separement": false,
+            "fin_reel": "2026-03-24",
+            "journal_nombre": 9,
+            "jours_factures": 3,
+            "jours_reels": 1.82,
+            "lot": "L2",
+            "montant": 2250,
+            "statut": "Terminé",
+            "taille": "M",
+            "titre": "Import des relevés bancaires",
+            "tjm": 750
+          },
+          {
+            "assigne": "Camille Roux",
+            "cle": "BANK-6",
+            "debut_reel": "2026-03-25",
+            "description": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés.",
+            "etapes": [
+              "Calculer le statut de paiement de chaque facture à partir des paiements rapprochés.",
+              "Afficher le statut dans la liste et sur la fiche de la facture.",
+              "Tester les cas payée, partiellement payée et en retard."
+            ],
+            "facture_separement": false,
+            "fin_reel": "2026-03-27",
+            "journal_nombre": 7,
+            "jours_factures": 3,
+            "jours_reels": 2.38,
+            "lot": "L2",
+            "montant": 1800,
+            "statut": "Terminé",
+            "taille": "M",
+            "titre": "Statut de paiement des factures",
+            "tjm": 600
+          },
+          {
+            "assigne": "Yanis Benali",
+            "cle": "BANK-7",
+            "debut_reel": "2026-03-30",
+            "description": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance.",
+            "etapes": [
+              "Ajouter sur la fiche de la facture l'historique des paiements reçus.",
+              "Afficher le solde restant dû et la date d'échéance.",
+              "Vérifier l'affichage sur des factures réglées en plusieurs fois.",
+              "Afficher la référence du virement bancaire de chaque paiement."
+            ],
+            "facture_separement": false,
+            "fin_reel": "2026-04-01",
+            "journal_nombre": 12,
+            "jours_factures": 1,
+            "jours_reels": 2.2,
+            "lot": "L2",
+            "montant": 600,
+            "statut": "Terminé",
+            "taille": "S",
+            "titre": "Détail des paiements partiels",
+            "tjm": 600
+          }
+        ],
+        "tva": 2730
+      }
+    ],
+    "lots": [
+      {
+        "approuve_le": "2026-03-10",
+        "cle": "L1",
+        "description": "Vue d'ensemble des factures avec filtres, tris et exports pour les équipes comptables.",
+        "facture": "F-2026-001",
+        "jours_factures": 5,
+        "jours_reels": 5.74,
+        "livraison_prevue": "2026-03-05",
+        "livre_le": "2026-03-09",
+        "nom": "Tableau de bord factures",
+        "prix": 3000,
+        "resume_livraison": "Vos équipes comptables disposent d'une vue d'ensemble de toutes les factures. Elles peuvent les filtrer par période, fournisseur, montant ou statut, et partager une vue filtrée avec un collègue. La liste affichée s'exporte en un clic vers un tableur ou en document imprimable.",
+        "statut_facture": "Payée",
+        "tickets_termines": 3,
+        "tickets_total": 3
+      },
+      {
+        "approuve_le": "2026-04-02",
+        "cle": "L2",
+        "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement.",
+        "facture": "F-2026-002",
+        "jours_factures": 17,
+        "jours_reels": 13.88,
+        "livraison_prevue": "2026-03-27",
+        "livre_le": "2026-04-01",
+        "nom": "Suivi des paiements",
+        "prix": 13650,
+        "resume_livraison": "Vos relevés bancaires sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû.",
+        "statut_facture": "À payer",
+        "tickets_termines": 4,
+        "tickets_total": 4
+      },
+      {
+        "approuve_le": null,
+        "cle": "L3",
+        "description": "Alertes e-mail, centre de notifications et exports destinés à la comptabilité.",
+        "facture": null,
+        "jours_factures": 12,
+        "jours_reels": 5.19,
+        "livraison_prevue": "2026-04-07",
+        "livre_le": null,
+        "nom": "Exports et notifications",
+        "prix": 8100,
+        "resume_livraison": "Les gestionnaires reçoivent chaque matin un e-mail qui liste les factures en retard, et un centre de notifications regroupe ces alertes dans l'application. Les factures payées s'exportent directement vers votre outil de comptabilité. Une documentation explique comment faire fonctionner le service au quotidien.",
+        "statut_facture": "À venir",
+        "tickets_termines": 1,
+        "tickets_total": 4
+      }
+    ],
+    "summary": {
+      "a_payer": 16380,
+      "contracte": 25500,
+      "contracte_ttc": 30600,
+      "en_retard": 0,
+      "en_retard_nombre": 0,
+      "facture": 19980,
+      "lots": [
+        {
+          "approuve_le": "2026-03-10",
+          "cle": "L1",
+          "description": "Vue d'ensemble des factures avec filtres, tris et exports pour les équipes comptables.",
+          "facture": "F-2026-001",
+          "jours_factures": 5,
+          "jours_reels": 5.74,
+          "livraison_prevue": "2026-03-05",
+          "livre_le": "2026-03-09",
+          "nom": "Tableau de bord factures",
+          "prix": 3000,
+          "resume_livraison": "Vos équipes comptables disposent d'une vue d'ensemble de toutes les factures. Elles peuvent les filtrer par période, fournisseur, montant ou statut, et partager une vue filtrée avec un collègue. La liste affichée s'exporte en un clic vers un tableur ou en document imprimable.",
+          "statut_facture": "Payée",
+          "tickets_termines": 3,
+          "tickets_total": 3
+        },
+        {
+          "approuve_le": "2026-04-02",
+          "cle": "L2",
+          "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement.",
+          "facture": "F-2026-002",
+          "jours_factures": 17,
+          "jours_reels": 13.88,
+          "livraison_prevue": "2026-03-27",
+          "livre_le": "2026-04-01",
+          "nom": "Suivi des paiements",
+          "prix": 13650,
+          "resume_livraison": "Vos relevés bancaires sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû.",
+          "statut_facture": "À payer",
+          "tickets_termines": 4,
+          "tickets_total": 4
+        },
+        {
+          "approuve_le": null,
+          "cle": "L3",
+          "description": "Alertes e-mail, centre de notifications et exports destinés à la comptabilité.",
+          "facture": null,
+          "jours_factures": 12,
+          "jours_reels": 5.19,
+          "livraison_prevue": "2026-04-07",
+          "livre_le": null,
+          "nom": "Exports et notifications",
+          "prix": 8100,
+          "resume_livraison": "Les gestionnaires reçoivent chaque matin un e-mail qui liste les factures en retard, et un centre de notifications regroupe ces alertes dans l'application. Les factures payées s'exportent directement vers votre outil de comptabilité. Une documentation explique comment faire fonctionner le service au quotidien.",
+          "statut_facture": "À venir",
+          "tickets_termines": 1,
+          "tickets_total": 4
+        }
+      ],
+      "paye": 3600,
+      "prochaine_facture": {
+        "date_prevue": "2026-04-07",
+        "lot": "L3",
+        "montant_ht": 8100,
+        "nom": "Exports et notifications"
+      },
+      "reste_a_payer": 16380
+    },
+    "today": {
+      "date": "2026-04-02",
+      "date_longue": "jeudi 2 avril 2026",
+      "jour": 23
+    }
+  },
+  "summary": {
+    "a_payer": 0,
+    "contracte": 25500,
+    "contracte_ttc": 30600,
+    "en_retard": 10620,
+    "en_retard_nombre": 2,
+    "facture": 30600,
+    "lots": [
+      {
+        "approuve_le": "2026-03-10",
+        "cle": "L1",
+        "description": "Vue d'ensemble des factures avec filtres, tris et exports pour les équipes comptables.",
+        "facture": "F-2026-001",
+        "jours_factures": 5,
+        "jours_reels": 5.74,
+        "livraison_prevue": "2026-03-05",
+        "livre_le": "2026-03-09",
+        "nom": "Tableau de bord factures",
+        "prix": 3000,
+        "resume_livraison": "Vos équipes comptables disposent d'une vue d'ensemble de toutes les factures. Elles peuvent les filtrer par période, fournisseur, montant ou statut, et partager une vue filtrée avec un collègue. La liste affichée s'exporte en un clic vers un tableur ou en document imprimable.",
+        "statut_facture": "Payée",
+        "tickets_termines": 3,
+        "tickets_total": 3
+      },
+      {
+        "approuve_le": "2026-04-02",
+        "cle": "L2",
+        "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement.",
+        "facture": "F-2026-002",
+        "jours_factures": 17,
+        "jours_reels": 13.88,
+        "livraison_prevue": "2026-03-27",
+        "livre_le": "2026-04-01",
+        "nom": "Suivi des paiements",
+        "prix": 13650,
+        "resume_livraison": "Vos relevés bancaires sont récupérés automatiquement et rapprochés des factures. Chaque facture indique désormais si elle est payée, partiellement payée ou en retard. La fiche d'une facture montre les paiements reçus et ce qui reste dû.",
+        "statut_facture": "Payée",
+        "tickets_termines": 4,
+        "tickets_total": 4
+      },
+      {
+        "approuve_le": "2026-04-10",
+        "cle": "L3",
+        "description": "Alertes e-mail, centre de notifications et exports destinés à la comptabilité.",
+        "facture": "F-2026-004",
+        "jours_factures": 12,
+        "jours_reels": 10.88,
+        "livraison_prevue": "2026-04-07",
+        "livre_le": "2026-04-09",
+        "nom": "Exports et notifications",
+        "prix": 8100,
+        "resume_livraison": "Les gestionnaires reçoivent chaque matin un e-mail qui liste les factures en retard, et un centre de notifications regroupe ces alertes dans l'application. Les factures payées s'exportent directement vers votre outil de comptabilité. Une documentation explique comment faire fonctionner le service au quotidien.",
+        "statut_facture": "Très en retard",
+        "tickets_termines": 4,
+        "tickets_total": 4
+      }
+    ],
+    "paye": 19980,
+    "prochaine_facture": null,
+    "reste_a_payer": 10620
+  },
+  "tickets": [
+    {
+      "assigne": "Camille Roux",
+      "cle": "BANK-1",
+      "debut_reel": "2026-03-02",
+      "description": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut. Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue.",
+      "etapes": [
+        "Recenser avec l'équipe comptable les critères de filtre attendus.",
+        "Créer les filtres par période, fournisseur, montant et statut sur la liste des factures.",
+        "Conserver les filtres actifs dans l'adresse de la page pour pouvoir partager une vue.",
+        "Tester les combinaisons de filtres sur un jeu de factures réel."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-03-04",
+      "journal_nombre": 7,
+      "jours_factures": 3,
+      "jours_reels": 2.59,
+      "lot": "L1",
+      "montant": 1800,
+      "statut": "Terminé",
+      "taille": "M",
+      "titre": "Filtres du tableau de bord",
+      "tjm": 600
+    },
+    {
+      "assigne": "Yanis Benali",
+      "cle": "BANK-2",
+      "debut_reel": "2026-03-05",
+      "description": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel.",
+      "etapes": [
+        "Générer le fichier CSV à partir de la liste filtrée, avec les colonnes visibles.",
+        "Régler l'encodage pour que le fichier s'ouvre correctement dans Excel.",
+        "Vérifier l'export sur une longue liste de factures filtrées."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-03-09",
+      "journal_nombre": 12,
+      "jours_factures": 1,
+      "jours_reels": 2.16,
+      "lot": "L1",
+      "montant": 600,
+      "statut": "Terminé",
+      "taille": "S",
+      "titre": "Export CSV",
+      "tjm": 600
+    },
+    {
+      "assigne": "Camille Roux",
+      "cle": "BANK-3",
+      "debut_reel": "2026-03-05",
+      "description": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition.",
+      "etapes": [
+        "Mettre en page la liste filtrée des factures avec l'en-tête de la banque.",
+        "Ajouter la pagination et la date d'édition sur chaque page.",
+        "Contrôler le rendu du PDF sur une liste longue."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-03-05",
+      "journal_nombre": 4,
+      "jours_factures": 1,
+      "jours_reels": 0.99,
+      "lot": "L1",
+      "montant": 600,
+      "statut": "Terminé",
+      "taille": "S",
+      "titre": "Export PDF",
+      "tjm": 600
+    },
+    {
+      "assigne": "Marc Delorme",
+      "cle": "BANK-4",
+      "debut_reel": "2026-03-05",
+      "description": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels.",
+      "etapes": [
+        "Analyser le format des relevés bancaires et des factures existantes.",
+        "Concevoir le modèle de données du rapprochement.",
+        "Définir les règles de correspondance entre une ligne de relevé et une facture.",
+        "Prévoir le traitement des écarts et des paiements partiels.",
+        "Documenter l'architecture et la faire valider par l'équipe."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-03-18",
+      "journal_nombre": 17,
+      "jours_factures": 10,
+      "jours_reels": 7.48,
+      "lot": "L2",
+      "montant": 9000,
+      "statut": "Terminé",
+      "taille": "XL",
+      "titre": "Architecture du rapprochement bancaire",
+      "tjm": 900
+    },
+    {
+      "assigne": "Sophie Lambert",
+      "cle": "BANK-5",
+      "debut_reel": "2026-03-19",
+      "description": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.",
+      "etapes": [
+        "Brancher le connecteur sur l'API bancaire de recette.",
+        "Récupérer automatiquement les relevés de compte chaque jour.",
+        "Convertir les relevés au format interne et les enregistrer.",
+        "Tester l'import sur les relevés d'un mois complet."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-03-24",
+      "journal_nombre": 9,
+      "jours_factures": 3,
+      "jours_reels": 1.82,
+      "lot": "L2",
+      "montant": 2250,
+      "statut": "Terminé",
+      "taille": "M",
+      "titre": "Import des relevés bancaires",
+      "tjm": 750
+    },
+    {
+      "assigne": "Camille Roux",
+      "cle": "BANK-6",
+      "debut_reel": "2026-03-25",
+      "description": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés.",
+      "etapes": [
+        "Calculer le statut de paiement de chaque facture à partir des paiements rapprochés.",
+        "Afficher le statut dans la liste et sur la fiche de la facture.",
+        "Tester les cas payée, partiellement payée et en retard."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-03-27",
+      "journal_nombre": 7,
+      "jours_factures": 3,
+      "jours_reels": 2.38,
+      "lot": "L2",
+      "montant": 1800,
+      "statut": "Terminé",
+      "taille": "M",
+      "titre": "Statut de paiement des factures",
+      "tjm": 600
+    },
+    {
+      "assigne": "Yanis Benali",
+      "cle": "BANK-7",
+      "debut_reel": "2026-03-30",
+      "description": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance.",
+      "etapes": [
+        "Ajouter sur la fiche de la facture l'historique des paiements reçus.",
+        "Afficher le solde restant dû et la date d'échéance.",
+        "Vérifier l'affichage sur des factures réglées en plusieurs fois.",
+        "Afficher la référence du virement bancaire de chaque paiement."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-04-01",
+      "journal_nombre": 12,
+      "jours_factures": 1,
+      "jours_reels": 2.2,
+      "lot": "L2",
+      "montant": 600,
+      "statut": "Terminé",
+      "taille": "S",
+      "titre": "Détail des paiements partiels",
+      "tjm": 600
+    },
+    {
+      "assigne": "Sophie Lambert",
+      "cle": "BANK-8",
+      "debut_reel": "2026-03-30",
+      "description": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée.",
+      "etapes": [
+        "Sélectionner chaque matin les factures dont l'échéance est dépassée.",
+        "Rédiger le modèle de l'e-mail récapitulatif.",
+        "Envoyer l'e-mail aux gestionnaires concernés par chaque facture.",
+        "Planifier l'envoi automatique chaque matin.",
+        "Tester l'envoi avec des factures en retard de plusieurs fournisseurs."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-04-03",
+      "journal_nombre": 9,
+      "jours_factures": 5,
+      "jours_reels": 3.61,
+      "lot": "L3",
+      "montant": 3750,
+      "statut": "Terminé",
+      "taille": "L",
+      "titre": "Alertes e-mail pour factures en retard",
+      "tjm": 750
+    },
+    {
+      "assigne": "Yanis Benali",
+      "cle": "BANK-9",
+      "debut_reel": "2026-04-02",
+      "description": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées.",
+      "etapes": [
+        "Reprendre le format d'écritures attendu par l'outil de comptabilité de la banque.",
+        "Produire le fichier d'écritures à partir des factures payées.",
+        "Faire valider un fichier d'essai par le service comptabilité."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-04-07",
+      "journal_nombre": 9,
+      "jours_factures": 3,
+      "jours_reels": 3.11,
+      "lot": "L3",
+      "montant": 1800,
+      "statut": "Terminé",
+      "taille": "M",
+      "titre": "Export comptable",
+      "tjm": 600
+    },
+    {
+      "assigne": "Camille Roux",
+      "cle": "BANK-10",
+      "debut_reel": "2026-04-06",
+      "description": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés.",
+      "etapes": [
+        "Créer le centre de notifications dans l'interface.",
+        "Y afficher les alertes de retard de paiement et les imports de relevés terminés.",
+        "Permettre de marquer une notification comme lue.",
+        "Tester l'affichage avec un grand nombre de notifications."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-04-09",
+      "journal_nombre": 8,
+      "jours_factures": 3,
+      "jours_reels": 2.8,
+      "lot": "L3",
+      "montant": 1800,
+      "statut": "Terminé",
+      "taille": "M",
+      "titre": "Centre de notifications",
+      "tjm": 600
+    },
+    {
+      "assigne": "Sophie Lambert",
+      "cle": "BANK-11",
+      "debut_reel": "2026-03-25",
+      "description": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement.",
+      "etapes": [
+        "Décrire la procédure de déploiement.",
+        "Expliquer comment surveiller l'import des relevés.",
+        "Rédiger la procédure à suivre en cas d'échec du rapprochement."
+      ],
+      "facture_separement": false,
+      "fin_reel": "2026-03-26",
+      "journal_nombre": 5,
+      "jours_factures": 1,
+      "jours_reels": 1.36,
+      "lot": "L3",
+      "montant": 750,
+      "statut": "Terminé",
+      "taille": "S",
+      "titre": "Documentation d'exploitation",
+      "tjm": 750
+    },
+    {
+      "assigne": "Sophie Lambert",
+      "cle": "BANK-12",
+      "debut_reel": "2026-04-06",
+      "description": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable.",
+      "etapes": [
+        "Reproduire l'erreur d'arrondi sur une facture à taux multiples.",
+        "Corriger le calcul de l'arrondi de la TVA.",
+        "Vérifier le correctif sur les factures signalées par l'équipe comptable."
+      ],
+      "facture_separement": true,
+      "fin_reel": "2026-04-07",
+      "journal_nombre": 5,
+      "jours_factures": 1,
+      "jours_reels": 1.69,
+      "lot": null,
+      "montant": 750,
+      "statut": "Terminé",
+      "taille": "S",
+      "titre": "Correctif urgent — calcul de TVA",
+      "tjm": 750
+    }
+  ],
+  "today": {
+    "date": "2026-06-26",
+    "date_longue": "vendredi 26 juin 2026",
+    "jour": 84
+  }
+}

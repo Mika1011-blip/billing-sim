@@ -115,6 +115,8 @@ cd backend && .venv/bin/python -m pytest tests/test_snapshot.py --update-snapsho
 # or: .venv/bin/python -m billing_sim.cli snapshot ../frontend/src/test-fixtures/dev-snapshot.json
 ```
 
+The `/client` page tests render the same way from `frontend/src/test-fixtures/client-snapshot.json` (the client routes' output on the last day, after the first invoice is paid on day 20 and the second on the last day); `--update-snapshot` regenerates both snapshots.
+
 ### End-to-end test
 
 The Playwright test drives the real stack in a browser using the fallback scenario (no key needed): it generates a plan on `/dev`, moves the clock to the last day, then checks that `/client` shows the "Reste à payer" tile and an "En retard" or "Payée" pill.
