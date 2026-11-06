@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import sqlite3
 
+from billing_sim.expander.calendar import date_for_day
+from billing_sim.store.db import start_date
+
 
 def get_day(conn: sqlite3.Connection) -> int:
     return conn.execute("SELECT current_day FROM clock WHERE id = 1").fetchone()[0]
@@ -24,3 +27,9 @@ def set_day(conn: sqlite3.Connection, d: int) -> int:
 
 def step(conn: sqlite3.Connection, n: int) -> int:
     return set_day(conn, get_day(conn) + n)
+
+
+def state(conn: sqlite3.Connection) -> dict:
+    """The clock as the routes and tools report it: `{day, last_day, date}` (NotFound before a scenario is loaded)."""
+    day = get_day(conn)
+    return {"day": day, "last_day": last_day(conn), "date": date_for_day(start_date(conn), day).isoformat()}

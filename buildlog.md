@@ -20,3 +20,4 @@ Every change to this repo gets an entry here: date, branch, what changed, how it
 | 2026-11-06 | task/04-store | SQLite store (`store/`: schema, load, as-of client queries, full dev queries), clock (`engine/clock.py`) and CLI (`python -m billing_sim.cli load/day/summary`) | `bash scripts/test.sh` -> 117 passed, exit 0 |
 | 2026-11-06 | develop | Merged task/04-store: sqlite store, as-of queries, clock, cli | bash scripts/test.sh green on develop |
 | 2026-11-06 | main | Merged develop (task/04-store): sqlite store, as-of queries, clock, cli | bash scripts/test.sh green on main |
+| 2026-11-06 | task/05-api | FastAPI app (`api/`: settings with `.env` + `CLAUDE_API_KEY` fallback, `/setup/generate`, `/sim/clock` + `/sim/step`, `/dev/*`, CORS, NotFound->404), generate pipeline, Haiku stub, manager MCP server (10 tools, `python -m billing_sim.mcp_manager`); `mcp` pinned `<2` (FastMCP) | `bash scripts/test.sh` -> 137 passed, exit 0; uvicorn smoke run ok |
