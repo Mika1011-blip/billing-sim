@@ -42,3 +42,11 @@ def conn(plan, contract, timeline):
     )
     yield connection
     connection.close()
+
+
+@pytest.fixture(autouse=True)
+def hermetic_env(tmp_path, monkeypatch):
+    """No test sees a real `.env` or API key from the machine running it."""
+    monkeypatch.setenv("BILLING_SIM_ENV_FILE", str(tmp_path / "no.env"))
+    for name in ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
