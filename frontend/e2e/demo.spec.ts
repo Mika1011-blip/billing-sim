@@ -28,5 +28,6 @@ test('generate with the fallback, move the clock to the end, read the client das
   await expect(page).toHaveURL(/\/client$/)
   await expect(page.locator('.clock-badge')).toContainText(`Jour ${last} ·`)
   await expect(page.getByText('Reste à payer').first()).toBeVisible()
-  await expect(page.locator('.pill').filter({ hasText: /^(En retard|Payée)$/ }).first()).toBeVisible()
+  // The invoice cards' status pills carry their day count or payment date: « Très en retard (39 j) », « Payée le … ».
+  await expect(page.locator('.invoice-card .pill').filter({ hasText: /^(Très en retard|En retard|Payée) / }).first()).toBeVisible()
 })
