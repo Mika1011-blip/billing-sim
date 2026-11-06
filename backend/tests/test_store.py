@@ -586,3 +586,15 @@ def test_reload_replaces_the_scenario_and_resets_the_clock(conn, plan, contract)
     assert conn.execute("SELECT COUNT(*) FROM scenario").fetchone()[0] == 1
     assert conn.execute("SELECT COUNT(*) FROM ticket").fetchone()[0] == len(plan.tickets)
     assert conn.execute("SELECT COUNT(*) FROM ticket_event").fetchone()[0] == len(other.events)
+
+
+def test_ticket_has_planned_dates(conn):
+    t = get_ticket(conn, 0, "BANK-1")
+    assert t["debut_prevu"] == "2026-03-02"
+    assert date.fromisoformat(t["fin_prevu"]) >= date.fromisoformat(t["debut_prevu"])
+    not_started = [x for x in list_tickets(conn, 0) if x["debut_reel"] is None]
+    assert not_started
+    for x in not_started:
+        assert x["debut_prevu"] and x["fin_prevu"] and x["fin_prevu"] >= x["debut_prevu"]
+    nested = [x for inv in list_invoices(conn, last_day(conn)) for x in inv["tickets"]]
+    assert nested and all("debut_prevu" in x and "fin_prevu" in x for x in nested)
