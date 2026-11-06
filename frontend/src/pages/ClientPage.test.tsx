@@ -1,7 +1,25 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react'
-import { ClientPage, CLOCK_POLL_MS } from './ClientPage'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { AppShell, CLOCK_POLL_MS } from '../components/AppShell'
+import { SIM_RESET_EVENT } from '../sim'
+import { ClientPage } from './ClientPage'
+
+/** The page alone (inside a router, for its links). */
+const renderPage = () => render(<ClientPage />, { wrapper: MemoryRouter })
+
+/** The page inside the app shell, which owns the clock poll. */
+const renderInShell = () =>
+  render(
+    <MemoryRouter initialEntries={['/client']}>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route path="/client" element={<ClientPage />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+  )
 
 // Day 3 = Wednesday 2026-03-04; day 0 = Monday 2026-03-02.
 const DATES = ['2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05', '2026-03-06', '2026-03-09']
@@ -27,6 +45,7 @@ const summary = { contracte: 2000, contracte_ttc: 2400, facture: 2400, paye: 0, 
 const reply = (body: unknown, status = 200) => ({ ok: status < 300, status, statusText: '', json: async () => body })
 
 let failClient = false
+let wasReset = false // the backend after POST /sim/reset: no clock, no client data
 
 let day = 2 // the backend clock; a test moves it to simulate /dev moving it
 
@@ -38,6 +57,8 @@ function installFetch() {
     vi.fn(async (url: string, init?: RequestInit) => {
       calls.push(`${init?.method ?? 'GET'} ${url}`)
       if (failClient && url.startsWith('/client/')) return reply({ detail: 'boom' }, 500)
+      if (wasReset && url === '/sim/clock') return reply({ detail: 'no simulation' }, 404)
+      if (wasReset && url.startsWith('/client/')) return reply({ detail: 'no plan' }, 409)
       if (url === '/sim/clock' && init?.method === 'PUT') day = JSON.parse(String(init.body)).day
       if (url === '/sim/clock') return reply({ day, last_day: 5, date: DATES[day] })
       if (url === '/client/today') return reply({ jour: day, date: DATES[day], date_longue: LONG[day] })
@@ -56,13 +77,14 @@ function installFetch() {
 afterEach(() => {
   vi.useRealTimers()
   failClient = false
+  wasReset = false
   vi.unstubAllGlobals()
 })
 
 describe('ClientPage', () => {
   it('loads everything and renders the French dashboard with record anchors', async () => {
     installFetch()
-    render(<ClientPage />)
+    renderPage()
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
       "Aujourd'hui : mercredi 4 mars 2026 · jour 2",
     )
@@ -78,23 +100,13 @@ describe('ClientPage', () => {
     expect(within(document.getElementById('rec-L1')!).queryByText('Correctif isolé')).toBeNull()
   })
 
-  it('sets the page language to French while mounted and restores it after', async () => {
-    installFetch()
-    document.documentElement.lang = 'en'
-    const { unmount } = render(<ClientPage />)
-    expect(document.documentElement.lang).toBe('fr')
-    await screen.findByText(/mercredi 4 mars 2026/)
-    unmount()
-    expect(document.documentElement.lang).toBe('en')
-  })
-
   describe('when the clock is moved elsewhere', () => {
     const summaryFetches = (calls: string[]) => calls.filter((c) => c === 'GET /client/summary').length
 
     async function loaded() {
       const calls = installFetch()
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] }) // promises and findBy keep running normally
-      render(<ClientPage />)
+      renderInShell() // the shell polls the clock; the page refetches when the polled day differs from its own
       await screen.findByText(/mercredi 4 mars 2026/)
       return calls
     }
@@ -131,7 +143,7 @@ describe('ClientPage', () => {
 
   it('moves the clock with the arrows then refetches the client data', async () => {
     const calls = installFetch()
-    render(<ClientPage />)
+    renderPage()
     await screen.findByText(/mercredi 4 mars 2026/)
     await userEvent.click(screen.getByRole('button', { name: 'Jour suivant' }))
     expect(await screen.findByText(/jeudi 5 mars 2026 · jour 3/)).toBeInTheDocument()
@@ -143,7 +155,7 @@ describe('ClientPage', () => {
 
   it('maps a picked date to a working day', async () => {
     installFetch()
-    render(<ClientPage />)
+    renderPage()
     await screen.findByText(/mercredi 4 mars 2026/)
     const picker = screen.getByLabelText('Choisir une date')
     fireEvent.change(picker, { target: { value: '2026-03-07' } }) // Saturday
@@ -154,7 +166,7 @@ describe('ClientPage', () => {
 
   it('disables the arrows at both ends of the simulation', async () => {
     installFetch()
-    render(<ClientPage />)
+    renderPage()
     await screen.findByText(/mercredi 4 mars 2026/)
     const picker = screen.getByLabelText('Choisir une date')
     fireEvent.change(picker, { target: { value: '2026-03-02' } }) // the first day
@@ -167,7 +179,7 @@ describe('ClientPage', () => {
 
   it('keeps the dashboard and shows an error banner when a refetch fails', async () => {
     installFetch()
-    render(<ClientPage />)
+    renderPage()
     await screen.findByText(/mercredi 4 mars 2026/)
     // The clock move succeeds, then every client fetch fails with a 500.
     failClient = true
@@ -181,20 +193,48 @@ describe('ClientPage', () => {
 
   it('shows the error message, not the empty state, when the initial load fails with a 500', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => reply({ detail: 'boom' }, 500)))
-    render(<ClientPage />)
+    renderPage()
     expect(await screen.findByText('Impossible de charger les données.')).toBeInTheDocument()
     expect(screen.queryByText(/Aucune simulation en cours/)).toBeNull()
   })
 
   it('shows the error message when the initial load hits a network error', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('network down') }))
-    render(<ClientPage />)
+    renderPage()
     expect(await screen.findByText('Impossible de charger les données.')).toBeInTheDocument()
   })
 
-  it('shows a French message when there is no simulation', async () => {
+  it('shows a French message when there is no simulation, with a link to the dev page', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => reply({ detail: 'no plan' }, 409)))
-    render(<ClientPage />)
+    renderPage()
     expect(await screen.findByText(/Aucune simulation en cours/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Aller à la page Dev' })).toHaveAttribute('href', '/dev')
+  })
+
+  describe('after a reset', () => {
+    const summaryFetches = (calls: string[]) => calls.filter((c) => c === 'GET /client/summary').length
+
+    it('refetches and shows the empty state with a link to /dev', async () => {
+      const calls = installFetch()
+      renderPage()
+      await screen.findByText(/mercredi 4 mars 2026/)
+      expect(summaryFetches(calls)).toBe(1)
+      wasReset = true
+      await act(async () => void window.dispatchEvent(new Event(SIM_RESET_EVENT)))
+      expect(await screen.findByText(/Aucune simulation en cours/)).toBeInTheDocument()
+      expect(summaryFetches(calls)).toBe(2)
+      expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
+      expect(screen.queryByText('Impossible de charger les données.')).toBeNull()
+      expect(screen.getByRole('link', { name: 'Aller à la page Dev' })).toHaveAttribute('href', '/dev')
+    })
+
+    it('loads the new simulation when a plan exists again', async () => {
+      const calls = installFetch()
+      renderPage()
+      await screen.findByText(/mercredi 4 mars 2026/)
+      await act(async () => void window.dispatchEvent(new Event(SIM_RESET_EVENT)))
+      await waitFor(() => expect(summaryFetches(calls)).toBe(2))
+      expect(await screen.findByText(/mercredi 4 mars 2026/)).toBeInTheDocument()
+    })
   })
 })

@@ -26,9 +26,9 @@ export function InvoiceList({ invoices, payments, onSelect }: Props) {
             <th>{t.lot}</th>
             <th>{t.issued}</th>
             <th>{t.due}</th>
-            <th>{t.ttc}</th>
-            <th>{t.paid}</th>
-            <th>{t.remaining}</th>
+            <th className="num">{t.ttc}</th>
+            <th className="num">{t.paid}</th>
+            <th className="num">{t.remaining}</th>
             <th>{t.status}</th>
           </tr>
         </thead>
@@ -97,7 +97,7 @@ function DrawerPayments({ payments }: { payments: ClientPayment[] }) {
       <thead>
         <tr>
           <th>{t.paymentDate}</th>
-          <th>{t.paymentAmount}</th>
+          <th className="num">{t.paymentAmount}</th>
           <th>{t.paymentReference}</th>
         </tr>
       </thead>

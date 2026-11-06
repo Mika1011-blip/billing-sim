@@ -101,7 +101,7 @@ describe('Gantt', () => {
       <Gantt rows={[...rows, loose]} lots={lots} sprints={sprints} today={5} lastDay={20} />,
     )
     expect(container.querySelectorAll('g.ticket-row')).toHaveLength(4)
-    expect(container.textContent).toContain('No lot')
+    expect(container.textContent).toContain('Sans lot')
   })
 
   it('draws a dependency arrow only between rows that exist', () => {

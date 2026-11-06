@@ -214,7 +214,7 @@ export function Assistant() {
           aria-label={t.placeholder}
           onChange={(e) => setInput(e.target.value)}
         />
-        <button type="submit" disabled={busy || !input.trim()}>
+        <button type="submit" className="btn-primary" disabled={busy || !input.trim()}>
           {t.send}
         </button>
       </form>

@@ -1,3 +1,4 @@
+import { fr } from '../../i18n/fr'
 import type { Diff, Invoice, Payment } from '../../types'
 
 interface Props {
@@ -11,6 +12,7 @@ const fmtDay = (d: number | null | undefined) => (d == null ? '—' : String(d))
 const fmtSlip = (s: number | null) => (s === null ? '—' : s > 0 ? `+${s}` : String(s))
 
 export function Ledger({ invoices, payments, diff, today }: Props) {
+  const label = fr.dev.ledger
   const paidFor = (number: string) =>
     payments
       .filter((p) => p.invoice === number && p.day <= today)
@@ -18,17 +20,17 @@ export function Ledger({ invoices, payments, diff, today }: Props) {
 
   return (
     <div className="ledger">
-      <h3>Invoices</h3>
+      <h3>{label.invoices}</h3>
       <table>
         <thead>
           <tr>
-            <th>Number</th>
-            <th>Lot</th>
-            <th>Issued</th>
-            <th>Due</th>
-            <th>TTC</th>
-            <th>Paid</th>
-            <th>Outstanding</th>
+            <th>{label.invoice}</th>
+            <th>{label.lot}</th>
+            <th className="num">{label.issued}</th>
+            <th className="num">{label.due}</th>
+            <th className="num">{label.ttc}</th>
+            <th className="num">{label.paid}</th>
+            <th className="num">{label.outstanding}</th>
           </tr>
         </thead>
         <tbody>
@@ -38,72 +40,72 @@ export function Ledger({ invoices, payments, diff, today }: Props) {
               <tr key={inv.number} className={inv.issued_day > today ? 'future' : undefined}>
                 <td>{inv.number}</td>
                 <td>{inv.lot ?? inv.ticket ?? '—'}</td>
-                <td>{inv.issued_day}</td>
-                <td>{inv.due_day}</td>
-                <td>{inv.amount_ttc}</td>
-                <td>{paid}</td>
-                <td>{inv.amount_ttc - paid}</td>
+                <td className="num">{inv.issued_day}</td>
+                <td className="num">{inv.due_day}</td>
+                <td className="num">{inv.amount_ttc}</td>
+                <td className="num">{paid}</td>
+                <td className="num">{inv.amount_ttc - paid}</td>
               </tr>
             )
           })}
         </tbody>
       </table>
 
-      <h3>Plan vs real: lots</h3>
+      <h3>{label.lotsDiff}</h3>
       <table>
         <thead>
           <tr>
-            <th>Lot</th>
-            <th>Planned delivery</th>
-            <th>Real delivery</th>
-            <th>Slip (days)</th>
-            <th>Days charged</th>
-            <th>Actual days</th>
+            <th>{label.lot}</th>
+            <th className="num">{label.plannedDelivery}</th>
+            <th className="num">{label.realDelivery}</th>
+            <th className="num">{label.slip}</th>
+            <th className="num">{label.daysCharged}</th>
+            <th className="num">{label.actualDays}</th>
           </tr>
         </thead>
         <tbody>
           {diff.lots.map((l) => (
             <tr key={l.key}>
               <td>{l.name}</td>
-              <td>{fmtDay(l.planned_delivery_day)}</td>
-              <td>{fmtDay(l.real_delivery_day)}</td>
-              <td>{fmtSlip(l.slip_days)}</td>
-              <td>{l.days_charged}</td>
-              <td>{fmtDay(l.actual_days)}</td>
+              <td className="num">{fmtDay(l.planned_delivery_day)}</td>
+              <td className="num">{fmtDay(l.real_delivery_day)}</td>
+              <td className="num">{fmtSlip(l.slip_days)}</td>
+              <td className="num">{l.days_charged}</td>
+              <td className="num">{fmtDay(l.actual_days)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <h3>Plan vs real: tickets</h3>
+      <h3>{label.ticketsDiff}</h3>
       <table>
         <thead>
           <tr>
-            <th>Ticket</th>
-            <th>Lot</th>
-            <th>Assignee</th>
-            <th>Planned</th>
-            <th>Real</th>
-            <th>Slip (days)</th>
-            <th>Days charged</th>
-            <th>Actual days</th>
+            <th>{label.ticket}</th>
+            <th>{label.lot}</th>
+            <th>{label.assignee}</th>
+            <th className="num">{label.planned}</th>
+            <th className="num">{label.real}</th>
+            <th className="num">{label.slip}</th>
+            <th className="num">{label.daysCharged}</th>
+            <th className="num">{label.actualDays}</th>
           </tr>
         </thead>
         <tbody>
           {diff.tickets.map((t) => (
             <tr key={t.key}>
               <td>{t.key}</td>
-              <td>{t.lot ?? 'no lot'}</td>
+              <td>{t.lot ?? label.noLot}</td>
               <td>{t.assignee}</td>
-              <td>
+              <td className="num">
                 {fmtDay(t.planned_start)}–{fmtDay(t.planned_end)}
               </td>
-              <td>
+              <td className="num">
                 {fmtDay(t.real_start)}–{fmtDay(t.real_end)}
               </td>
-              <td>{fmtSlip(t.slip_days)}</td>
-              <td>{t.days_charged}</td>
-              <td>{fmtDay(t.actual_days)}</td>
+              <td className="num">{fmtSlip(t.slip_days)}</td>
+              <td className="num">{t.days_charged}</td>
+              <td className="num">{fmtDay(t.actual_days)}</td>
             </tr>
           ))}
         </tbody>

@@ -4,6 +4,8 @@ import { ClockPanel } from '../components/dev/ClockPanel'
 import { Gantt } from '../components/dev/Gantt'
 import { Ledger } from '../components/dev/Ledger'
 import { SetupPanel } from '../components/dev/SetupPanel'
+import { fr } from '../i18n/fr'
+import { useOnSimReset, useSimClock } from '../sim'
 import type { AgentTool, Clock, Diff, Plan, Timeline } from '../types'
 
 interface Loaded {
@@ -15,18 +17,27 @@ interface Loaded {
 
 export function DevPage() {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
-  const [message, setMessage] = useState('Loading…')
+  const t = fr.dev
+  const [message, setMessage] = useState(t.loading)
   const [tools, setTools] = useState<AgentTool[]>([])
+  const { reportClock } = useSimClock()
 
   const refresh = useCallback(async () => {
     try {
       const [clock, plan, timeline, diff] = await Promise.all([getClock(), getPlan(), getTimeline(), getDiff()])
       setLoaded({ clock, plan, timeline, diff })
+      reportClock(clock) // a freshly generated plan shows up in the shell's clock badge at once
     } catch {
       setLoaded(null)
-      setMessage('No simulation yet. Generate a plan in the Setup panel.')
+      setMessage(fr.dev.empty)
     }
-  }, [])
+  }, [reportClock])
+
+  useOnSimReset(() => {
+    setLoaded(null)
+    setMessage(t.loading)
+    void refresh()
+  })
 
   useEffect(() => {
     void refresh()
@@ -40,11 +51,11 @@ export function DevPage() {
 
   return (
     <main className="dev-page">
-      <h1>Billing simulation: dev</h1>
+      <h1>{t.title}</h1>
       <SetupPanel onGenerated={() => void refresh()} />
       {tools.length > 0 && (
         <section className="panel agent-tools">
-          <h2>Agent tools</h2>
+          <h2>{t.agentTools}</h2>
           <ul>
             {tools.map((t) => (
               <li key={t.name}>
@@ -62,10 +73,13 @@ export function DevPage() {
           {/* The timeline and diff cover the whole simulation; the clock only moves "today". */}
           <ClockPanel
             clock={loaded.clock}
-            onChange={(clock) => setLoaded((l) => (l ? { ...l, clock } : l))}
+            onChange={(clock) => {
+              setLoaded((l) => (l ? { ...l, clock } : l))
+              reportClock(clock)
+            }}
           />
           <section className="panel">
-            <h2>Gantt</h2>
+            <h2>{t.gantt.title}</h2>
             <div className="gantt-scroll">
               <Gantt
                 rows={loaded.diff.tickets}
@@ -78,12 +92,22 @@ export function DevPage() {
               />
             </div>
             <p className="legend">
-              <span className="swatch planned" /> planned <span className="swatch real" /> real{' '}
-              <span className="swatch blocked" /> blocked <span className="swatch today" /> today
+              <span className="legend-chip">
+                <span className="swatch planned" /> {t.gantt.planned}
+              </span>
+              <span className="legend-chip">
+                <span className="swatch real" /> {t.gantt.real}
+              </span>
+              <span className="legend-chip">
+                <span className="swatch blocked" /> {t.gantt.blocked}
+              </span>
+              <span className="legend-chip">
+                <span className="swatch today" /> {t.gantt.today}
+              </span>
             </p>
           </section>
           <section className="panel">
-            <h2>Ledger</h2>
+            <h2>{t.ledger.title}</h2>
             <Ledger
               invoices={loaded.timeline.invoices}
               payments={loaded.timeline.payments}

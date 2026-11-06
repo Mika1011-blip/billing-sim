@@ -26,25 +26,27 @@ export function Header({ today, lastDay, onStep, onPickDate }: Props) {
 
   return (
     <header className="client-header row">
-      <button type="button" aria-label={t.previous} disabled={today.jour <= 0} onClick={() => onStep(-1)}>
-        ◀
-      </button>
       <h1>
         {t.today} : {today.date_longue} · {t.day} {today.jour}
       </h1>
-      <button type="button" aria-label={t.next} disabled={today.jour >= lastDay} onClick={() => onStep(1)}>
-        ▶
-      </button>
-      <input
-        type="date"
-        aria-label={t.pickDate}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') commit()
-        }}
-      />
+      <div className="date-control" role="group">
+        <button type="button" aria-label={t.previous} disabled={today.jour <= 0} onClick={() => onStep(-1)}>
+          ◀
+        </button>
+        <input
+          type="date"
+          aria-label={t.pickDate}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commit()
+          }}
+        />
+        <button type="button" aria-label={t.next} disabled={today.jour >= lastDay} onClick={() => onStep(1)}>
+          ▶
+        </button>
+      </div>
     </header>
   )
 }

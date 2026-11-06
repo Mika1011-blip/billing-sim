@@ -1,3 +1,4 @@
+import { fr } from '../../i18n/fr'
 import type { DiffTicketRow, Sprint, TimelineEvent } from '../../types'
 
 export const PAD = 160 // left margin holds the labels
@@ -63,7 +64,7 @@ function layout(rows: DiffTicketRow[], lots: { key: string; name: string }[]): L
   // Tickets with no lot (or an unknown one) still get a group, so every row is drawn.
   const orphans = [...new Set(rows.map((r) => r.lot ?? NO_LOT))]
     .filter((k) => !known.has(k))
-    .map((k) => ({ key: k, name: k === NO_LOT ? 'No lot' : k }))
+    .map((k) => ({ key: k, name: k === NO_LOT ? fr.dev.gantt.noLot : k }))
   for (const lot of [...lots, ...orphans]) {
     const lotRows = rows.filter((r) => (r.lot ?? NO_LOT) === lot.key)
     if (lotRows.length === 0) continue
@@ -102,7 +103,7 @@ export function Gantt({ rows, lots, sprints, today, lastDay, events = [], depend
   }
 
   return (
-    <svg className="gantt" width={width} height={height} role="img" aria-label="Gantt chart">
+    <svg className="gantt" width={width} height={height} role="img" aria-label={fr.dev.gantt.title}>
       <defs>
         <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
           <rect width="6" height="6" fill="#fff" />
@@ -150,7 +151,7 @@ export function Gantt({ rows, lots, sprints, today, lastDay, events = [], depend
                 y={y + 3}
                 width={barW(r.planned_start, r.planned_end)}
                 height={BAR_H}
-                fill="#b8bec6"
+                fill="#cbd5e1"
               />
             )}
             {r.real_start !== null && r.real_end !== null && (
@@ -160,7 +161,7 @@ export function Gantt({ rows, lots, sprints, today, lastDay, events = [], depend
                 y={y + 13}
                 width={barW(r.real_start, r.real_end)}
                 height={BAR_H}
-                fill="#2563eb"
+                fill="#4f46e5"
               />
             )}
             {(spans[r.key] ?? []).map((s) => (
@@ -183,7 +184,7 @@ export function Gantt({ rows, lots, sprints, today, lastDay, events = [], depend
         <path key={a.id} className="dependency" d={a.d} fill="none" stroke="#555" strokeWidth="1" markerEnd="url(#arrowhead)" />
       ))}
 
-      <line className="today" x1={scale(today)} x2={scale(today)} y1={0} y2={height} stroke="#dc2626" strokeWidth="2" />
+      <line className="today" x1={scale(today)} x2={scale(today)} y1={0} y2={height} stroke="#b91c1c" strokeWidth="2" />
     </svg>
   )
 }
