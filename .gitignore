@@ -25,3 +25,6 @@ Thumbs.db
 
 # Worktrees
 .worktrees/
+
+# Build process scratch
+.superpowers/

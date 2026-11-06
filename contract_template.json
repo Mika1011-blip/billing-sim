@@ -1,0 +1,10 @@
+{
+  "tjm": {"dev": 600, "senior": 750, "architect": 900},
+  "rate_card": {"S": 1, "M": 3, "L": 5, "XL": 10},
+  "hours_per_day": 8,
+  "payment_terms_days": 30,
+  "overrun_rule": "absorbed",
+  "vat_rate": 0.20,
+  "currency": "EUR",
+  "invoice_timing": "on_delivery"
+}
