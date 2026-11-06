@@ -35,3 +35,5 @@ data/
 # Playwright
 frontend/test-results/
 frontend/playwright-report/
+docs/demo/*.webm
+docs/demo/contact.png
