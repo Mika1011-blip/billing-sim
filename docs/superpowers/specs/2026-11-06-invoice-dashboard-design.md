@@ -164,3 +164,20 @@ E2E: generate (fallback), clock to end, `/client` shows ≥ 2 `Très en retard` 
 ## 14. Out of scope
 
 Partial payments, editing amounts, participant-driven approvals, payment reminders/e-mails, exporting invoices, a separate route for the invoice list.
+
+## 15. Addendum (2026-11-06, after the interface guideline document)
+
+### 15.1 Due date in calendar days
+`due_day` was `issued_day + payment_terms_days` in **working** days. The contract's "30 jours" means calendar days and the overdue tiers already count calendar days, so: `due_day = day_for_date(first working day on or after date(issued_day) + payment_terms_days calendar days)` (Saturday/Sunday roll to Monday). `policy.due_day(contract, issued_day)` keeps its signature but needs `start_date`; it becomes `due_day(contract, issued_day, start_date)`. `last_day` (35 calendar days after the latest due date) follows automatically. Both snapshots are regenerated; the fixture's dates shift earlier.
+
+### 15.2 Client chronology view (Vue 1)
+A second client layout, switchable with two tabs under the tiles: **Chronologie** and **Factures** (the §8 dashboard; `Factures` is the default). Both share the header, the tiles, the alert line, *Lots à valider*, the assistant and the ticket detail (§10).
+
+Chronologie, top to bottom:
+1. **Avancement** — a French Gantt (`components/client/Avancement.tsx`), one row per ticket grouped by lot (then *Sans lot*), x-axis in working days with sprint bands and date ticks every 5 days, a grey bar for the planned span (`planned_start`/`planned_end`), a blue bar for the real span **clipped at today** (`debut_reel` to `min(fin_reel ?? today, today)`), hatched segments for days in `Bloqué` (from the history: between a *Blocage* and the next *Déblocage*, clipped at today), a red today line, the legend `prévu · réel · bloqué · aujourd'hui`. A ticket not started has no blue bar. Clicking a row opens its ticket detail (§10) below the chart (one open at a time).
+2. **Terminé (n)** — the tickets with `statut = Terminé`, newest `fin_reel` first: `TicketDetail` rows.
+3. **Reste à faire (n)** — the other tickets ordered by planned start: `TicketDetail` rows; a not-started ticket shows `Début prévu le …`.
+
+Data: the client ticket record gains `debut_prevu` and `fin_prevu` (ISO dates from `planned_start_day`/`planned_end_day`; plan data, not future-filtered — the plan was shown to the client at signature); the history already exposes blocks. No new route.
+
+Tests: planned-only row for a not-started ticket; real bar clipped at today for a ticket in progress; hatched block from the BANK-5 history in the snapshot; the tab switch keeps the tiles; the lists' counts equal the status counts in the snapshot; e2e: open *Chronologie* at the last day, every ticket is in *Terminé*, click one → the detail shows its journal.

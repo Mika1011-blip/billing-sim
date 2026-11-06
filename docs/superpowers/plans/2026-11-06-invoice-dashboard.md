@@ -298,3 +298,31 @@ def test_lot_has_resume_livraison(conn):
 - Spec coverage: §2 decisions → T1 (schema/prompt/fixture/behaviour), T3 (payment rules), T4 (statuses, calendar days); §3 → T1; §4 → T3; §5 → T2; §6 → T4; §7 → T4; §8 → T6; §9 → T7; §10 → T5; §11 → T1 (`full_plan`), T3 (manager tool), T6 (ledger statuses fall out of T4); §12 → T3/T7; §13 → spread as named; §14 nothing to do.
 - Type consistency: `paiement`, `calcul`, `etapes`, `journal_nombre`, `resume_livraison`, `prochaine_facture`, `en_retard_nombre`, `a_payer` used identically in T4–T7; `pay_invoice`/`AlreadyPaid` in T3/T4; `step_notes` in T2 only.
 - Review Focus items each have a named test in T2, T3, T4, T6.
+
+---
+
+### Task 8: Due date in calendar days (spec §15.1)
+
+**Files:**
+- Modify: `backend/billing_sim/billing/policy.py:76-77` (`due_day`), `backend/billing_sim/expander/invoicing.py` (its one caller), `backend/billing_sim/expander/calendar.py` (reuse `first_working_day_on_or_after` if it lives in `expand.py`: move it to `calendar.py`)
+- Test: `backend/tests/test_billing.py`, `test_expander.py`, snapshots regenerated (`--update-snapshot`), `frontend/src/test-fixtures/{dev,client}-snapshot.json`
+
+**Interfaces:**
+- Produces: `due_day(contract, issued_day: int, start_date: date) -> int` = index of the first working day whose date ≥ `date_for_day(start_date, issued_day) + timedelta(days=contract.payment_terms_days)`.
+
+- [ ] **Step 1: Failing tests** — `test_due_day_is_30_calendar_days_rolled_to_monday`: issued on a Monday (day 0, 2026-03-02) → due date 2026-04-01 (Wednesday) → day index 22; issued day 4 (Friday 2026-03-06) → 2026-04-05 is a Sunday → 2026-04-06 (Monday) → day 25. `test_fixture_due_dates_are_calendar` in `test_expander.py`: for every invoice, `date(due) − date(issued)` is 30, 31 or 32 days and `date(due).weekday() < 5`.
+- [ ] **Step 2: Run** → FAIL. **Step 3: Implement**; update the caller; regenerate both snapshots; `bash scripts/test.sh` green (frontend tests read the snapshots, so they follow). Commit `fix(billing): due date is 30 calendar days`.
+
+### Task 9: Client chronology view (spec §15.2) — after Task 7
+
+**Files:**
+- Modify: `backend/billing_sim/store/queries.py` (`tickets()` rows + `debut_prevu`, `fin_prevu`), `backend/tests/test_store.py`, snapshots regenerated
+- Create: `frontend/src/components/client/Avancement.tsx` (+test), `ChronologieView.tsx` (+test), `ViewTabs.tsx`
+- Modify: `frontend/src/pages/ClientPage.tsx` (+test), `types.ts`, `i18n/fr.ts` (`tabs`, `chronologie`), `styles.css`, `e2e/demo.spec.ts`, `README.md`
+
+**Interfaces:**
+- Consumes: `TicketDetail` (Task 5), client snapshot incl. `history["BANK-5"]`, `ClientTicket` + `debut_prevu/fin_prevu`.
+- Produces: `Avancement({ tickets, lots, today, history: Record<string, HistoryRow[]>, onSelect(key) })`; `ChronologieView({ tickets, lots, today })` (fetches history for in-progress/done tickets lazily, one request per ticket, cached as in `TicketDetail`); `ViewTabs({ value: 'factures' | 'chronologie', onChange })`; `ClientPage` keeps the tab in `localStorage` key `billing-sim.client.view`.
+
+- [ ] **Step 1: Backend** — failing store test `test_ticket_has_planned_dates` (BANK-1 `debut_prevu == '2026-03-02'`), implement, regenerate snapshots.
+- [ ] **Step 2: Frontend failing tests** per spec §15.2 (planned-only row; real bar clipped at today; hatched block from BANK-5 history; tab switch keeps tiles; list counts equal status counts). **Step 3: Implement.** **Step 4:** `npm test -- --run`, `npm run build` green; e2e extended per §15.2; README updated. Commit `feat(client): chronology view with planned vs real and ticket lists`.

@@ -1,0 +1,529 @@
+% Simulation de facturation au forfait — description précise du simulateur
+% Compilation : tectonic simulation-facturation.tex   (ou pdflatex ×2)
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit,backgrounds,chains}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{accent}{HTML}{4F46E5}
+\definecolor{accentsoft}{HTML}{EEF2FF}
+\definecolor{ok}{HTML}{15803D}
+\definecolor{oksoft}{HTML}{DCFCE7}
+\definecolor{warn}{HTML}{B45309}
+\definecolor{warnsoft}{HTML}{FEF3C7}
+\definecolor{danger}{HTML}{B91C1C}
+\definecolor{dangersoft}{HTML}{FEE2E2}
+\definecolor{muted}{HTML}{6B7280}
+\definecolor{line}{HTML}{CBD5E1}
+\definecolor{client}{HTML}{DBEAFE}
+\definecolor{manager}{HTML}{F3F4F6}
+
+\tikzset{
+  box/.style={draw=line, rounded corners=3pt, fill=white, align=center, inner sep=6pt, font=\small},
+  table/.style={draw=line, rounded corners=3pt, align=left, inner sep=5pt, font=\footnotesize, text width=3.1cm},
+  tclient/.style={table, fill=client},
+  tmanager/.style={table, fill=manager},
+  step/.style={box, fill=accentsoft, minimum height=1.1cm, text width=2.6cm},
+  data/.style={box, fill=manager, text width=2.6cm},
+  flow/.style={-{Stealth[length=2.5mm]}, thick, draw=muted},
+  state/.style={box, minimum width=2.6cm, minimum height=0.9cm},
+  lbl/.style={font=\footnotesize, text=muted},
+}
+
+\newcommand{\key}[1]{\texttt{#1}}
+\newcommand{\eur}[1]{#1\,€}
+\newcommand{\statut}[1]{\textit{#1}}
+
+\title{Simulation de facturation au forfait\\\large Description précise du simulateur}
+\author{Projet \texttt{billing-sim}}
+\date{Version du 6 novembre 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Le simulateur reproduit, jour par jour, un projet logiciel réalisé au forfait par une société de services pour un client bancaire. L'équipe est rémunérée à la journée (TJM) mais le client est facturé par lot, à prix fixe. Le simulateur montre au client exactement ce qu'il paie, pour quel travail, et où il en est de ses paiements ; il montre au prestataire l'écart entre les jours facturés et les jours réellement passés. Ce document décrit sans approximation les informations enregistrées, celles que le client voit, la manière dont chacune est dérivée, le déroulement d'une simulation, les actions possibles, les deux vues de l'interface client et l'assistant conversationnel.
+\end{abstract}
+
+\tableofcontents
+\clearpage
+
+%==============================================================
+\section{Principe}
+
+Le contrat fixe un \textbf{tarif journalier par profil} (TJM) et une \textbf{grille de tailles} qui convertit la taille d'un ticket en un nombre de jours. Le prix d'un ticket est donc connu dès la signature : $\text{prix} = \text{jours(taille)} \times \text{TJM(profil)}$. Le prix d'un lot est la somme des prix de ses tickets. Si l'équipe met plus de jours que prévu, l'écart est \textbf{absorbé par le prestataire} (règle \key{overrun\_rule = absorbed}) : le prix ne bouge pas. Le TJM est l'\emph{unité de calcul du prix}, jamais une \emph{cadence de facturation} : il n'y a pas de facture journalière (ce serait de la régie), mais une facture par lot livré.
+
+Toute la simulation est \textbf{événementielle} : chaque fait porte un index de jour ouvré ; « l'état au jour $D$ » est l'ensemble des faits dont le jour est $\le D$. Déplacer l'horloge ne modifie aucune donnée, cela déplace seulement la frontière $D$.
+
+%==============================================================
+\section{Le réservoir d'informations}
+\label{sec:pool}
+
+Tout ce que le simulateur enregistre est listé ici, y compris ce que le client ne voit pas. Trois couches : le \textbf{contrat}, le \textbf{plan} (fixé une fois à la génération) et la \textbf{chronologie} (les faits datés), plus l'horloge.
+
+\subsection{Schéma des données}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[node distance=5mm and 7mm]
+  \node[tmanager] (scenario) {\textbf{scenario}\\ demande, résumé produit,\\ \key{seed}, date de départ, \key{last\_day}};
+  \node[tclient, right=of scenario] (contract) {\textbf{contract}\\ TJM par profil, grille S/M/L/XL,\\ TVA, délai de paiement,\\ règle de dépassement};
+  \node[tmanager, right=of contract] (team) {\textbf{team\_member}\\ nom, profil};
+  \node[tmanager, right=of team] (sprint) {\textbf{sprint}\\ n°, jour début, jour fin};
+
+  \node[tclient, below=of scenario] (lot) {\textbf{lot}\\ clé, nom, description,\\ prix HT, livraison prévue,\\ résumé de livraison};
+  \node[tclient, below=of contract] (ticket) {\textbf{ticket}\\ clé, titre, description, lot,\\ taille, profil, jours facturés,\\ prix, assigné, \key{steps}\\ \textcolor{muted}{+ dates prévues/réelles, beats}};
+  \node[tmanager, below=of team] (dep) {\textbf{ticket\_dependency}\\ ticket $\to$ ticket};
+  \node[tclient, below=of sprint] (clock) {\textbf{clock}\\ \key{current\_day}};
+
+  \node[tclient, below=of lot] (event) {\textbf{ticket\_event}\\ jour, ordre, type, acteur,\\ contenu (heures + note,\\ raison de blocage, texte)};
+  \node[tclient, below=of ticket] (invoice) {\textbf{invoice}\\ n°, lot ou ticket, jour\\ d'émission, échéance,\\ HT, TVA, TTC, tickets couverts};
+  \node[tclient, below=of dep] (payment) {\textbf{payment}\\ facture, jour, montant,\\ référence};
+  \node[tclient, below=of clock] (approval) {\textbf{approval}\\ lot, jour, validé par};
+
+  \draw[flow] (ticket) -- (lot);
+  \draw[flow] (ticket) -- (dep);
+  \draw[flow] (event) -- (ticket);
+  \draw[flow] (invoice) -- (lot);
+  \draw[flow] (invoice) -- (ticket);
+  \draw[flow] (payment) -- (invoice);
+  \draw[flow] (approval) -- (lot);
+  \draw[flow] (ticket) -- (team);
+  \draw[flow] (ticket) -- (sprint);
+
+  \begin{scope}[on background layer]
+    \node[draw=line, dashed, rounded corners, fit=(scenario)(contract)(team)(sprint)(lot)(ticket)(dep), inner sep=4pt, label={[lbl]above left:couche statique (plan)}] {};
+    \node[draw=line, dashed, rounded corners, fit=(event)(invoice)(payment)(approval), inner sep=4pt, label={[lbl]below left:couche chronologique (chaque ligne porte un \key{jour})}] {};
+  \end{scope}
+\end{tikzpicture}
+\caption{Les tables de la base. Fond bleu : le client y a accès (filtré au jour courant) ; fond gris : réservé au pilote de la simulation.}
+\end{figure}
+
+\subsection{Inventaire des champs}
+
+\begin{longtable}{>{\ttfamily}p{3.4cm} p{6.2cm} c c}
+\toprule
+\textrm{Champ} & Signification & Client & Filtré au jour \\
+\midrule
+\endhead
+\multicolumn{4}{l}{\textbf{Contrat} (fichier \key{contract\_template.json}, figé à la signature)}\\
+tjm & 600 (dev), 750 (senior), 900 (architect) €\,HT/jour & oui & — \\
+rate\_card & S = 1, M = 3, L = 5, XL = 10 jours & oui & — \\
+hours\_per\_day & 8 h (conversion heures $\to$ jours réels) & oui & — \\
+payment\_terms\_days & 30 jours & oui & — \\
+vat\_rate & 0,20 & oui & — \\
+overrun\_rule & \key{absorbed} : le dépassement ne se facture pas & oui & — \\
+invoice\_timing & \key{on\_delivery} : facture à la livraison du lot & oui & — \\
+\midrule
+\multicolumn{4}{l}{\textbf{Scénario}}\\
+request\_text & la demande saisie par le participant & non & — \\
+product\_summary & résumé du produit (1--2 phrases) & oui & — \\
+seed & graine du générateur aléatoire & non & — \\
+start\_date & date du jour 0 (un lundi ; défaut 2026-03-02) & oui & — \\
+last\_day & dernier jour simulé & non & — \\
+\midrule
+\multicolumn{4}{l}{\textbf{Lot}}\\
+key, name, description & identité du lot (L1, L2, …) & oui & — \\
+price & somme des prix des tickets facturés avec le lot (HT) & oui & — \\
+planned\_delivery\_day & jour ouvré de livraison prévu & oui & — \\
+delivery\_summary & 2--4 phrases, en langage client, écrites à la génération & oui & — \\
+\midrule
+\multicolumn{4}{l}{\textbf{Ticket}}\\
+key, title, description & identité (BANK-1, BANK-2, …) & oui & — \\
+lot\_id, charged\_separately & lot d'appartenance ; facturé à part ou non & oui & — \\
+size, profile & taille S/M/L/XL, profil du réalisateur & oui & — \\
+days\_charged, fee & jours facturés et prix, calculés par le code & oui & — \\
+assignee\_id & membre de l'équipe qui réalise le ticket & oui & — \\
+steps & 2--8 étapes de travail, dans l'ordre & oui & — \\
+planned\_start/end\_day & planning initial & non$^{*}$ & — \\
+real\_start/end\_day & dates réelles (connues d'avance du pilote) & non & — \\
+beats & aléas scénarisés : blocages, retours de revue, notes & non & — \\
+sprint\_id, position & sprint de rattachement, ordre dans le plan & non & — \\
+\midrule
+\multicolumn{4}{l}{\textbf{Chronologie}}\\
+ticket\_event & statut, temps passé (heures + note), blocage, déblocage, commentaire, revue & oui & oui \\
+invoice & n° \key{F-AAAA-NNN}, émission, échéance, HT, TVA, TTC, tickets couverts & oui & oui \\
+payment & paiement enregistré par le participant & oui & oui \\
+approval & validation du lot par la direction des achats & oui & oui \\
+clock & jour courant $D$ & oui & — \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize $^{*}$ le planning initial est montré au client dans la vue chronologie (section~\ref{sec:layout1}) sous forme de barres « prévu », sans les dates réelles futures.}\\
+\end{longtable}
+
+Les données qui restent \textbf{hors de portée du client} : la demande brute, la graine, \key{last\_day}, les dates réelles futures, les aléas scénarisés (\key{beats}) et tout événement postérieur au jour courant. Le pilote (page \emph{Dev}, serveur MCP « manager ») voit tout, y compris le futur.
+
+%==============================================================
+\section{Ce que le client doit savoir}
+\label{sec:besoins}
+
+\begin{enumerate}[label=\textbf{C\arabic*}, leftmargin=1.2cm]
+  \item \textbf{Les termes du contrat} : TJM par profil, grille de tailles, TVA, délai de paiement, règle de dépassement.
+  \item \textbf{Chaque facture} : numéro, lot ou ticket concerné, dates d'émission et d'échéance, montants HT / TVA / TTC, statut (\statut{À payer}, \statut{En retard}, \statut{Très en retard}, \statut{Payée}), nombre de jours de retard ou restants, date et référence du paiement.
+  \item \textbf{Ce qu'une facture couvre} : un résumé de livraison en langage courant, puis la liste des tickets livrés.
+  \item \textbf{Pourquoi ce prix} : pour chaque ticket $\text{taille} \to \text{jours} \times \text{TJM} = \text{montant}$, le total HT, la TVA, le TTC ; et la ligne d'honnêteté : jours facturés contre jours réellement passés.
+  \item \textbf{Chaque ticket} : titre, description, réalisateur, taille, jours facturés, prix, statut, dates réelles de début et de fin, jours réels, étapes prévues (cochées au fur et à mesure), journal des événements jusqu'au jour courant.
+  \item \textbf{Où il en est} : contracté, facturé, payé, reste à payer, en retard (montant et nombre de factures), prochaine facture attendue.
+  \item \textbf{Ce qu'il doit faire} : payer les factures dues, valider les lots livrés.
+\end{enumerate}
+
+%==============================================================
+\section{Dérivation de chaque information client}
+\label{sec:derivations}
+
+Toutes les valeurs ci-dessous sont \textbf{calculées par le code} à partir du réservoir de la section~\ref{sec:pool} ; aucune n'est écrite par le modèle de langage ni saisie par le participant (à l'exception du fait « payée », qui est une action du participant). $D$ désigne le jour courant, $\mathrm{date}(d)$ la date calendaire du jour ouvré $d$.
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[node distance=4mm and 6mm, every node/.style={font=\footnotesize}]
+  \node[data] (contract) {Contrat\\ TJM, grille, TVA, délai};
+  \node[data, right=of contract] (plan) {Plan\\ taille, profil, lot};
+  \node[data, right=of plan] (events) {Événements $\le D$\\ statuts, heures};
+  \node[data, right=of events] (inv) {Factures $\le D$\\ émission, échéance};
+  \node[data, right=of inv] (pay) {Paiements $\le D$};
+
+  \node[step, below=9mm of contract] (jours) {jours facturés\\ $= \text{grille}[\text{taille}]$};
+  \node[step, right=of jours] (prix) {prix ticket\\ $= \text{jours} \times \text{TJM}$};
+  \node[step, right=of prix] (statut) {statut ticket,\\ dates réelles, heures};
+  \node[step, right=of statut] (jreels) {jours réels\\ $= \sum \text{heures} / 8$};
+  \node[step, right=of jreels] (fstatut) {statut facture,\\ jours de retard};
+
+  \node[step, below=9mm of prix] (lotprix) {prix lot\\ $= \sum$ prix tickets};
+  \node[step, right=of lotprix] (ttc) {TVA, TTC\\ (arrondi au plus proche)};
+  \node[step, right=of ttc] (synthese) {synthèse : facturé,\\ payé, reste, en retard};
+
+  \draw[flow] (contract) -- (jours);
+  \draw[flow] (plan) -- (jours);
+  \draw[flow] (contract) -- (prix);
+  \draw[flow] (jours) -- (prix);
+  \draw[flow] (events) -- (statut);
+  \draw[flow] (events) -- (jreels);
+  \draw[flow] (contract) to[out=-60,in=120] (jreels);
+  \draw[flow] (inv) -- (fstatut);
+  \draw[flow] (pay) -- (fstatut);
+  \draw[flow] (prix) -- (lotprix);
+  \draw[flow] (lotprix) -- (ttc);
+  \draw[flow] (contract) to[out=-80,in=180] (ttc);
+  \draw[flow] (ttc) -- (synthese);
+  \draw[flow] (fstatut) -- (synthese);
+\end{tikzpicture}
+\caption{Graphe de dérivation : les cases grises sont des données enregistrées, les cases bleues des valeurs calculées à la demande.}
+\end{figure}
+
+\subsection{Prix}
+\begin{align*}
+\text{jours facturés}(t) &= \text{rate\_card}[\text{taille}(t)] && \text{S}=1,\ \text{M}=3,\ \text{L}=5,\ \text{XL}=10\\
+\text{prix}(t) &= \text{jours facturés}(t) \times \text{tjm}[\text{profil}(t)] && \text{entier, en € HT}\\
+\text{prix}(L) &= \sum_{t \in L,\ \neg\text{charged\_separately}(t)} \text{prix}(t)\\
+\text{TVA}(x) &= \operatorname{arrondi}_{\text{au plus proche, demi vers le haut}}(x \times 0{,}20)\\
+\text{TTC}(x) &= x + \text{TVA}(x)
+\end{align*}
+Exemple (scénario de démonstration) : BANK-5, taille M, profil senior : $3 \times 750 = \eur{2\,250}$ HT. Lot L1 : $3\,000$ HT, TVA $600$, TTC \eur{3\,600}. Total contracté : \eur{25\,500} HT, soit \eur{30\,600} TTC.
+
+\subsection{Statut et durée d'un ticket}
+On rejoue, dans l'ordre (jour, rang), les événements de type \emph{transition} et \emph{temps passé} dont le jour est $\le D$ :
+\begin{itemize}[nosep]
+  \item \textbf{statut} = cible de la dernière transition rejouée (\statut{À faire} si aucune) ; valeurs : \statut{À faire}, \statut{En cours}, \statut{Bloqué}, \statut{En revue}, \statut{Terminé} ;
+  \item \textbf{début réel} = jour de la première transition vers \statut{En cours} ; \textbf{fin réelle} = jour de la première transition vers \statut{Terminé} ;
+  \item \textbf{heures} = somme des heures des événements \emph{temps passé} ; \textbf{jours réels} $= \text{heures} / 8$, arrondi à 2 décimales.
+\end{itemize}
+Une étape prévue est « cochée » dès qu'une note de temps passé (jour $\le D$) la mentionne.
+
+\subsection{Factures}
+\begin{itemize}[nosep]
+  \item Une facture par lot, émise le premier jour ouvré qui suit la fin réelle du dernier ticket facturé avec le lot ; une facture par ticket \key{charged\_separately} (ou sans lot), émise le jour de sa fin réelle. Numéros \key{F-AAAA-NNN} dans l'ordre d'émission.
+  \item Visible au jour $D$ si $\text{émission} \le D$.
+  \item \textbf{Échéance} $= \mathrm{date}(\text{émission}) + 30$ jours calendaires, reportée au jour ouvré suivant si elle tombe un week-end.
+  \item \textbf{Paiement} = la ligne \key{payment} de la facture dont le jour est $\le D$ (il y en a au plus une : un paiement est toujours intégral).
+  \item \textbf{Statut} :
+  \[
+  \text{statut} =
+  \begin{cases}
+    \statut{Payée} & \text{si un paiement existe au jour } \le D\\
+    \statut{À payer} & \text{sinon, si } \mathrm{date}(D) \le \text{échéance}\\
+    \statut{En retard} & \text{sinon, si } \mathrm{date}(D) - \text{échéance} \le 30 \text{ jours}\\
+    \statut{Très en retard} & \text{sinon}
+  \end{cases}
+  \]
+  \item \textbf{jours de retard} $= \mathrm{date}(D) - \text{échéance}$ (jours calendaires, 0 si non applicable) ; \textbf{jours restants} $= \text{échéance} - \mathrm{date}(D)$ (0 si non applicable).
+  \item \textbf{Calcul de la facture} : les lignes $\text{taille} \to \text{jours} \times \text{TJM} = \text{montant}$ de chaque ticket couvert ; total HT ; TVA ; TTC ; jours facturés $= \sum$ jours facturés ; jours réels $= \sum$ jours réels des tickets ; écart $=$ jours réels $-$ jours facturés. Si l'écart est positif : « l'écart est absorbé par le prestataire : le prix du forfait ne change pas ».
+\end{itemize}
+
+\subsection{Synthèse}
+\begin{align*}
+\text{contracté}_{HT} &= \sum_{t} \text{prix}(t) & \text{contracté}_{TTC} &= \text{TTC}(\text{contracté}_{HT})\\
+\text{facturé} &= \sum_{f\,:\,\text{émission} \le D} \text{TTC}(f) & \text{payé} &= \sum_{p\,:\,\text{jour} \le D} \text{montant}(p)\\
+\text{reste à payer} &= \text{facturé} - \text{payé} & \text{en retard} &= \sum_{f \text{ en retard ou très en retard}} \text{TTC}(f)
+\end{align*}
+\textbf{À payer} = somme TTC des factures \statut{À payer} ; \textbf{nombre en retard} = nombre de factures \statut{En retard} ou \statut{Très en retard} ; \textbf{prochaine facture} = parmi les lots sans facture émise au jour $D$, celui dont la livraison prévue est la plus proche (date prévue au plan, montant HT du lot).
+
+Un lot est \statut{Livré} quand sa facture est émise ; \statut{Validé} quand une ligne \key{approval} existe au jour $\le D$ (le scénario la place le jour de l'émission).
+
+%==============================================================
+\section{Déroulement d'une simulation}
+\label{sec:workflow}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[node distance=5mm, start chain=going below, every node/.style={on chain}]
+  \node[step, text width=11cm] (req) {\textbf{1. Demande du participant} (texte libre, en français ou non) + graine facultative};
+  \node[step, text width=11cm] (haiku) {\textbf{2. Génération par Claude Haiku} (\key{claude-haiku-5-5}), schéma strict : équipe (3--5), lots (2--4), tickets (12--30) avec taille, profil, dépendances, étapes, aléas ; résumé de livraison par lot. Jamais de prix ni de nombre de jours dans le texte. Rejet si la demande ne décrit aucun projet logiciel.};
+  \node[step, text width=11cm] (valid) {\textbf{3. Validation par le code} : clés uniques, lots connus, dépendances sans cycle, blocages de 1 à 3 jours, étapes non vides. Une seule nouvelle tentative, sinon échec explicite. Sans clé API : scénario de secours intégré (12 tickets, 3 lots).};
+  \node[step, text width=11cm] (plan) {\textbf{4. Planning} (déterministe) : ordre topologique (dépendances, puis lot, puis clé) ; affectation au membre du profil voulu le plus tôt libre ; durée prévue = jours de la grille ; sprints de 10 jours ouvrés ; prix des tickets, des lots, livraison prévue.};
+  \node[step, text width=11cm] (real) {\textbf{5. Chronologie réelle} (aléatoire mais rejouable par la graine) : par ticket, un facteur log-normal $e^{\mathcal N(0,\,0{,}25)}$ borné à $[0{,}6\,;\,1{,}8]$ sur la durée, plus les jours de blocage et 2 jours de revue ; même réalisateur ; mêmes dépendances. Puis les événements jour par jour : passage \statut{En cours}, temps passé ($8\text{ h} \times \mathcal U(0{,}5;\,1)$, note = l'étape du jour), blocage/déblocage, commentaires d'avancement, revue, \statut{Terminé}.};
+  \node[step, text width=11cm] (inv) {\textbf{6. Factures et validations} : une par lot à la livraison, une par ticket facturé à part ; échéance à 30 jours ; validation du lot par la direction des achats le jour de l'émission. \textbf{Aucun paiement} n'est scénarisé.};
+  \node[step, text width=11cm] (store) {\textbf{7. Base événementielle} + horloge à 0. La simulation dure jusqu'à 35 jours calendaires après la dernière échéance, pour que toute facture puisse devenir \statut{Très en retard}.};
+  \draw[flow] (req) -- (haiku); \draw[flow] (haiku) -- (valid); \draw[flow] (valid) -- (plan);
+  \draw[flow] (plan) -- (real); \draw[flow] (real) -- (inv); \draw[flow] (inv) -- (store);
+\end{tikzpicture}
+\caption{Pipeline de génération. Les étapes 3 à 7 sont du code pur : le modèle de langage n'intervient qu'à l'étape 2.}
+\end{figure}
+
+\subsection{Prévu contre réel}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[x=0.42cm, y=0.55cm, font=\footnotesize]
+  % grille des jours
+  \foreach \d in {0,5,...,30} { \draw[line] (\d,0.4) -- (\d,-5.4); \node[lbl, above] at (\d,0.4) {j\d}; }
+  \fill[accentsoft, opacity=0.5] (10,0.4) rectangle (20,-5.4);
+  \node[lbl] at (5,1.2) {Sprint 1}; \node[lbl] at (15,1.2) {Sprint 2}; \node[lbl] at (25,1.2) {Sprint 3};
+  % BANK-4 (M, 3 j prévus)
+  \node[left] at (-0.5,-1) {BANK-4 (M, 3 j)};
+  \fill[line] (0,-0.7) rectangle (3,-1.0);
+  \fill[accent] (0,-1.05) rectangle (4,-1.35);
+  % BANK-5 (M, 3 j prévus, bloqué 2 j)
+  \node[left] at (-0.5,-2.5) {BANK-5 (M, 3 j)};
+  \fill[line] (3,-2.2) rectangle (6,-2.5);
+  \fill[accent] (4,-2.55) rectangle (5,-2.85);
+  \fill[pattern=north east lines, pattern color=warn] (5,-2.55) rectangle (7,-2.85);
+  \fill[accent] (7,-2.55) rectangle (10,-2.85);
+  % BANK-6 (L, 5 j prévus, dépend de BANK-5)
+  \node[left] at (-0.5,-4) {BANK-6 (L, 5 j)};
+  \fill[line] (6,-3.7) rectangle (11,-4.0);
+  \fill[accent] (10,-4.05) rectangle (14,-4.35);
+  \draw[flow, dashed] (10,-2.85) -- (10,-4.05);
+  % aujourd'hui
+  \draw[danger, thick] (12,0.4) -- (12,-5.4); \node[danger, above] at (12,-5.9) {aujourd'hui (D = 12)};
+  % légende
+  \fill[line] (16,-4.9) rectangle (17.2,-5.2); \node[right] at (17.3,-5.05) {prévu};
+  \fill[accent] (20,-4.9) rectangle (21.2,-5.2); \node[right] at (21.3,-5.05) {réel};
+  \fill[pattern=north east lines, pattern color=warn] (23.5,-4.9) rectangle (24.7,-5.2); \node[right] at (24.8,-5.05) {bloqué};
+\end{tikzpicture}
+\caption{Extrait de chronologie du lot L2. BANK-5 était prévu sur 3 jours ; il en a pris 6 (1 jour, 2 jours de blocage, 3 jours). Son prix reste $3 \times 750 = \eur{2\,250}$ : l'écart de 1,9 jour réel est absorbé. Le client ne voit la partie réelle qu'à gauche de la ligne « aujourd'hui ».}
+\end{figure}
+
+\subsection{Reproductibilité}
+Deux générations avec la même demande produisent des plans différents (le modèle de langage varie). Deux expansions du \emph{même plan} avec la même \textbf{graine} produisent exactement la même chronologie : mêmes durées, mêmes blocages, mêmes heures. Le scénario de secours avec une graine fixe donne donc une démonstration rejouable à l'identique.
+
+%==============================================================
+\section{Ce que le participant peut faire}
+\label{sec:actions}
+
+Le participant joue le \textbf{client}. Le pilote de la simulation (page \emph{Dev}) génère le scénario et peut aussi déplacer l'horloge et réinitialiser.
+
+\begin{description}[style=nextline, leftmargin=0pt]
+  \item[Se déplacer dans le temps] Jour précédent, jour suivant, choisir une date (bornée au premier et au dernier jour). L'état affiché est recalculé au jour choisi ; rien n'est perdu en revenant en arrière.
+  \item[Voir l'argent] Les tuiles \emph{Contracté (TTC, avec le HT en sous-ligne)}, \emph{Facturé}, \emph{Payé}, \emph{Reste à payer}, \emph{En retard (montant et nombre de factures)} ; une ligne d'alerte « $n$ factures en retard · $m$ à payer avant le \dots{} · prochaine facture : L3 vers le \dots{} ».
+  \item[Payer une facture] Bouton \emph{Marquer comme payée} sur chaque facture non payée : enregistre un paiement intégral à la date du jour courant. Si le participant revient avant ce jour, la facture redevient non payée ; s'il la paie à nouveau, le paiement futur est remplacé (une facture n'a jamais deux paiements dans une même histoire). Si le participant ne paie rien, toutes les factures finissent \statut{Très en retard} : c'est le comportement attendu, pas une erreur.
+  \item[Valider un lot] Section \emph{Lots à valider} (scénarisée : la validation est enregistrée automatiquement le jour de la facture).
+  \item[Interroger l'assistant] Section~\ref{sec:agent}.
+\end{description}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[node distance=9mm and 12mm]
+  \node[state, fill=client] (apayer) {\statut{À payer}\\ \footnotesize $\mathrm{date}(D) \le$ échéance};
+  \node[state, fill=warnsoft, right=of apayer] (retard) {\statut{En retard}\\ \footnotesize 1 à 30 jours après};
+  \node[state, fill=dangersoft, right=of retard] (tres) {\statut{Très en retard}\\ \footnotesize $> 30$ jours après};
+  \node[state, fill=oksoft, below=of retard] (payee) {\statut{Payée}\\ \footnotesize paiement au jour $\le D$};
+  \draw[flow] (apayer) -- node[lbl, above] {l'horloge avance} (retard);
+  \draw[flow] (retard) -- node[lbl, above] {l'horloge avance} (tres);
+  \draw[flow] (apayer) |- node[lbl, below left] {Marquer comme payée} (payee);
+  \draw[flow] (retard) -- (payee);
+  \draw[flow] (tres) |- (payee);
+  \draw[flow, dashed] (payee) to[bend left=35] node[lbl, right] {retour avant le jour du paiement} (tres);
+\end{tikzpicture}
+\caption{États d'une facture. Les transitions pleines suivent l'horloge et l'action du participant ; la transition pointillée illustre qu'un retour dans le temps masque le paiement (l'état est toujours recalculé au jour courant).}
+\end{figure}
+
+%==============================================================
+\section{Les deux vues de l'interface client}
+
+Les deux vues partagent le même en-tête (date, navigation), les mêmes tuiles d'argent et la même \textbf{fiche ticket} (figure~\ref{fig:popup}). Elles diffèrent par l'axe de lecture : le temps, ou la facture.
+
+\subsection{Vue 1 — chronologie}
+\label{sec:layout1}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[font=\footnotesize]
+  \draw[line, rounded corners] (0,0) rectangle (14,9.2);
+  \draw[line] (0,8.5) -- (14,8.5); \node[anchor=west] at (0.2,8.85) {Simulation de facturation \quad Dev \quad \textbf{Client} \hfill Jour 45 · 05/05/2026 \quad [Réinitialiser]};
+  \node[anchor=west] at (0.2,8.0) {\textbf{Aujourd'hui : mardi 5 mai 2026 · jour 45} \quad ◀ [05/05/2026] ▶};
+  \foreach \i/\t in {0/Contracté, 1/Facturé, 2/Payé, 3/Reste à payer, 4/En retard} {
+    \draw[line, rounded corners] (0.2+\i*2.75,6.3) rectangle (2.75+\i*2.75,7.4);
+    \node[anchor=west] at (0.3+\i*2.75,7.1) {\t};
+  }
+  \node[anchor=west, danger] at (11.3,6.65) {7 200 € · 2};
+  \draw[line, rounded corners] (0.2,3.3) rectangle (13.8,5.9);
+  \node[anchor=west] at (0.3,5.6) {\textbf{Avancement} \quad prévu \textcolor{muted}{■} \ réel \textcolor{accent}{■} \ bloqué \textcolor{warn}{▨} \ aujourd'hui \textcolor{danger}{|}};
+  \foreach \y/\k in {5.1/BANK-4, 4.7/BANK-5, 4.3/BANK-6, 3.9/BANK-8, 3.5/BANK-9} { \node[anchor=west] at (0.4,\y) {\k}; \fill[line] (2,\y+0.08) rectangle (4.5,\y-0.04); }
+  \fill[accent] (2,4.99) rectangle (5.1,4.9); \fill[accent] (2,4.59) rectangle (4.2,4.5); \fill[pattern=north east lines, pattern color=warn] (4.2,4.59) rectangle (5.2,4.5);
+  \fill[accent] (2,4.19) rectangle (6.2,4.1); \fill[accent] (2,3.79) rectangle (3.4,3.7);
+  \draw[danger] (6.4,5.4) -- (6.4,3.4);
+  \draw[line, rounded corners] (0.2,0.2) rectangle (6.8,3.0); \node[anchor=west] at (0.3,2.7) {\textbf{Terminé} (7)};
+  \foreach \y/\k in {2.3/BANK-1 · Filtres du tableau de bord, 1.9/BANK-2 · Tri et pagination, 1.5/BANK-4 · Import des relevés, 1.1/BANK-5 · Rapprochement automatique} { \node[anchor=west] at (0.4,\y) {▸ \k}; }
+  \draw[line, rounded corners] (7.0,0.2) rectangle (13.8,3.0); \node[anchor=west] at (7.1,2.7) {\textbf{Reste à faire} (5)};
+  \foreach \y/\k in {2.3/BANK-6 · Alertes (En cours), 1.9/BANK-8 · Export comptable (À faire), 1.5/BANK-9 · Notifications (À faire)} { \node[anchor=west] at (7.2,\y) {▸ \k}; }
+\end{tikzpicture}
+\caption{Vue chronologie : avancement prévu contre réel jusqu'au jour courant, puis les tickets terminés et ceux qui restent. Chaque ligne s'ouvre sur la fiche ticket.}
+\end{figure}
+
+\begin{itemize}[nosep]
+  \item \textbf{Avancement} : une ligne par ticket, groupée par lot ; barre grise = planning initial (début, fin prévus) ; barre bleue = réel, tracée uniquement jusqu'au jour courant ; hachures = jours bloqués ; ligne rouge = aujourd'hui. Un ticket non commencé n'a pas de barre bleue.
+  \item \textbf{Terminé} : les tickets au statut \statut{Terminé} au jour $D$, avec leur date de fin et leurs jours réels.
+  \item \textbf{Reste à faire} : les autres, avec leur statut courant et, pour un ticket non commencé, sa date de début prévue.
+\end{itemize}
+
+\subsection{Vue 2 — par facture}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[font=\footnotesize]
+  \draw[line, rounded corners] (0,0) rectangle (14,7.6);
+  \node[anchor=west] at (0.2,7.2) {\textbf{Factures} \quad [Toutes 3] [À payer 1] [En retard 2] [Payées 0]};
+  \foreach \i/\n/\l/\m/\s/\c in {0/F-2026-001 · L1/Tableau de bord factures/3 600 € TTC/TRÈS EN RETARD (26 j)/dangersoft, 1/F-2026-002 · L2/Suivi des paiements/10 800 € TTC/EN RETARD (3 j)/warnsoft, 2/F-2026-003 · BANK-12/Export comptable (séparé)/3 600 € TTC/À PAYER (15 j restants)/client} {
+    \draw[line, rounded corners] (0.2+\i*4.6,3.4) rectangle (4.5+\i*4.6,6.8);
+    \node[anchor=west] at (0.3+\i*4.6,6.5) {\textbf{\n}};
+    \node[anchor=west] at (0.3+\i*4.6,6.1) {\l};
+    \node[anchor=west] at (0.3+\i*4.6,5.6) {\large \m};
+    \node[anchor=west] at (0.3+\i*4.6,5.1) {Émise le 10/03 · Échéance le 09/04};
+    \node[anchor=west, fill=\c, rounded corners, inner sep=2pt] at (0.3+\i*4.6,4.5) {\s};
+    \node[anchor=west, draw=line, rounded corners, inner sep=3pt] at (0.3+\i*4.6,3.8) {Marquer comme payée};
+  }
+  \draw[line, rounded corners] (0.2,0.2) rectangle (13.8,3.0);
+  \node[anchor=west] at (0.3,2.7) {\textbf{Lots en cours} (pas encore facturés)};
+  \node[anchor=west] at (0.4,2.2) {▸ L3 · Exports et notifications · livraison prévue le 02/06 · 4/6 tickets terminés · 9 000 € HT à venir};
+\end{tikzpicture}
+\caption{Vue par facture : une carte par facture, filtrables par statut ; les lots non encore facturés en dessous.}
+\end{figure}
+
+Cliquer une carte ouvre le \textbf{détail de la facture} : le résumé de livraison, les tickets couverts (chacun ouvrable en fiche ticket), le calcul ligne par ligne (taille $\to$ jours $\times$ TJM $=$ montant HT), total HT, TVA, TTC, jours facturés contre jours réels avec la phrase sur l'écart absorbé, et le paiement (date et référence) ou le bouton \emph{Marquer comme payée}.
+
+\subsection{La fiche ticket}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[font=\footnotesize]
+  \draw[line, rounded corners, fill=white] (0,0) rectangle (13,7.4);
+  \node[anchor=west] at (0.3,7.0) {\textbf{BANK-5 · Import des relevés bancaires} \hfill M $\to$ 3 j $\times$ 750 € $=$ 2 250 € HT \quad \colorbox{oksoft}{Terminé}};
+  \node[anchor=west, text width=12.4cm] at (0.3,6.3) {Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.};
+  \node[anchor=west] at (0.3,5.5) {\textbf{Assigné à} Sophie Lambert \quad \textbf{Du} 23/03/2026 \textbf{au} 27/03/2026 \quad \textbf{Jours facturés} 3 · \textbf{jours réels} 1,91};
+  \node[anchor=west] at (0.3,4.9) {\textbf{Étapes prévues}};
+  \node[anchor=west] at (0.5,4.5) {☑ Créer le connecteur vers l'API bancaire de recette};
+  \node[anchor=west] at (0.5,4.1) {☑ Convertir chaque relevé au format interne};
+  \node[anchor=west] at (0.5,3.7) {☑ Vérifier l'import sur un mois de données réelles};
+  \node[anchor=west] at (0.3,3.1) {\textbf{Journal}};
+  \node[anchor=west] at (0.5,2.7) {23/03 \ ↔ \ Sophie Lambert · À faire → En cours};
+  \node[anchor=west] at (0.5,2.3) {23/03 \ ⏱ \ 4,9 h : Créer le connecteur vers l'API bancaire de recette};
+  \node[anchor=west] at (0.5,1.9) {24/03 \ ⛔ \ En attente des accès à l'API bancaire};
+  \node[anchor=west] at (0.5,1.5) {25/03 \ ✅ \ Le blocage est levé · 4,8 h : Convertir chaque relevé au format interne};
+  \node[anchor=west] at (0.5,1.1) {27/03 \ 💬 \ Terminé. Étapes réalisées : Créer le connecteur … ; Convertir … ; Vérifier …};
+  \node[anchor=west] at (0.5,0.7) {27/03 \ ↔ \ En cours → Terminé};
+\end{tikzpicture}
+\caption{La fiche ticket, identique dans les deux vues : identité et prix, réalisateur et dates réelles, jours facturés contre réels, étapes cochées, journal jusqu'au jour courant.}
+\label{fig:popup}
+\end{figure}
+
+%==============================================================
+\section{L'assistant du client}
+\label{sec:agent}
+
+\subsection{Architecture}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[node distance=6mm and 9mm]
+  \node[box, fill=client, text width=2.6cm] (page) {Page client\\ (navigateur)};
+  \node[box, right=of page, text width=2.8cm] (api) {API HTTP\\ \key{POST /client/chat}\\ flux SSE};
+  \node[box, right=of api, text width=2.8cm] (agent) {Agent\\ boucle d'appels d'outils\\ Claude Haiku};
+  \node[box, fill=client, right=of agent, text width=3cm] (mcp) {Serveur MCP « client »\\ 13 outils, lecture seule,\\ jour $\le D$ imposé};
+  \node[box, fill=manager, below=of mcp, text width=3cm] (mgr) {Serveur MCP « manager »\\ génération, horloge,\\ réinitialisation, paiement,\\ lecture du futur};
+  \node[box, below=of agent, text width=2.8cm] (db) {Base SQLite\\ événementielle};
+  \draw[flow] (page) -- (api); \draw[flow] (api) -- (agent); \draw[flow] (agent) -- (mcp);
+  \draw[flow] (mcp) -- (db); \draw[flow] (mgr) -- (db);
+  \draw[thick, danger, dashed] ($(mcp.south west)+(-0.3,-0.25)$) -- ($(mcp.south east)+(0.3,-0.25)$) node[lbl, right, text=danger] {frontière de confiance};
+\end{tikzpicture}
+\caption{L'assistant n'a accès qu'au serveur « client » : chaque outil lit l'horloge et ne renvoie que des faits au jour $\le D$. Aucun outil ne prend de paramètre de date. Le serveur « manager » est réservé au pilote.}
+\end{figure}
+
+\subsection{Les outils et ce qu'ils renvoient}
+
+Tous les outils renvoient du JSON en français, calculé au jour courant par les mêmes fonctions que la page client (section~\ref{sec:derivations}). Aucun ne permet d'écrire.
+
+\begin{longtable}{>{\ttfamily}p{3.6cm} p{3cm} p{8.4cm}}
+\toprule
+\textrm{Outil} & Paramètres & Renvoie \\
+\midrule
+\endhead
+get\_today & — & jour courant, date ISO, date en toutes lettres \\
+get\_contract & — & TJM, grille, TVA, délai de paiement, règle de dépassement \\
+get\_summary & — & contracté (HT et TTC), facturé, payé, reste, en retard (montant et nombre), à payer, prochaine facture, liste des lots \\
+list\_lots & — & lots : prix, livraison prévue/réelle, tickets terminés / total, jours facturés / réels, validation, statut de facture, résumé de livraison \\
+get\_lot & clé & un lot avec ses tickets \\
+list\_tickets & lot?, statut? & tickets : taille, jours facturés, TJM, montant, statut, assigné, dates réelles, jours réels, étapes, nombre d'événements \\
+get\_ticket & clé & un ticket (mêmes champs) \\
+get\_ticket\_history & clé & journal daté : statut, temps passé, blocage, déblocage, commentaire, revue \\
+list\_invoices & — & factures émises : montants, échéance, statut, jours de retard/restants, paiement, résumé, tickets, calcul \\
+get\_invoice & numéro & une facture (mêmes champs) \\
+list\_payments & facture? & paiements reçus : date, montant, référence \\
+list\_pending\_approvals & — & lots livrés non encore validés \\
+explain\_price & clé & pour un ticket : taille $\to$ jours $\times$ TJM $=$ montant ; pour un lot : une ligne par ticket et le total \\
+\bottomrule
+\end{longtable}
+
+\subsection{Règles de conception}
+\begin{enumerate}[nosep]
+  \item \textbf{Il ne sait que ce que les outils renvoient.} Le prompt système lui interdit toute connaissance externe ; il commence chaque réponse par \key{get\_today}.
+  \item \textbf{Il ne calcule jamais un prix.} Toute question de montant passe par \key{explain\_price}, dont il recopie le calcul.
+  \item \textbf{Il cite ses sources} entre crochets : [BANK-12], [F-2026-001], [L1] ; la page transforme chaque citation en lien vers la fiche correspondante.
+  \item \textbf{Il ne voit pas le futur.} Si on l'interroge sur l'avenir, il donne la date prévue au planning et précise qu'il ne peut pas voir ce qui n'est pas encore arrivé.
+  \item \textbf{Il ne paie pas.} Le paiement est une action du participant dans l'interface ; l'assistant rappelle montants et dates.
+  \item \textbf{Mémoire bornée au jour.} La conversation est attachée au jour courant ; si l'horloge change, elle repart de zéro (« Nouvelle date : la conversation repart de zéro ») pour qu'aucun fait d'un jour postérieur ne reste en contexte après un retour en arrière.
+  \item \textbf{Réponses en français, simples}, pour une personne non technique ; si un enregistrement est introuvable, il le dit.
+\end{enumerate}
+
+\subsection{Exemple de dialogue}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}[font=\footnotesize, node distance=1.4cm]
+  \node (c) at (0,0) {\textbf{Client}};
+  \node (a) at (4.5,0) {\textbf{Assistant}};
+  \node (t) at (9.5,0) {\textbf{Serveur MCP client}};
+  \draw[line] (c) -- ++(0,-6.6); \draw[line] (a) -- ++(0,-6.6); \draw[line] (t) -- ++(0,-6.6);
+  \draw[flow] (0,-0.6) -- node[above] {« Pourquoi le lot L1 coûte 3 000 € ? »} (4.5,-0.6);
+  \draw[flow] (4.5,-1.3) -- node[above] {\key{get\_today}} (9.5,-1.3);
+  \draw[flow] (9.5,-1.8) -- node[above] {jour 45 · 5 mai 2026} (4.5,-1.8);
+  \draw[flow] (4.5,-2.6) -- node[above] {\key{explain\_price(L1)}} (9.5,-2.6);
+  \draw[flow] (9.5,-3.1) -- node[above] {BANK-1 M 3 j × 600 = 1 800 ; BANK-2 S 1 × 600 ; BANK-3 S 1 × 600 ; total 3 000} (4.5,-3.1);
+  \draw[flow] (4.5,-3.9) -- node[above] {\key{get\_invoice(F-2026-001)}} (9.5,-3.9);
+  \draw[flow] (9.5,-4.4) -- node[above] {TTC 3 600, échéance 09/04, Très en retard (26 j)} (4.5,-4.4);
+  \draw[flow] (4.5,-5.4) -- node[above, text width=4.2cm, align=center] {« Le lot [L1] regroupe trois tickets : [BANK-1] 3 j × 600 €, [BANK-2] et [BANK-3] 1 j × 600 € chacun, soit 3 000 € HT, 3 600 € TTC sur la facture [F-2026-001], en retard de 26 jours. »} (0,-5.4);
+\end{tikzpicture}
+\caption{Une question, trois appels d'outils, une réponse citée. Le flux SSE transmet à la page les appels d'outils (affichés en pastilles « consulte … »), le texte au fil de l'eau, puis la fin.}
+\end{figure}
+
+%==============================================================
+\section{Récapitulatif des invariants}
+\begin{itemize}[nosep]
+  \item Le prix d'un ticket, d'un lot et d'une facture est calculé par le code à partir du contrat et de la taille ; le modèle de langage n'écrit jamais de prix ni de nombre de jours.
+  \item L'état affiché au client est toujours recalculé à partir des faits de jour $\le D$ ; déplacer l'horloge ne modifie aucune donnée.
+  \item Le seul fait écrit pendant une simulation est le paiement d'une facture par le participant, daté du jour courant, intégral, unique par facture dans une histoire.
+  \item Le client, l'assistant et la page client partagent exactement les mêmes fonctions de lecture ; le pilote est le seul à voir le planning réel complet et le futur.
+  \item Même plan + même graine $\Rightarrow$ même chronologie.
+\end{itemize}
+
+\end{document}
