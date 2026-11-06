@@ -51,6 +51,7 @@ export async function generate(body: GenerateBody): Promise<GenerateResult> {
 export const getClock = () => request<Clock>('/sim/clock')
 export const setClock = (day: number) => request<Clock>('/sim/clock', json('PUT', { day }))
 export const stepClock = (n: number) => request<Clock>('/sim/step', json('POST', { n }))
+export const resetSim = () => request<{ status: string }>('/sim/reset', { method: 'POST' })
 
 export const getPlan = () => request<Plan>('/dev/plan')
 export const getTimeline = (fromDay?: number, toDay?: number) => {

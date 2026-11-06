@@ -1,6 +1,7 @@
 import { fr } from '../../i18n/fr'
 import { fmtEuro } from '../../lib/format'
 import type { ClientTicket } from '../../types'
+import { Pill } from './Pill'
 
 /** One row per ticket: `taille → jours × TJM = montant`, statut, jours réels. */
 export function TicketTable({ tickets }: { tickets: ClientTicket[] }) {
@@ -12,7 +13,7 @@ export function TicketTable({ tickets }: { tickets: ClientTicket[] }) {
           <th>{t.ticket}</th>
           <th>{t.pricing}</th>
           <th>{t.status}</th>
-          <th>{t.realDays}</th>
+          <th className="num">{t.realDays}</th>
         </tr>
       </thead>
       <tbody>
@@ -25,7 +26,9 @@ export function TicketTable({ tickets }: { tickets: ClientTicket[] }) {
             <td>
               {tk.taille} → {tk.jours_factures} {t.daysUnit} × {fmtEuro(tk.tjm)} = {fmtEuro(tk.montant)}
             </td>
-            <td>{tk.statut}</td>
+            <td>
+              <Pill statut={tk.statut} />
+            </td>
             <td className="num">{tk.jours_reels}</td>
           </tr>
         ))}
