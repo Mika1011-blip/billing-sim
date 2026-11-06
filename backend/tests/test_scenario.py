@@ -1,14 +1,21 @@
+import json
+
 import pytest
 from pydantic import ValidationError
 
 from billing_sim.billing.policy import lot_price
-from billing_sim.scenario.fixture import load_fixture
+from billing_sim.scenario.fixture import FIXTURES_DIR, load_fixture
+from billing_sim.scenario.prompts import SYSTEM_PROMPT_FR
 from billing_sim.scenario.schema import GenerationResult, ScenarioPlan, TicketPlan
 from billing_sim.scenario.validate import validate_plan
 
 
 def _ticket(plan: ScenarioPlan, key: str) -> TicketPlan:
     return next(t for t in plan.tickets if t.key == key)
+
+
+def fixture_dict() -> dict:
+    return json.loads((FIXTURES_DIR / "invoice_dashboard.json").read_text(encoding="utf-8"))
 
 
 def test_fixture_loads_and_is_valid():
@@ -84,17 +91,76 @@ def test_cycle_reported():
     assert "BANK-1" in cycle_errors[0] and "BANK-2" in cycle_errors[0]
 
 
-def test_behaviour_must_cover_each_lot():
-    plan = load_fixture().model_copy(deep=True)
-    plan.client_behaviour = [b for b in plan.client_behaviour if b.invoice_index != 3]
-    errors = validate_plan(plan)
-    assert any("3" in e and "client_behaviour" in e for e in errors)
+def test_fixture_has_steps_and_summaries():
+    plan = load_fixture()
+    assert all(2 <= len(t.steps) <= 8 for t in plan.tickets)
+    assert all(lot.delivery_summary.strip() for lot in plan.lots)
+    assert not hasattr(plan, "client_behaviour")
 
 
-def test_behaviour_duplicate_index_reported():
-    plan = load_fixture().model_copy(deep=True)
-    plan.client_behaviour[2].invoice_index = 1
-    assert validate_plan(plan) != []
+def test_fixture_texts_carry_no_day_counts_or_prices():
+    plan = load_fixture()
+    texts = [step for t in plan.tickets for step in t.steps] + [lot.delivery_summary for lot in plan.lots]
+    assert all(not any(ch.isdigit() for ch in text) and "€" not in text for text in texts)
+    assert all(1 <= len(step.strip()) <= 160 for t in plan.tickets for step in t.steps)
+
+
+def test_ticket_without_steps_is_rejected():
+    data = fixture_dict()
+    data["tickets"][0].pop("steps")
+    with pytest.raises(ValidationError):
+        ScenarioPlan.model_validate(data)
+
+
+@pytest.mark.parametrize("steps", [["Une seule étape."], [f"Étape {i}." for i in range(9)]])
+def test_step_count_outside_two_to_eight_is_rejected(steps):
+    data = fixture_dict()
+    data["tickets"][0]["steps"] = steps
+    with pytest.raises(ValidationError):
+        ScenarioPlan.model_validate(data)
+
+
+def test_lot_without_delivery_summary_is_rejected():
+    data = fixture_dict()
+    data["lots"][0].pop("delivery_summary")
+    with pytest.raises(ValidationError):
+        ScenarioPlan.model_validate(data)
+
+
+def test_client_behaviour_is_no_longer_accepted():
+    data = fixture_dict()
+    data["client_behaviour"] = [{"invoice_index": 1, "pays_fraction": 1.0, "days_late": 0}]
+    with pytest.raises(ValidationError):
+        ScenarioPlan.model_validate(data)
+
+
+def test_blank_step_and_blank_summary_messages():
+    data = fixture_dict()
+    data["tickets"][0]["steps"][0] = "  "
+    data["lots"][0]["delivery_summary"] = " "
+    errors = validate_plan(ScenarioPlan.model_validate(data))  # model-level: strip happens in the validator
+    assert "ticket BANK-1 : étape vide" in errors and "lot L1 : résumé de livraison vide" in errors
+
+
+def test_overlong_step_reported_after_strip():
+    data = fixture_dict()
+    data["tickets"][0]["steps"][0] = "x" * 161
+    data["tickets"][0]["steps"][1] = "  " + "x" * 160 + "  "  # 160 once stripped: fine
+    errors = validate_plan(ScenarioPlan.model_validate(data))
+    assert [e for e in errors if "BANK-1" in e] == ["ticket BANK-1 : étape trop longue (160 caractères au plus)"]
+
+
+def test_overlong_delivery_summary_is_rejected():
+    data = fixture_dict()
+    data["lots"][0]["delivery_summary"] = "x" * 601
+    with pytest.raises(ValidationError):
+        ScenarioPlan.model_validate(data)
+
+
+def test_prompt_mentions_steps_and_summary_not_behaviour():
+    text = SYSTEM_PROMPT_FR
+    assert "steps" in text and "delivery_summary" in text and "client_behaviour" not in text
+    assert "pays_fraction" not in text and "days_late" not in text
 
 
 def test_blocked_beat_requires_duration():

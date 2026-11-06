@@ -6,6 +6,8 @@ from collections import Counter, deque
 
 from billing_sim.scenario.schema import ScenarioPlan
 
+STEP_MAX_CHARS = 160
+
 
 def validate_plan(plan: ScenarioPlan) -> list[str]:
     """Return a list of human-readable problems; an empty list means the plan is valid."""
@@ -24,6 +26,10 @@ def validate_plan(plan: ScenarioPlan) -> list[str]:
         if count > 1:
             errors.append(f"duplicate team member name {name} ({count} members)")
 
+    for lot in plan.lots:
+        if not lot.delivery_summary.strip():
+            errors.append(f"lot {lot.key} : résumé de livraison vide")
+
     edges: dict[str, set[str]] = {key: set() for key in ticket_keys}  # ticket -> its dependencies
     for ticket in plan.tickets:
         if ticket.lot_key is not None and ticket.lot_key not in lot_keys:
@@ -35,6 +41,11 @@ def validate_plan(plan: ScenarioPlan) -> list[str]:
                 errors.append(f"ticket {ticket.key}: unknown dependency {dep}")
             else:
                 edges[ticket.key].add(dep)
+        steps = [step.strip() for step in ticket.steps]
+        if any(not step for step in steps):
+            errors.append(f"ticket {ticket.key} : étape vide")
+        if any(len(step) > STEP_MAX_CHARS for step in steps):
+            errors.append(f"ticket {ticket.key} : étape trop longue ({STEP_MAX_CHARS} caractères au plus)")
         for beat in ticket.beats:
             if beat.kind == "blocked" and (beat.duration_days is None or beat.duration_days < 1):
                 errors.append(f"ticket {ticket.key}: blocked beat needs duration_days >= 1")
@@ -42,16 +53,6 @@ def validate_plan(plan: ScenarioPlan) -> list[str]:
     cycle = _cycle_members(edges)
     if cycle:
         errors.append(f"dependency cycle between tickets: {', '.join(sorted(cycle))}")
-
-    expected = set(range(1, len(plan.lots) + 1))
-    seen = Counter(b.invoice_index for b in plan.client_behaviour)
-    for index in sorted(expected - set(seen)):
-        errors.append(f"client_behaviour missing entry for invoice_index {index}")
-    for index, count in sorted(seen.items()):
-        if index not in expected:
-            errors.append(f"client_behaviour has invoice_index {index} outside 1..{len(plan.lots)}")
-        elif count > 1:
-            errors.append(f"client_behaviour has {count} entries for invoice_index {index}")
 
     return errors
 

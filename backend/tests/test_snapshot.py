@@ -23,5 +23,8 @@ def test_snapshot_exercises_what_the_dev_page_draws():
     data = snapshot_data()
     assert data["clock"]["day"] == data["clock"]["last_day"]
     assert {e["type"] for e in data["timeline"]["events"]} >= {"blocked", "unblocked"}
-    assert any(p["amount"] > 0 for p in data["timeline"]["payments"])
+    assert data["timeline"]["payments"] == []  # nobody pays by script: payments are the participant's at runtime
+    assert "client_behaviour" not in data["plan"]["scenario"]
+    assert all(lot["delivery_summary"] for lot in data["plan"]["lots"])
+    assert all(len(t["steps"]) >= 2 for t in data["plan"]["tickets"])
     assert all(i["lot"] or i["ticket"] for i in data["timeline"]["invoices"])

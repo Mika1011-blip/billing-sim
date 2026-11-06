@@ -31,7 +31,7 @@ def load_scenario(
         clear_rows(conn)
         conn.execute(
             "INSERT INTO scenario (id, request_text, product_summary, seed, start_date, signed_day, last_day,"
-            " warnings, client_behaviour) VALUES (1, ?, ?, ?, ?, 0, ?, ?, ?)",
+            " warnings) VALUES (1, ?, ?, ?, ?, 0, ?, ?)",
             (
                 request_text,
                 plan.product_summary,
@@ -39,7 +39,6 @@ def load_scenario(
                 start_date.isoformat(),
                 timeline.last_day,
                 _json(timeline.warnings),
-                _json([b.model_dump() for b in plan.client_behaviour]),
             ),
         )
         conn.execute(
@@ -76,21 +75,23 @@ def load_scenario(
             price = lot_price(contract, [(t.size, t.profile, t.charged_separately) for t in priced])
             ends = [scheduled[t.key].planned_end for t in priced if not t.charged_separately]
             lot_id[lot.key] = conn.execute(
-                "INSERT INTO lot (key, name, description, price, planned_delivery_day) VALUES (?, ?, ?, ?, ?)",
-                (lot.key, lot.name, lot.description, price, max(ends) if ends else None),
+                "INSERT INTO lot (key, name, description, delivery_summary, price, planned_delivery_day)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (lot.key, lot.name, lot.description, lot.delivery_summary, price, max(ends) if ends else None),
             ).lastrowid
 
         ticket_id = {}
         for position, ticket in enumerate(plan.tickets):
             s = scheduled[ticket.key]
             ticket_id[ticket.key] = conn.execute(
-                "INSERT INTO ticket (key, title, description, lot_id, charged_separately, size, profile, days_charged,"
-                " fee, assignee_id, sprint_id, planned_start_day, planned_end_day, real_start_day, real_end_day,"
-                " beats, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO ticket (key, title, description, steps, lot_id, charged_separately, size, profile,"
+                " days_charged, fee, assignee_id, sprint_id, planned_start_day, planned_end_day, real_start_day,"
+                " real_end_day, beats, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     ticket.key,
                     ticket.title,
                     ticket.description,
+                    _json(ticket.steps),
                     lot_id[ticket.lot_key] if ticket.lot_key is not None else None,
                     int(ticket.charged_separately),
                     ticket.size,

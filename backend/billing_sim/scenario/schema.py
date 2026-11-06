@@ -32,12 +32,14 @@ class LotPlan(_Strict):
     key: str
     name: str
     description: str
+    delivery_summary: str = Field(min_length=1, max_length=600)
 
 
 class TicketPlan(_Strict):
     key: str
     title: str
     description: str
+    steps: list[str] = Field(min_length=2, max_length=8)
     lot_key: str | None
     charged_separately: bool = False
     size: Size
@@ -46,18 +48,11 @@ class TicketPlan(_Strict):
     beats: list[Beat] = []
 
 
-class ClientBehaviour(_Strict):
-    invoice_index: int
-    pays_fraction: float = Field(ge=0, le=1)
-    days_late: int = Field(ge=0)
-
-
 class ScenarioPlan(_Strict):
     product_summary: str
     team: list[TeamMember] = Field(min_length=3, max_length=5)
     lots: list[LotPlan] = Field(min_length=2, max_length=4)
     tickets: list[TicketPlan] = Field(min_length=12, max_length=30)
-    client_behaviour: list[ClientBehaviour]
 
 
 class Rejection(_Strict):

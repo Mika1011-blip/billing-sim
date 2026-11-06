@@ -69,8 +69,9 @@ def test_system_prompt_embeds_contract(contract):
     assert client.calls[0]["model"] == "m"
     assert system == system_prompt_fr(contract)
     assert json.dumps(contract.to_dict(), sort_keys=True, ensure_ascii=False) in system
-    for needle in ("BANK-", "L1", "rejection", "blocked", "review_changes", "client_behaviour"):
+    for needle in ("BANK-", "L1", "rejection", "blocked", "review_changes", "steps", "delivery_summary"):
         assert needle in system
+    assert "client_behaviour" not in system
 
 
 def test_rejection_returned(contract):

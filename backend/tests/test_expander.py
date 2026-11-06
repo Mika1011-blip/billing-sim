@@ -8,7 +8,7 @@ import pytest
 from billing_sim.expander.calendar import date_for_day, day_for_date
 from billing_sim.expander.expand import expand
 from billing_sim.expander.schedule import plan_schedule, real_schedule, topo_order
-from billing_sim.scenario.schema import Beat, ClientBehaviour
+from billing_sim.scenario.schema import Beat
 
 START = date(2026, 3, 2)  # a Monday
 
@@ -19,10 +19,6 @@ def _by_key(items, attr="key"):
 
 def _lot_invoice(timeline, lot_key):
     return next(i for i in timeline.invoices if i.lot_key == lot_key)
-
-
-def _payments_of(timeline, invoice):
-    return sorted((p for p in timeline.payments if p.invoice_number == invoice.number), key=lambda p: p.day)
 
 
 LEGAL_TRANSITIONS = {
@@ -416,60 +412,20 @@ def test_sum_fees_equals_sum_invoices_ht(timeline, plan, contract):
 # --- payments ------------------------------------------------------------------
 
 
-def test_payments_follow_behaviour(timeline):
-    l1 = _lot_invoice(timeline, "L1")
-    first, second = _payments_of(timeline, l1)
-    assert (first.amount, first.day, first.reference) == (1200, l1.due_day, f"VIR-{l1.number}-1")
-    assert (second.amount, second.day, second.reference) == (2400, l1.due_day + 15, f"VIR-{l1.number}-2")
-
-    l2 = _lot_invoice(timeline, "L2")
-    (only,) = _payments_of(timeline, l2)
-    assert (only.amount, only.day) == (l2.amount_ttc, l2.due_day + 12)
-
-    l3 = _lot_invoice(timeline, "L3")
-    first, second = _payments_of(timeline, l3)
-    assert first.amount == round(0.5 * l3.amount_ttc)
-    assert first.day == l3.due_day + 20
-    assert first.amount + second.amount == l3.amount_ttc
-    assert second.day == first.day + 15
+def test_nobody_pays_by_script(timeline):
+    """Payments are a participant action at runtime; the expander emits none."""
+    assert timeline.payments == []
 
 
-def test_every_invoice_is_paid_in_full(timeline):
-    for invoice in timeline.invoices:
-        assert sum(p.amount for p in _payments_of(timeline, invoice)) == invoice.amount_ttc
+def test_build_invoices_returns_no_payments(plan, contract):
+    from billing_sim.expander.invoicing import build_invoices
 
-
-def test_separate_invoice_is_paid_in_full_on_due_day(timeline):
-    invoice = next(i for i in timeline.invoices if i.lot_key is None)
-    (payment,) = _payments_of(timeline, invoice)
-    assert (payment.amount, payment.day) == (invoice.amount_ttc, invoice.due_day)
-    assert payment.reference == f"VIR-{invoice.number}-1"
-
-
-def test_full_fraction_single_payment(plan, contract):
-    plan.client_behaviour = [
-        ClientBehaviour(invoice_index=i, pays_fraction=1.0, days_late=0) for i in (1, 2, 3)
-    ]
     timeline = expand(plan, contract, 42, START)
-    for invoice in timeline.invoices:
-        assert len(_payments_of(timeline, invoice)) == 1
-    assert all(p.amount > 0 for p in timeline.payments)
-
-
-def test_zero_fraction_emits_only_the_remainder_as_first_reference(plan, contract):
-    plan.client_behaviour = [
-        ClientBehaviour(invoice_index=1, pays_fraction=0, days_late=5),
-        ClientBehaviour(invoice_index=2, pays_fraction=1.0, days_late=0),
-        ClientBehaviour(invoice_index=3, pays_fraction=1.0, days_late=0),
-    ]
-    timeline = expand(plan, contract, 42, START)
-    l1 = _lot_invoice(timeline, "L1")
-    (only,) = _payments_of(timeline, l1)
-    assert (only.amount, only.reference, only.day) == (l1.amount_ttc, f"VIR-{l1.number}-1", l1.due_day + 5 + 15)
-    assert all(p.amount > 0 for p in timeline.payments)
+    invoices, approvals, payments = build_invoices(plan, contract, timeline.tickets, timeline.sprints, START)
+    assert payments == []
+    assert invoices == timeline.invoices and approvals == timeline.approvals
 
 
 def test_last_day_after_everything(timeline):
-    assert timeline.last_day >= max(p.day for p in timeline.payments) + 15
     assert timeline.last_day >= max(e.day for e in timeline.events) + 15
     assert timeline.last_day >= max(i.due_day for i in timeline.invoices) + 15

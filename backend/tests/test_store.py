@@ -46,6 +46,16 @@ def _diff_ticket(conn, key):
     return next(t for t in diff_plan_vs_real(conn)["tickets"] if t["key"] == key)
 
 
+def _pay(conn, number, day, amount, n=1):
+    """Payments are written at runtime now (the expander emits none): insert one row as the participant would."""
+    with conn:
+        conn.execute(
+            "INSERT INTO payment (invoice_id, day, amount, reference)"
+            " SELECT id, ?, ?, ? FROM invoice WHERE number = ?",
+            (day, amount, f"VIR-{number}-{n}", number),
+        )
+
+
 # --- the brief's tests -------------------------------------------------------------------
 
 
@@ -84,8 +94,17 @@ def test_status_before_and_after_start(conn):
         assert get_ticket(conn, start, key)["statut"] == "En cours"
 
 
+def test_loaded_scenario_has_no_payments(conn):
+    assert conn.execute("SELECT COUNT(*) FROM payment").fetchone()[0] == 0
+    inv = _invoice(conn, INV1)
+    unpaid = get_invoice(conn, last_day(conn), INV1)
+    assert unpaid["paye"] == 0 and unpaid["reste"] == inv["amount_ttc"] and unpaid["statut"] == "En retard"
+
+
 def test_invoice_statuses(conn):
     inv = _invoice(conn, INV1)
+    _pay(conn, INV1, inv["due_day"], 1200)
+    _pay(conn, INV1, inv["due_day"] + 15, 2400, n=2)
     assert get_invoice(conn, inv["issued_day"], INV1)["statut"] == "Émise"
     partial = get_invoice(conn, inv["due_day"], INV1)
     assert partial["paye"] == 1200 and partial["reste"] == 2400
@@ -95,6 +114,7 @@ def test_invoice_statuses(conn):
     assert get_invoice(conn, inv["due_day"] + 15, INV1)["statut"] == "Payée"
 
     inv2 = _invoice(conn, INV2)
+    _pay(conn, INV2, inv2["due_day"] + 12, inv2["amount_ttc"])
     assert get_invoice(conn, inv2["due_day"] + 11, INV2)["statut"] == "En retard"
     paid = get_invoice(conn, inv2["due_day"] + 12, INV2)
     assert paid["statut"] == "Payée" and paid["reste"] == 0 and paid["en_retard"] is False
@@ -102,6 +122,8 @@ def test_invoice_statuses(conn):
 
 def test_overdue_amount_in_summary(conn):
     inv = _invoice(conn, INV1)
+    assert summary(conn, inv["due_day"] + 1)["en_retard"] == 3600
+    _pay(conn, INV1, inv["due_day"], 1200)
     assert summary(conn, inv["due_day"] + 1)["en_retard"] == 2400
     assert summary(conn, inv["due_day"])["en_retard"] == 0
 
@@ -242,6 +264,7 @@ def test_history_is_flattened_and_ordered(conn):
 
 
 def test_lot_dict(conn):
+    _pay(conn, INV1, _invoice(conn, INV1)["due_day"], 3600)
     lot = get_lot(conn, last_day(conn), "L1")
     assert lot["nom"] == "Tableau de bord factures" and lot["prix"] == 3000
     assert lot["tickets_total"] == 3 and lot["tickets_termines"] == 3 and lot["jours_factures"] == 5
@@ -266,10 +289,12 @@ def test_summary_totals(conn, timeline):
     end = summary(conn, last_day(conn))
     assert end["contracte"] == sum(t.fee for t in timeline.tickets)
     assert end["facture"] == sum(i.amount_ttc for i in timeline.invoices)
-    assert end["paye"] == sum(p.amount for p in timeline.payments) == end["facture"]
-    assert end["reste_a_payer"] == 0 and end["en_retard"] == 0
-    mid = summary(conn, _invoice(conn, INV1)["due_day"] + 1)
-    assert mid["reste_a_payer"] == mid["facture"] - mid["paye"] > 0
+    assert end["paye"] == 0 == len(timeline.payments)
+    assert end["reste_a_payer"] == end["facture"] == end["en_retard"] > 0  # nothing paid: every invoice is overdue
+    due = _invoice(conn, INV1)["due_day"]
+    _pay(conn, INV1, due, 1200)
+    mid = summary(conn, due + 1)
+    assert mid["paye"] == 1200 and mid["reste_a_payer"] == mid["facture"] - mid["paye"] > 0
     assert [lot["cle"] for lot in mid["lots"]] == ["L1", "L2", "L3"]
 
 
@@ -279,9 +304,12 @@ def test_invoice_dict_and_payments(conn):
     assert inv["numero"] == INV1 and inv["lot"] == "L1" and inv["couvre"] == ["BANK-1", "BANK-2", "BANK-3"]
     assert (inv["montant_ht"], inv["tva"], inv["montant_ttc"]) == (3000, 600, 3600)
     assert inv["emise_le"] < inv["echeance"]
-    assert [p["montant"] for p in list_payments(conn, end, INV1)] == [1200, 2400]
+    assert list_payments(conn, end) == []
+    _pay(conn, INV1, _invoice(conn, INV1)["due_day"], 3600)
+    _pay(conn, INV2, end, _invoice(conn, INV2)["amount_ttc"])
+    assert [p["montant"] for p in list_payments(conn, end, INV1)] == [3600]
     assert all(p["facture"] == INV1 for p in list_payments(conn, end, INV1))
-    assert len(list_payments(conn, end)) == 6
+    assert len(list_payments(conn, end)) == 2
     separate = next(i for i in list_invoices(conn, end) if i["lot"] is None)
     assert separate["couvre"] == ["BANK-12"]
 
@@ -306,6 +334,7 @@ def test_every_query_is_json_serialisable(conn):
 def test_full_plan(conn, plan, contract):
     p = full_plan(conn)
     assert p["scenario"]["seed"] == 42 and p["scenario"]["start_date"] == "2026-03-02"
+    assert "client_behaviour" not in p["scenario"]
     assert p["contract"]["tjm"] == contract.tjm
     assert [m["name"] for m in p["team"]] == [m.name for m in plan.team]
     assert [lot["key"] for lot in p["lots"]] == ["L1", "L2", "L3"]
@@ -316,15 +345,37 @@ def test_full_plan(conn, plan, contract):
     assert len(p["tickets"]) == len(plan.tickets) and p["sprints"]
 
 
+def test_full_plan_carries_steps_and_delivery_summaries(conn, plan):
+    p = full_plan(conn)
+    assert [lot["delivery_summary"] for lot in p["lots"]] == [lot.delivery_summary for lot in plan.lots]
+    assert [t["steps"] for t in p["tickets"]] == [t.steps for t in plan.tickets]
+    assert ticket_full(conn, "BANK-5")["steps"] == next(t.steps for t in plan.tickets if t.key == "BANK-5")
+
+
+def test_store_columns_for_steps_and_summaries(conn):
+    def columns(table):
+        return {r["name"]: r for r in conn.execute(f"PRAGMA table_info({table})")}
+
+    assert "client_behaviour" not in columns("scenario")
+    for table, column in (("lot", "delivery_summary"), ("ticket", "steps")):
+        info = columns(table)[column]
+        assert info["type"] == "TEXT" and info["notnull"] == 1
+    raw = conn.execute("SELECT steps FROM ticket WHERE key = 'BANK-1'").fetchone()[0]
+    assert isinstance(json.loads(raw), list)
+
+
 def test_full_timeline_range(conn, timeline):
     everything = full_timeline(conn)
     assert len(everything["events"]) == len(timeline.events)
-    assert len(everything["invoices"]) == 4 and len(everything["payments"]) == 6 and len(everything["approvals"]) == 3
+    assert len(everything["invoices"]) == 4 and everything["payments"] == [] and len(everything["approvals"]) == 3
     window = full_timeline(conn, from_day=10, to_day=20)
     assert window["events"] and all(10 <= e["day"] <= 20 for e in window["events"])
     assert all(10 <= i["issued_day"] <= 20 for i in window["invoices"])
     assert full_timeline(conn, from_day=20)["events"][0]["day"] >= 20
     assert full_timeline(conn, from_day=50)["events"] == []
+    _pay(conn, INV1, 51, 1200)
+    _pay(conn, INV1, 56, 2400, n=2)
+    _pay(conn, INV2, 61, 100)
     assert [p["day"] for p in full_timeline(conn, from_day=50, to_day=60)["payments"]] == [51, 56]
     assert max(e["day"] for e in full_timeline(conn, to_day=5)["events"]) <= 5
 

@@ -51,7 +51,7 @@ describe('DevPage', () => {
     expect(await screen.findByText('get_ticket')).toBeInTheDocument()
   })
 
-  it('renders the backend snapshot: gantt grouped by lot with blocked spans, paid invoices, filled diff tables', async () => {
+  it('renders the backend snapshot: gantt grouped by lot with blocked spans, unpaid invoices, filled diff tables', async () => {
     installFetch(true)
     const { container } = render(<DevPage />)
     expect(await screen.findByRole('img', { name: /gantt/i })).toBeInTheDocument()
@@ -63,12 +63,13 @@ describe('DevPage', () => {
     expect(container.querySelectorAll('rect.blocked').length).toBeGreaterThanOrEqual(1)
     expect(container.querySelectorAll('path.dependency').length).toBeGreaterThan(0)
 
-    // Ledger at the last day: money has been paid, every invoice names its lot or ticket.
+    // Ledger at the last day: nothing is paid by script (payments are the participant's), every invoice names its
+    // lot or ticket.
     const invoices = screen.getByRole('heading', { name: 'Factures' }).nextElementSibling as HTMLElement
     const rows = within(invoices).getAllByRole('row').slice(1)
     expect(rows).toHaveLength(timeline.invoices.length)
     const paid = rows.map((r) => Number(within(r).getAllByRole('cell')[5].textContent))
-    expect(paid.some((p) => p > 0)).toBe(true)
+    expect(paid.every((p) => p === 0)).toBe(true)
     const lotCells = rows.map((r) => within(r).getAllByRole('cell')[1].textContent)
     expect(lotCells).not.toContain('—')
     expect(lotCells).toContain('L1')

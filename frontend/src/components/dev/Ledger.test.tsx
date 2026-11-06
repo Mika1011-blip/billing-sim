@@ -67,7 +67,7 @@ describe('Ledger', () => {
     expect(container.textContent).not.toContain('undefined')
   })
 
-  it('renders the backend snapshot: paid amounts, the lot of every invoice, no blank diff cell', () => {
+  it('renders the backend snapshot: nothing paid by script, the lot of every invoice, no blank diff cell', () => {
     const { timeline, diff: real, clock } = snapshot
     render(<Ledger invoices={timeline.invoices} payments={timeline.payments} diff={real} today={clock.day} />)
     const [invoiceTable, lotTable, ticketTable] = screen.getAllByRole('table')
@@ -75,7 +75,7 @@ describe('Ledger', () => {
     const rows = within(invoiceTable).getAllByRole('row').slice(1)
     expect(rows).toHaveLength(timeline.invoices.length)
     const cells = rows.map((r) => within(r).getAllByRole('cell').map((c) => c.textContent))
-    expect(cells.some((c) => Number(c[5]) > 0)).toBe(true) // Paid
+    expect(cells.every((c) => Number(c[5]) === 0)).toBe(true) // Paid: nobody pays by script, the participant does
     expect(cells.map((c) => c[1])).not.toContain('—') // Lot (or the ticket, for an invoice outside any lot)
 
     for (const table of [lotTable, ticketTable]) {

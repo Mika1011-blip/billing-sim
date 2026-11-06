@@ -42,6 +42,7 @@ def _ticket_plan(row: sqlite3.Row, tjm: dict[str, int], depends_on: list[str]) -
         "key": row["key"],
         "title": row["title"],
         "description": row["description"],
+        "steps": json.loads(row["steps"]),
         "lot": row["lot_key"],
         "charged_separately": bool(row["charged_separately"]),
         "size": row["size"],
@@ -73,7 +74,6 @@ def full_plan(conn: sqlite3.Connection) -> dict:
             "signed_day": scenario["signed_day"],
             "last_day": scenario["last_day"],
             "warnings": json.loads(scenario["warnings"]),
-            "client_behaviour": json.loads(scenario["client_behaviour"]),
         },
         "contract": contract,
         "team": [dict(r) for r in conn.execute("SELECT name, profile FROM team_member ORDER BY id")],
@@ -83,6 +83,7 @@ def full_plan(conn: sqlite3.Connection) -> dict:
                 "key": r["key"],
                 "name": r["name"],
                 "description": r["description"],
+                "delivery_summary": r["delivery_summary"],
                 "price": r["price"],
                 "planned_delivery_day": r["planned_delivery_day"],
             }
