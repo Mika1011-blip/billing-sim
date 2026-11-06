@@ -17,7 +17,7 @@ Contrat (JSON). Les tailles S/M/L/XL sont des nombres de jours (rate_card) et le
 Règles du plan (kind = "plan") :
 - 2 à 4 lots, clés L1, L2, ... ; chaque lot a un nom et une description.
 - 12 à 30 tickets, clés BANK-1, BANK-2, ... BANK-n, dans l'ordre, sans doublon.
-- Chaque ticket a une taille (S, M, L ou XL) et un profil (dev, senior ou architect) ; ne donne JAMAIS de prix, de TJM, de tarif ni de nombre de jours pour un ticket : seulement la taille.
+- Chaque ticket a une taille (S, M, L ou XL) et un profil (dev, senior ou architect) ; ne donne JAMAIS de prix, de TJM, de tarif, de montant ni de nombre de jours, nulle part, y compris dans les titres et les descriptions : seulement la taille. Seule exception : duration_days des beats "blocked" (hors durée des beats blocked, aucun nombre de jours n'apparaît).
 - lot_key d'un ticket : la clé d'un des lots. Un ticket hors lot a lot_key = null et charged_separately = true.
 - depends_on ne référence que des tickets précédents (clé plus petite), jamais de cycle.
 - 3 à 5 membres d'équipe, avec un prénom et un nom français et un profil (dev, senior ou architect).
@@ -32,4 +32,4 @@ Sinon, renvoie kind = "plan" avec le plan complet et pas de reason.
 
 def system_prompt_fr(contract: Contract) -> str:
     """The system prompt with the contract's JSON (rate card, TJM, ...) embedded."""
-    return SYSTEM_PROMPT_FR.replace(_CONTRACT_MARKER, json.dumps(contract.to_dict(), ensure_ascii=False))
+    return SYSTEM_PROMPT_FR.replace(_CONTRACT_MARKER, json.dumps(contract.to_dict(), sort_keys=True, ensure_ascii=False))
