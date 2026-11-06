@@ -125,14 +125,75 @@ textarea {
 
 .assistant {
   margin: 16px 0;
-  border: 1px dashed #9ca3af;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
   padding: 16px;
-  color: #6b7280;
   align-self: start;
   position: sticky;
   top: 16px;
   min-height: 200px;
+}
+
+.assistant-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assistant-panel h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.bubble {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 92%;
+  overflow-wrap: anywhere;
+}
+
+.bubble p {
+  margin: 0 0 6px;
+}
+
+.bubble.user {
+  align-self: flex-end;
+  background: #e0e7ff;
+}
+
+.bubble.assistant-reply {
+  align-self: flex-start;
+  background: #f3f4f6;
+}
+
+.chip {
+  display: inline-block;
+  margin: 0 4px 6px 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #4b5563;
+  font-size: 0.8rem;
+}
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
 }
 
 .empty {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LotCard } from './LotCard'
 import type { ClientLot, ClientTicket } from '../../types'
@@ -31,5 +31,20 @@ describe('LotCard', () => {
     render(<LotCard lot={lot} tickets={[]} />)
     expect(screen.getByText('À venir')).toHaveClass('pill')
     expect(screen.getByText(/Non livré/)).toBeInTheDocument()
+  })
+
+  it('expands when a citation asks to reveal one of its tickets or itself, and ignores other keys', () => {
+    render(<LotCard lot={lot} tickets={[ticket]} />)
+    const reveal = (key: string) => act(() => void window.dispatchEvent(new CustomEvent('reveal-record', { detail: key })))
+    reveal('BANK-77')
+    expect(screen.getByText('Écran des factures')).not.toBeVisible()
+    reveal('BANK-12')
+    expect(screen.getByText('Écran des factures')).toBeVisible()
+  })
+
+  it('expands when its own key is revealed', () => {
+    render(<LotCard lot={lot} tickets={[ticket]} />)
+    act(() => void window.dispatchEvent(new CustomEvent('reveal-record', { detail: 'L1' })))
+    expect(screen.getByText('Écran des factures')).toBeVisible()
   })
 })

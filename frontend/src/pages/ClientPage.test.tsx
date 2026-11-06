@@ -64,7 +64,8 @@ describe('ClientPage', () => {
     )
     expect(screen.getByText('Reste à payer')).toBeInTheDocument()
     expect(screen.getByText('Lots à valider')).toBeInTheDocument()
-    expect(screen.getByText('Assistant — bientôt')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Assistant' })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Posez une question…')).toBeInTheDocument()
     for (const id of ['rec-L1', 'rec-BANK-12', 'rec-BANK-99', 'rec-F-2026-001']) {
       expect(document.getElementById(id), id).not.toBeNull()
     }

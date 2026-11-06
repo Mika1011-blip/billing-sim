@@ -11,6 +11,7 @@ import {
   getClock,
   setClock,
 } from '../api'
+import { Assistant } from '../components/client/Assistant'
 import { Header } from '../components/client/Header'
 import { InvoiceList } from '../components/client/InvoiceList'
 import { LotCard } from '../components/client/LotCard'
@@ -145,7 +146,9 @@ export function ClientPage() {
           <InvoiceList invoices={data.invoices} payments={data.payments} />
         </section>
       </main>
-      <aside className="assistant">{fr.page.assistantPlaceholder}</aside>
+      <aside className="assistant">
+        <Assistant />
+      </aside>
     </div>
   )
 }

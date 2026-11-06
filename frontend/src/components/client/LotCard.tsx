@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { fr } from '../../i18n/fr'
 import { fmtDate, fmtEuro } from '../../lib/format'
 import type { ClientLot, ClientTicket } from '../../types'
@@ -13,6 +13,16 @@ interface Props {
 export function LotCard({ lot, tickets }: Props) {
   const [open, setOpen] = useState(false)
   const t = fr.lot
+
+  // A citation in the assistant panel asks to reveal a record: open this card when it holds it.
+  useEffect(() => {
+    const onReveal = (e: Event) => {
+      const key = (e as CustomEvent<string>).detail
+      if (key === lot.cle || tickets.some((tk) => tk.cle === key)) setOpen(true)
+    }
+    window.addEventListener('reveal-record', onReveal)
+    return () => window.removeEventListener('reveal-record', onReveal)
+  }, [lot.cle, tickets])
 
   return (
     <article className="lot-card" id={`rec-${lot.cle}`}>
