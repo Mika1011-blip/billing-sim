@@ -11,17 +11,23 @@ export function SummaryTiles({ summary }: { summary: ClientSummary }) {
       basis: t.ttc,
       value: summary.contracte_ttc,
       sub: `${t.contractedHt} ${fmtEuro(summary.contracte)} ${t.htUnit}`,
-      alert: false,
+      danger: false,
     },
-    { label: t.invoiced, basis: t.ttc, value: summary.facture, sub: '', alert: false },
-    { label: t.paid, basis: t.ttc, value: summary.paye, sub: '', alert: false },
-    { label: t.remaining, basis: t.ttc, value: summary.reste_a_payer, sub: '', alert: false },
-    { label: t.late, basis: t.ttc, value: summary.en_retard, sub: '', alert: summary.en_retard > 0 },
+    { label: t.invoiced, basis: t.ttc, value: summary.facture, sub: '', danger: false },
+    { label: t.paid, basis: t.ttc, value: summary.paye, sub: '', danger: false },
+    { label: t.remaining, basis: t.ttc, value: summary.reste_a_payer, sub: '', danger: false },
+    {
+      label: t.late,
+      basis: t.ttc,
+      value: summary.en_retard,
+      sub: fr.alert.nombreFactures(summary.en_retard_nombre),
+      danger: summary.en_retard > 0,
+    },
   ]
   return (
     <ul className="tiles" aria-label={t.title}>
       {tiles.map((tile) => (
-        <li key={tile.label} className={tile.alert ? 'tile alert' : 'tile'}>
+        <li key={tile.label} className={tile.danger ? 'tile danger' : 'tile'}>
           <div className="tile-label">
             <span>{tile.label}</span> <small>{tile.basis}</small>
           </div>

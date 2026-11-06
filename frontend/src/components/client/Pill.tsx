@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 const CLASS_BY_STATUS: Record<string, string> = {
   // invoices (and a lot's invoice statut)
   'À venir': 'pill-a-venir',
@@ -13,7 +15,7 @@ const CLASS_BY_STATUS: Record<string, string> = {
   'Terminé': 'pill-termine',
 }
 
-/** Status badge: the text is the statut itself, the class drives the colour. */
-export function Pill({ statut }: { statut: string }) {
-  return <span className={`pill ${CLASS_BY_STATUS[statut] ?? ''}`.trim()}>{statut}</span>
+/** Status badge: the class follows the statut; the text is the statut itself unless a longer one is given. */
+export function Pill({ statut, children }: { statut: string; children?: ReactNode }) {
+  return <span className={`pill ${CLASS_BY_STATUS[statut] ?? ''}`.trim()}>{children ?? statut}</span>
 }

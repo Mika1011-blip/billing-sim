@@ -600,13 +600,126 @@ td.num {
   margin-top: 2px;
 }
 
-.tile.alert {
+.tile.danger {
   border-top-color: var(--danger);
   background: var(--danger-soft);
 }
 
-.tile.alert .tile-value {
+.tile.danger .tile-value {
   color: var(--danger);
+}
+
+/* ---- alert line, under the tiles ---- */
+
+.alert-line {
+  background: var(--warn-soft);
+  border-left: 4px solid var(--warn);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.alert-line p {
+  margin: 0;
+}
+
+.alert-line p + p {
+  margin-top: 4px;
+}
+
+.alert-line .danger {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ---- invoice dashboard ---- */
+
+.filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filter-pills button {
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+}
+
+.filter-pills button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.invoice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.invoice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.invoice-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.invoice-card-title {
+  border: 0;
+  padding: 0;
+  background: none;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.invoice-card-title:hover:not(:disabled) {
+  background: none;
+}
+
+.invoice-card-amount {
+  font-size: 1.3rem;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.invoice-card-amount small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.invoice-card .meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.invoice-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.invoice-card .error {
+  margin: 0;
+  font-size: 0.85rem;
 }
 
 .pending-approvals ul {
@@ -631,10 +744,6 @@ td.num {
   flex: 1;
 }
 
-.lot-card > p {
-  margin: 8px 0;
-}
-
 .lot-card .meta {
   margin: 4px 0;
   font-size: 0.85rem;
@@ -645,8 +754,8 @@ td.num {
   margin-top: 8px;
 }
 
-.client-page .note {
-  color: var(--muted);
+.lot-tickets {
+  margin-top: 8px;
 }
 
 /* ---- ticket detail row ---- */
@@ -741,24 +850,6 @@ td.num {
 
 .journal-actor {
   font-weight: 600;
-}
-
-.drawer {
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--accent);
-  border-radius: 10px;
-  padding: 8px 16px 12px;
-  margin-top: 12px;
-  background: #f9fafb;
-}
-
-.drawer h3,
-.drawer h4 {
-  margin: 8px 0 4px;
-}
-
-.drawer .row {
-  justify-content: space-between;
 }
 
 /* ---- assistant ---- */

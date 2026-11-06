@@ -5,31 +5,24 @@ import {
   getClientApprovals,
   getClientInvoices,
   getClientLots,
-  getClientPayments,
   getClientSummary,
   getClientTickets,
   getClientToday,
   getClock,
+  payInvoice,
   setClock,
 } from '../api'
+import { AlertLine } from '../components/client/AlertLine'
 import { Assistant } from '../components/client/Assistant'
 import { Header } from '../components/client/Header'
-import { InvoiceList } from '../components/client/InvoiceList'
-import { LotCard } from '../components/client/LotCard'
+import { InvoiceGallery } from '../components/client/InvoiceGallery'
+import { LotsEnCours } from '../components/client/LotsEnCours'
 import { PendingApprovals } from '../components/client/PendingApprovals'
 import { SummaryTiles } from '../components/client/SummaryTiles'
-import { TicketTable } from '../components/client/TicketTable'
 import { fr } from '../i18n/fr'
 import { dayForDate } from '../lib/workdays'
 import { useOnSimReset, useSimClock } from '../sim'
-import type {
-  ClientInvoice,
-  ClientLot,
-  ClientPayment,
-  ClientSummary,
-  ClientTicket,
-  ClientToday,
-} from '../types'
+import type { ClientInvoice, ClientLot, ClientSummary, ClientTicket, ClientToday } from '../types'
 
 interface Loaded {
   lastDay: number
@@ -38,22 +31,20 @@ interface Loaded {
   lots: ClientLot[]
   tickets: ClientTicket[]
   invoices: ClientInvoice[]
-  payments: ClientPayment[]
   approvals: ClientLot[]
 }
 
 async function fetchAll(): Promise<Loaded> {
-  const [clock, today, summary, lots, tickets, invoices, payments, approvals] = await Promise.all([
+  const [clock, today, summary, lots, tickets, invoices, approvals] = await Promise.all([
     getClock(),
     getClientToday(),
     getClientSummary(),
     getClientLots(),
     getClientTickets(),
     getClientInvoices(),
-    getClientPayments(),
     getClientApprovals(),
   ])
-  return { lastDay: clock.last_day, today, summary, lots, tickets, invoices, payments, approvals }
+  return { lastDay: clock.last_day, today, summary, lots, tickets, invoices, approvals }
 }
 
 export function ClientPage() {
@@ -132,6 +123,17 @@ export function ClientPage() {
     }
   }
 
+  // Paying changes the tiles, the alert line and the card: refetch everything. On failure the card keeps its
+  // state and shows why under its button (a 409 carries the backend's French message).
+  async function pay(numero: string) {
+    try {
+      await payInvoice(numero)
+    } catch (e) {
+      throw new Error(e instanceof ApiError && e.status === 409 && e.detail ? e.detail : fr.invoiceCard.payError)
+    }
+    await refresh()
+  }
+
   if (!data) {
     return (
       <main className="client-page">
@@ -149,8 +151,6 @@ export function ClientPage() {
   }
 
   const { today, lastDay } = data
-  const ticketsOf = (lotKey: string) => data.tickets.filter((t) => t.lot === lotKey)
-  const unassigned = data.tickets.filter((t) => t.lot === null)
 
   return (
     <div className="client-layout">
@@ -163,23 +163,14 @@ export function ClientPage() {
         />
         {error && <p className="error">{error}</p>}
         <SummaryTiles summary={data.summary} />
+        <AlertLine summary={data.summary} invoices={data.invoices} />
+        {/* The invoice dashboard: invoices, then the lots still to invoice. */}
+        <section className="panel invoices">
+          <h2>{fr.invoiceCard.title}</h2>
+          <InvoiceGallery invoices={data.invoices} onPay={pay} onOpen={() => {}} />
+        </section>
+        <LotsEnCours lots={data.lots} tickets={data.tickets} day={today.jour} />
         <PendingApprovals lots={data.approvals} />
-        <section className="panel">
-          <h2>{fr.page.lotsTitle}</h2>
-          {data.lots.map((lot) => (
-            <LotCard key={lot.cle} lot={lot} tickets={ticketsOf(lot.cle)} />
-          ))}
-        </section>
-        {unassigned.length > 0 && (
-          <section className="panel">
-            <h2>{fr.page.separateTicketsTitle}</h2>
-            <TicketTable tickets={unassigned} />
-          </section>
-        )}
-        <section className="panel">
-          <h2>{fr.page.invoicesTitle}</h2>
-          <InvoiceList invoices={data.invoices} payments={data.payments} />
-        </section>
       </main>
       <aside className="assistant">
         <Assistant />
