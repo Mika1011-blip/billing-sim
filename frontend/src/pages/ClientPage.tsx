@@ -54,12 +54,16 @@ async function fetchAll(): Promise<Loaded> {
   return { lastDay: clock.last_day, today, summary, lots, tickets, invoices, payments, approvals }
 }
 
+/** How often the page asks the backend whether the clock was moved elsewhere (the dev page, say). */
+export const CLOCK_POLL_MS = 5000
+
 export function ClientPage() {
   const [data, setData] = useState<Loaded | null>(null)
   const [message, setMessage] = useState<string>(fr.page.loading)
   const [error, setError] = useState('')
   const latest = useRef(0)
   const hasData = useRef(false)
+  const shownDay = useRef<number | null>(null) // the clock day the dashboard was last loaded at
 
   const refresh = useCallback(async () => {
     const id = ++latest.current
@@ -67,6 +71,7 @@ export function ClientPage() {
       const loaded = await fetchAll()
       if (id !== latest.current) return
       hasData.current = true
+      shownDay.current = loaded.today.jour
       setData(loaded)
       setError('')
     } catch (e) {
@@ -88,11 +93,39 @@ export function ClientPage() {
 
   useEffect(() => {
     const previous = document.title
+    const previousLang = document.documentElement.lang
     document.title = fr.page.title
+    document.documentElement.lang = 'fr'
     return () => {
       document.title = previous
+      document.documentElement.lang = previousLang
     }
   }, [])
+
+  // The clock can be moved from /dev while this page is open: the numbers here must follow what the agent sees.
+  useEffect(() => {
+    const visible = () => document.visibilityState !== 'hidden'
+    const poll = async () => {
+      if (!visible() || shownDay.current === null) return
+      try {
+        const clock = await getClock()
+        if (clock.day !== shownDay.current) void refresh()
+      } catch {
+        // offline or restarting: the next tick tries again
+      }
+    }
+    const onShow = () => {
+      if (visible() && hasData.current) void refresh()
+    }
+    const timer = setInterval(() => void poll(), CLOCK_POLL_MS)
+    document.addEventListener('visibilitychange', onShow)
+    window.addEventListener('focus', onShow)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onShow)
+      window.removeEventListener('focus', onShow)
+    }
+  }, [refresh])
 
   // The client view depends on the clock, so every move refetches everything.
   async function moveTo(day: number) {

@@ -40,6 +40,20 @@ def test_duplicate_ticket_key_reported():
     assert any("BANK-1" in e and "duplicate" in e.lower() for e in errors)
 
 
+def test_duplicate_lot_key_reported():
+    plan = load_fixture().model_copy(deep=True)
+    plan.lots[1].key = plan.lots[0].key
+    errors = validate_plan(plan)
+    assert any("duplicate lot key" in e and plan.lots[0].key in e for e in errors)
+
+
+def test_duplicate_team_name_reported():
+    plan = load_fixture().model_copy(deep=True)
+    plan.team[1].name = plan.team[0].name
+    errors = validate_plan(plan)
+    assert any("duplicate team member" in e and plan.team[0].name in e for e in errors)
+
+
 def test_unknown_lot_key_reported():
     plan = load_fixture().model_copy(deep=True)
     _ticket(plan, "BANK-3").lot_key = "L9"

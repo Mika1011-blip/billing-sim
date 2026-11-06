@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 
 import anthropic
@@ -15,13 +16,14 @@ from billing_sim.agent.tools import anthropic_tool_defs, call_tool
 
 logger = logging.getLogger(__name__)
 
-AgentEvent = dict  # {"type": "text"|"tool_call"|"tool_result"|"done"|"error", ...}
+AgentEvent = dict  # {"type": "text"|"tool_call"|"tool_result"|"info"|"done"|"error", ...}
 
 HISTORY_LIMIT = 40
 ERROR_NO_DATA = "Je n'ai pas pu consulter les données de la simulation."
 ERROR_NO_ANSWER = "Je n'ai pas réussi à terminer ma réponse."
 ERROR_UNUSABLE = "L'assistant n'a pas donné de réponse exploitable."
 ERROR_NO_KEY = "Aucune clé API configurée."
+INFO_NEW_DATE = "Nouvelle date : la conversation repart de zéro."
 
 
 def _is_user_turn(message: dict) -> bool:
@@ -36,6 +38,13 @@ def trim_history(history: list[dict], limit: int = HISTORY_LIMIT) -> list[dict]:
     return kept
 
 
+def _day_of(today_json: str) -> int | None:
+    try:
+        return json.loads(today_json)["jour"]
+    except (ValueError, KeyError, TypeError):
+        return None
+
+
 class ClientAgent:
     """One per app. `chat` is an async generator of events; sessions live in memory only."""
 
@@ -45,15 +54,19 @@ class ClientAgent:
         server: FastMCP,
         model: str,
         max_turns: int = 8,
+        client_factory: Callable[[], anthropic.Anthropic | None] | None = None,
     ):
         self.client = client
+        self.client_factory = client_factory  # asked on every chat when no fixed client is given
         self.server = server
         self.model = model
         self.max_turns = max_turns
-        self.sessions: dict[str, list[dict]] = {}
+        # session id -> (clock day the history was built at, history)
+        self.sessions: dict[str, tuple[int | None, list[dict]]] = {}
 
     async def chat(self, session_id: str, message: str) -> AsyncIterator[AgentEvent]:
-        if self.client is None:
+        client = self.client if self.client is not None else self.client_factory and self.client_factory()
+        if client is None:
             yield {"type": "error", "message": ERROR_NO_KEY}
             yield {"type": "done"}
             return
@@ -67,8 +80,15 @@ class ClientAgent:
             yield {"type": "done"}
             return
 
+        # Earlier answers and tool results belong to the day they were computed at: when the clock has moved
+        # (either way) the model must not keep them, or a scrub back would leave it holding future facts.
+        day = _day_of(today)
+        stored_day, stored = self.sessions.get(session_id, (day, []))
+        if stored_day != day:
+            stored = []
+            yield {"type": "info", "message": INFO_NEW_DATE}
         # Work on a copy and store it only at the end, so concurrent requests on one session cannot interleave.
-        history = list(self.sessions.get(session_id, []))
+        history = list(stored)
         start = len(history)
         history.append({"role": "user", "content": message})
         defs = await anthropic_tool_defs(self.server)
@@ -77,7 +97,7 @@ class ClientAgent:
         try:
             for _ in range(self.max_turns):
                 final = None
-                async for kind, payload in self._model_turn(history, defs):
+                async for kind, payload in self._model_turn(client, history, defs):
                     if kind == "text":
                         yield {"type": "text", "text": payload}
                     else:
@@ -123,13 +143,13 @@ class ClientAgent:
         finally:
             if not completed:  # a half-finished exchange (dangling tool_use) would poison the next request
                 del history[start:]
-            self.sessions[session_id] = trim_history(history)
+            self.sessions[session_id] = (day, trim_history(history))
         if not completed:
             yield {"type": "error", "message": failure}
         yield {"type": "done"}
 
     async def _model_turn(
-        self, history: list[dict], defs: list[dict]
+        self, client: anthropic.Anthropic, history: list[dict], defs: list[dict]
     ) -> AsyncIterator[tuple[str, Any]]:
         """One streamed model call. The SDK client is synchronous, so it runs in a worker thread and hands
         its text deltas back through a queue; yields `("text", delta)` then one `("final", message)`."""
@@ -139,7 +159,7 @@ class ClientAgent:
 
         def run() -> None:
             try:
-                with self.client.messages.stream(
+                with client.messages.stream(
                     model=self.model,
                     max_tokens=4096,
                     system=SYSTEM_PROMPT_FR,

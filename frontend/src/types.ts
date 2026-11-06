@@ -1,4 +1,6 @@
-// Mirrors the backend JSON shapes (see /setup, /sim and /dev routes).
+// Mirrors the backend JSON shapes (see /setup, /sim and /dev routes). The dev shapes are the exact keys of
+// `store/dev_queries.py`; `src/test-fixtures/dev-snapshot.json` is generated from the backend and the dev page
+// tests render from it, so a drift between the two fails there.
 
 export interface Clock {
   day: number
@@ -18,7 +20,6 @@ export type GenerateResult =
   | { kind: 'error'; status: number; detail: string; raw?: string } // 400 / 502 / other
 
 export interface TeamMember {
-  id: string
   name: string
   profile: string
 }
@@ -40,17 +41,20 @@ export interface Lot {
 export interface PlanTicket {
   key: string
   title: string
-  lot_key: string
+  description: string
+  lot: string | null
   charged_separately: boolean
   size: string
   profile: string
   days_charged: number
+  tjm: number
   fee: number
   assignee: string
-  sprint_number: number
-  planned_start_day: number
-  planned_end_day: number
+  sprint: number
+  planned_start: number
+  planned_end: number
   depends_on: string[]
+  beats: unknown[]
 }
 
 export interface Plan {
@@ -59,6 +63,8 @@ export interface Plan {
     product_summary: string
     seed: number
     start_date: string
+    signed_day: number
+    last_day: number
     warnings: string[]
   }
   contract: Record<string, unknown>
@@ -79,8 +85,9 @@ export type EventType =
   | 'review_approved'
 
 export interface TimelineEvent {
-  ticket_key: string
+  ticket: string
   day: number
+  date: string
   seq: number
   type: EventType
   actor: string
@@ -89,8 +96,8 @@ export interface TimelineEvent {
 
 export interface Invoice {
   number: string
-  lot_key: string | null
-  ticket_key: string | null
+  lot: string | null
+  ticket: string | null
   issued_day: number
   due_day: number
   amount_ht: number
@@ -100,14 +107,14 @@ export interface Invoice {
 }
 
 export interface Payment {
-  invoice_number: string
+  invoice: string
   day: number
   amount: number
   reference: string
 }
 
 export interface Approval {
-  lot_key: string
+  lot: string
   day: number
   approved_by: string
 }
@@ -121,7 +128,7 @@ export interface Timeline {
 
 export interface DiffTicketRow {
   key: string
-  lot_key: string
+  lot: string | null // null: not priced with a lot
   assignee: string
   planned_start: number | null
   planned_end: number | null
@@ -222,6 +229,7 @@ export interface ClientPayment {
 
 export interface ClientSummary {
   contracte: number // HT
+  contracte_ttc: number // TTC
   facture: number // TTC
   paye: number // TTC
   reste_a_payer: number // TTC

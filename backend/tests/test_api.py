@@ -29,6 +29,13 @@ def test_generate_fallback(client):
     assert isinstance(body["warnings"], list)
 
 
+def test_fallback_needs_no_request_text(client):
+    r = client.post("/setup/generate", json={"request_text": "", "fallback": True})
+    assert r.status_code == 200
+    assert r.json()["kind"] == "plan"
+    assert client.get("/dev/plan").json()["scenario"]["request_text"].strip()
+
+
 def test_generate_uses_given_seed(client):
     assert generate(client, seed=7).json()["seed"] == 7
 

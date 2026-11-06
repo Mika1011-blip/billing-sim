@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Assistant } from './Assistant'
 
@@ -54,11 +54,83 @@ describe('Assistant', () => {
     expect(ids[0]).toBe(ids[1])
   })
 
-  it('renders a chip for a tool_call event', async () => {
-    mockChat([sse({ type: 'tool_call', name: 'get_summary', input: {} }), sse({ type: 'tool_result', name: 'get_summary' }), sse({ type: 'done' })])
+  it('renders a French chip for a tool_call event, using the call input where the label has a slot', async () => {
+    mockChat([
+      sse({ type: 'tool_call', name: 'get_summary', input: {} }),
+      sse({ type: 'tool_result', name: 'get_summary' }),
+      sse({ type: 'tool_call', name: 'get_ticket', input: { key: 'BANK-12' } }),
+      sse({ type: 'tool_call', name: 'explain_price', input: { key: 'L1' } }),
+      sse({ type: 'tool_call', name: 'get_today', input: {} }),
+      sse({ type: 'tool_call', name: 'list_invoices', input: {} }),
+      sse({ type: 'done' }),
+    ])
     render(<Assistant />)
     await ask()
-    expect(await screen.findByText('consulte get_summary…')).toBeInTheDocument()
+    for (const label of [
+      'consulte le résumé…',
+      'consulte BANK-12…',
+      'calcule le prix de L1…',
+      'vérifie la date…',
+      'consulte les factures…',
+    ]) {
+      expect(await screen.findByText(label)).toBeInTheDocument()
+    }
+  })
+
+  it('falls back to "consulte <tool>…" for an unmapped tool, or a mapped one missing its input', async () => {
+    mockChat([
+      sse({ type: 'tool_call', name: 'some_new_tool', input: {} }),
+      sse({ type: 'tool_call', name: 'get_ticket', input: {} }),
+      sse({ type: 'done' }),
+    ])
+    render(<Assistant />)
+    await ask()
+    expect(await screen.findByText('consulte some_new_tool…')).toBeInTheDocument()
+    expect(screen.getByText('consulte get_ticket…')).toBeInTheDocument()
+  })
+
+  it('renders an info event as a divider ahead of the new reply', async () => {
+    mockChat([
+      sse({ type: 'info', message: 'Nouvelle date : la conversation repart de zéro.' }),
+      sse({ type: 'text', text: 'Bonjour' }),
+      sse({ type: 'done' }),
+    ])
+    render(<Assistant />)
+    await ask()
+    const divider = await screen.findByRole('separator')
+    expect(divider).toHaveTextContent('Nouvelle date : la conversation repart de zéro.')
+    expect(await screen.findByText('Bonjour')).toBeInTheDocument()
+    const log = divider.parentElement!
+    const order = [...log.children].map((c) => c.className)
+    expect(order.indexOf('chat-divider')).toBeGreaterThan(order.indexOf('bubble user'))
+    expect(order.indexOf('chat-divider')).toBeLessThan(order.indexOf('bubble assistant-reply'))
+  })
+
+  it('renders **bold** as <strong> text, with citations still linked inside and outside it', async () => {
+    mockChat([
+      sse({ type: 'text', text: 'Le total est **2 400 €** pour **[BANK-1]** et [F-2026-001], **non clos.' }),
+      sse({ type: 'done' }),
+    ])
+    const { container } = render(<Assistant />)
+    await ask()
+    const strongs = await waitFor(() => {
+      const found = container.querySelectorAll('.assistant-reply strong')
+      expect(found).toHaveLength(2)
+      return found
+    })
+    expect(strongs[0].textContent).toBe('2 400 €')
+    expect(within(strongs[1] as HTMLElement).getByRole('link', { name: '[BANK-1]' })).toHaveAttribute('href', '#rec-BANK-1')
+    expect(screen.getByRole('link', { name: '[F-2026-001]' })).toHaveAttribute('href', '#rec-F-2026-001')
+    const reply = container.querySelector('.assistant-reply p')!
+    expect(reply.textContent).toBe('Le total est 2 400 € pour [BANK-1] et [F-2026-001], **non clos.') // an unclosed ** stays as typed
+  })
+
+  it('never interprets HTML in the model text', async () => {
+    mockChat([sse({ type: 'text', text: '**<img src=x onerror=alert(1)>**' }), sse({ type: 'done' })])
+    const { container } = render(<Assistant />)
+    await ask()
+    await screen.findByText('<img src=x onerror=alert(1)>')
+    expect(container.querySelector('img')).toBeNull()
   })
 
   it('accumulates text deltas, even when an event is split across chunks', async () => {

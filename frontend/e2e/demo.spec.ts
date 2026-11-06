@@ -16,6 +16,13 @@ test('generate with the fallback, move the clock to the end, read the client das
   await page.getByLabel('Day', { exact: true }).fill(last)
   await expect(page.locator('.clock-panel p')).toHaveText(new RegExp(`^Day ${last} / ${last} `))
 
+  // At the end of the run the Ledger shows money received: some invoice has a Paid cell other than 0.
+  const paidCells = page.locator('.ledger table').first().locator('tbody tr td:nth-child(6)')
+  await expect(paidCells.first()).toBeVisible()
+  const paid = await paidCells.allTextContents()
+  expect(paid.length).toBeGreaterThan(0)
+  expect(paid.some((cell) => cell.trim() !== '0' && cell.trim() !== '0 €')).toBe(true)
+
   await page.goto('/client')
   await expect(page.getByText('Reste à payer').first()).toBeVisible()
   await expect(page.locator('.pill').filter({ hasText: /^(En retard|Payée)$/ }).first()).toBeVisible()

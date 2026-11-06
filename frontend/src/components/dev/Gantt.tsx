@@ -6,6 +6,7 @@ const ROW_H = 24
 const LOT_H = 22
 const HEAD_H = 24
 const BAR_H = 8
+const NO_LOT = ''
 
 export const scale = (day: number) => PAD + day * DAY_PX
 
@@ -34,11 +35,11 @@ export function blockedSpans(events: TimelineEvent[], lastDay: number): Record<s
     .sort((a, b) => a.day - b.day || a.seq - b.seq)
   for (const e of sorted) {
     if (e.type === 'blocked') {
-      if (!(e.ticket_key in open)) open[e.ticket_key] = e.day
-    } else if (e.ticket_key in open) {
-      const spans = (out[e.ticket_key] ??= [])
-      spans.push({ from: open[e.ticket_key], to: e.day })
-      delete open[e.ticket_key]
+      if (!(e.ticket in open)) open[e.ticket] = e.day
+    } else if (e.ticket in open) {
+      const spans = (out[e.ticket] ??= [])
+      spans.push({ from: open[e.ticket], to: e.day })
+      delete open[e.ticket]
     }
   }
   for (const [key, from] of Object.entries(open)) {
@@ -59,11 +60,12 @@ function layout(rows: DiffTicketRow[], lots: { key: string; name: string }[]): L
   const rowY: Record<string, number> = {}
   let y = HEAD_H
   const known = new Set(lots.map((l) => l.key))
-  const orphans = [...new Set(rows.map((r) => r.lot_key))]
+  // Tickets with no lot (or an unknown one) still get a group, so every row is drawn.
+  const orphans = [...new Set(rows.map((r) => r.lot ?? NO_LOT))]
     .filter((k) => !known.has(k))
-    .map((k) => ({ key: k, name: k }))
+    .map((k) => ({ key: k, name: k === NO_LOT ? 'No lot' : k }))
   for (const lot of [...lots, ...orphans]) {
-    const lotRows = rows.filter((r) => r.lot_key === lot.key)
+    const lotRows = rows.filter((r) => (r.lot ?? NO_LOT) === lot.key)
     if (lotRows.length === 0) continue
     lotLabels.push({ key: lot.key, name: lot.name, y })
     y += LOT_H

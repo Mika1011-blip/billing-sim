@@ -1,0 +1,1761 @@
+{
+  "plan": {
+    "scenario": {
+      "request_text": "Scénario de démonstration : tableau de bord de factures (fixture).",
+      "product_summary": "Un tableau de bord de suivi des factures pour une banque : les équipes comptables y consultent les factures fournisseurs et clients, suivent l'état des paiements, déclenchent des relances et exportent les données vers les outils de comptabilité.",
+      "seed": 42,
+      "start_date": "2026-03-02",
+      "signed_day": 0,
+      "last_day": 109,
+      "warnings": [],
+      "client_behaviour": [
+        {
+          "invoice_index": 1,
+          "pays_fraction": 0.3333,
+          "days_late": 0
+        },
+        {
+          "invoice_index": 2,
+          "pays_fraction": 1.0,
+          "days_late": 12
+        },
+        {
+          "invoice_index": 3,
+          "pays_fraction": 0.5,
+          "days_late": 20
+        }
+      ]
+    },
+    "contract": {
+      "tjm": {
+        "dev": 600,
+        "senior": 750,
+        "architect": 900
+      },
+      "rate_card": {
+        "S": 1,
+        "M": 3,
+        "L": 5,
+        "XL": 10
+      },
+      "hours_per_day": 8,
+      "payment_terms_days": 30,
+      "overrun_rule": "absorbed",
+      "vat_rate": 0.2,
+      "currency": "EUR",
+      "invoice_timing": "on_delivery"
+    },
+    "team": [
+      {
+        "name": "Camille Roux",
+        "profile": "dev"
+      },
+      {
+        "name": "Yanis Benali",
+        "profile": "dev"
+      },
+      {
+        "name": "Sophie Lambert",
+        "profile": "senior"
+      },
+      {
+        "name": "Marc Delorme",
+        "profile": "architect"
+      }
+    ],
+    "sprints": [
+      {
+        "number": 1,
+        "start_day": 0,
+        "end_day": 9
+      },
+      {
+        "number": 2,
+        "start_day": 10,
+        "end_day": 19
+      },
+      {
+        "number": 3,
+        "start_day": 20,
+        "end_day": 29
+      }
+    ],
+    "lots": [
+      {
+        "key": "L1",
+        "name": "Tableau de bord factures",
+        "description": "Vue d'ensemble des factures avec filtres, tris et exports pour les équipes comptables.",
+        "price": 3000,
+        "planned_delivery_day": 3
+      },
+      {
+        "key": "L2",
+        "name": "Suivi des paiements",
+        "description": "Rapprochement des relevés bancaires avec les factures et suivi du statut de paiement.",
+        "price": 13650,
+        "planned_delivery_day": 19
+      },
+      {
+        "key": "L3",
+        "name": "Exports et notifications",
+        "description": "Alertes e-mail, centre de notifications et exports destinés à la comptabilité.",
+        "price": 8100,
+        "planned_delivery_day": 26
+      }
+    ],
+    "tickets": [
+      {
+        "key": "BANK-1",
+        "title": "Filtres du tableau de bord",
+        "description": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut. Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue.",
+        "lot": "L1",
+        "charged_separately": false,
+        "size": "M",
+        "profile": "dev",
+        "days_charged": 3,
+        "tjm": 600,
+        "fee": 1800,
+        "assignee": "Camille Roux",
+        "sprint": 1,
+        "planned_start": 0,
+        "planned_end": 2,
+        "depends_on": [],
+        "beats": [
+          {
+            "kind": "scope_note",
+            "text": "Le client aimerait aussi un filtre par centre de coût, à confirmer lors de la prochaine revue.",
+            "duration_days": null
+          }
+        ]
+      },
+      {
+        "key": "BANK-2",
+        "title": "Export CSV",
+        "description": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel.",
+        "lot": "L1",
+        "charged_separately": false,
+        "size": "S",
+        "profile": "dev",
+        "days_charged": 1,
+        "tjm": 600,
+        "fee": 600,
+        "assignee": "Yanis Benali",
+        "sprint": 1,
+        "planned_start": 3,
+        "planned_end": 3,
+        "depends_on": [
+          "BANK-1"
+        ],
+        "beats": [
+          {
+            "kind": "review_changes",
+            "text": "Le séparateur de colonnes doit être le point-virgule et les montants doivent utiliser la virgule décimale.",
+            "duration_days": null
+          }
+        ]
+      },
+      {
+        "key": "BANK-3",
+        "title": "Export PDF",
+        "description": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition.",
+        "lot": "L1",
+        "charged_separately": false,
+        "size": "S",
+        "profile": "dev",
+        "days_charged": 1,
+        "tjm": 600,
+        "fee": 600,
+        "assignee": "Camille Roux",
+        "sprint": 1,
+        "planned_start": 3,
+        "planned_end": 3,
+        "depends_on": [
+          "BANK-1"
+        ],
+        "beats": []
+      },
+      {
+        "key": "BANK-4",
+        "title": "Architecture du rapprochement bancaire",
+        "description": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels.",
+        "lot": "L2",
+        "charged_separately": false,
+        "size": "XL",
+        "profile": "architect",
+        "days_charged": 10,
+        "tjm": 900,
+        "fee": 9000,
+        "assignee": "Marc Delorme",
+        "sprint": 1,
+        "planned_start": 3,
+        "planned_end": 12,
+        "depends_on": [
+          "BANK-1"
+        ],
+        "beats": []
+      },
+      {
+        "key": "BANK-5",
+        "title": "Import des relevés bancaires",
+        "description": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement.",
+        "lot": "L2",
+        "charged_separately": false,
+        "size": "M",
+        "profile": "senior",
+        "days_charged": 3,
+        "tjm": 750,
+        "fee": 2250,
+        "assignee": "Sophie Lambert",
+        "sprint": 2,
+        "planned_start": 13,
+        "planned_end": 15,
+        "depends_on": [
+          "BANK-4"
+        ],
+        "beats": [
+          {
+            "kind": "blocked",
+            "text": "En attente des accès à l'API bancaire",
+            "duration_days": 2
+          }
+        ]
+      },
+      {
+        "key": "BANK-6",
+        "title": "Statut de paiement des factures",
+        "description": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés.",
+        "lot": "L2",
+        "charged_separately": false,
+        "size": "M",
+        "profile": "dev",
+        "days_charged": 3,
+        "tjm": 600,
+        "fee": 1800,
+        "assignee": "Camille Roux",
+        "sprint": 2,
+        "planned_start": 16,
+        "planned_end": 18,
+        "depends_on": [
+          "BANK-5"
+        ],
+        "beats": []
+      },
+      {
+        "key": "BANK-7",
+        "title": "Détail des paiements partiels",
+        "description": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance.",
+        "lot": "L2",
+        "charged_separately": false,
+        "size": "S",
+        "profile": "dev",
+        "days_charged": 1,
+        "tjm": 600,
+        "fee": 600,
+        "assignee": "Yanis Benali",
+        "sprint": 2,
+        "planned_start": 19,
+        "planned_end": 19,
+        "depends_on": [
+          "BANK-6"
+        ],
+        "beats": [
+          {
+            "kind": "review_changes",
+            "text": "Afficher aussi la référence du virement bancaire pour chaque paiement reçu.",
+            "duration_days": null
+          }
+        ]
+      },
+      {
+        "key": "BANK-8",
+        "title": "Alertes e-mail pour factures en retard",
+        "description": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée.",
+        "lot": "L3",
+        "charged_separately": false,
+        "size": "L",
+        "profile": "senior",
+        "days_charged": 5,
+        "tjm": 750,
+        "fee": 3750,
+        "assignee": "Sophie Lambert",
+        "sprint": 2,
+        "planned_start": 19,
+        "planned_end": 23,
+        "depends_on": [
+          "BANK-6"
+        ],
+        "beats": []
+      },
+      {
+        "key": "BANK-9",
+        "title": "Export comptable",
+        "description": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées.",
+        "lot": "L3",
+        "charged_separately": false,
+        "size": "M",
+        "profile": "dev",
+        "days_charged": 3,
+        "tjm": 600,
+        "fee": 1800,
+        "assignee": "Yanis Benali",
+        "sprint": 3,
+        "planned_start": 20,
+        "planned_end": 22,
+        "depends_on": [
+          "BANK-2",
+          "BANK-6"
+        ],
+        "beats": [
+          {
+            "kind": "scope_note",
+            "text": "Le service comptabilité demande d'ajouter le code journal dans le fichier, hors périmètre initial.",
+            "duration_days": null
+          }
+        ]
+      },
+      {
+        "key": "BANK-10",
+        "title": "Centre de notifications",
+        "description": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés.",
+        "lot": "L3",
+        "charged_separately": false,
+        "size": "M",
+        "profile": "dev",
+        "days_charged": 3,
+        "tjm": 600,
+        "fee": 1800,
+        "assignee": "Camille Roux",
+        "sprint": 3,
+        "planned_start": 24,
+        "planned_end": 26,
+        "depends_on": [
+          "BANK-8"
+        ],
+        "beats": []
+      },
+      {
+        "key": "BANK-11",
+        "title": "Documentation d'exploitation",
+        "description": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement.",
+        "lot": "L3",
+        "charged_separately": false,
+        "size": "S",
+        "profile": "senior",
+        "days_charged": 1,
+        "tjm": 750,
+        "fee": 750,
+        "assignee": "Sophie Lambert",
+        "sprint": 2,
+        "planned_start": 16,
+        "planned_end": 16,
+        "depends_on": [
+          "BANK-5"
+        ],
+        "beats": []
+      },
+      {
+        "key": "BANK-12",
+        "title": "Correctif urgent — calcul de TVA",
+        "description": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable.",
+        "lot": null,
+        "charged_separately": true,
+        "size": "S",
+        "profile": "senior",
+        "days_charged": 1,
+        "tjm": 750,
+        "fee": 750,
+        "assignee": "Sophie Lambert",
+        "sprint": 3,
+        "planned_start": 24,
+        "planned_end": 24,
+        "depends_on": [],
+        "beats": []
+      }
+    ]
+  },
+  "timeline": {
+    "events": [
+      {
+        "ticket": "BANK-1",
+        "day": 0,
+        "date": "2026-03-02",
+        "seq": 0,
+        "type": "transition",
+        "actor": "Camille Roux",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-1",
+        "day": 0,
+        "date": "2026-03-02",
+        "seq": 1,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 7.9,
+          "note": "Permettre de filtrer la liste des factures par période, fournisseur, montant et statut."
+        }
+      },
+      {
+        "ticket": "BANK-1",
+        "day": 1,
+        "date": "2026-03-03",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 5.5,
+          "note": "Les filtres actifs sont conservés dans l'URL pour pouvoir partager une vue."
+        }
+      },
+      {
+        "ticket": "BANK-1",
+        "day": 1,
+        "date": "2026-03-03",
+        "seq": 1,
+        "type": "comment",
+        "actor": "Camille Roux",
+        "payload": {
+          "text": "Point d'avancement sur « Filtres du tableau de bord » : ça avance comme prévu."
+        }
+      },
+      {
+        "ticket": "BANK-1",
+        "day": 2,
+        "date": "2026-03-04",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 7.3,
+          "note": "Le client aimerait aussi un filtre par centre de coût, à confirmer lors de la prochaine revue."
+        }
+      },
+      {
+        "ticket": "BANK-1",
+        "day": 2,
+        "date": "2026-03-04",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Camille Roux",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 0,
+        "type": "transition",
+        "actor": "Yanis Benali",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 1,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 6.3,
+          "note": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel."
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 2,
+        "type": "review_requested",
+        "actor": "Yanis Benali",
+        "payload": {
+          "text": "Le séparateur de colonnes doit être le point-virgule et les montants doivent utiliser la virgule décimale."
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 3,
+        "type": "transition",
+        "actor": "Yanis Benali",
+        "payload": {
+          "from": "En cours",
+          "to": "En revue"
+        }
+      },
+      {
+        "ticket": "BANK-3",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 4,
+        "type": "transition",
+        "actor": "Camille Roux",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-3",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 5,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 7.9,
+          "note": "Générer un PDF paginé de la liste filtrée des factures, avec l'en-tête de la banque et la date d'édition."
+        }
+      },
+      {
+        "ticket": "BANK-3",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 6,
+        "type": "transition",
+        "actor": "Camille Roux",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 7,
+        "type": "transition",
+        "actor": "Marc Delorme",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 3,
+        "date": "2026-03-05",
+        "seq": 8,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 7.5,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 4,
+        "date": "2026-03-06",
+        "seq": 0,
+        "type": "review_changes",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "text": "Le séparateur de colonnes doit être le point-virgule et les montants doivent utiliser la virgule décimale."
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 4,
+        "date": "2026-03-06",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "En revue",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 4,
+        "date": "2026-03-06",
+        "seq": 2,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 6.8,
+          "note": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 4,
+        "date": "2026-03-06",
+        "seq": 3,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 5.5,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 4,
+        "date": "2026-03-06",
+        "seq": 4,
+        "type": "comment",
+        "actor": "Marc Delorme",
+        "payload": {
+          "text": "Point d'avancement sur « Architecture du rapprochement bancaire » : ça avance comme prévu."
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 5,
+        "date": "2026-03-09",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 4.2,
+          "note": "Exporter en CSV la liste des factures telle qu'elle est filtrée à l'écran, avec les colonnes visibles et un encodage compatible Excel."
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 5,
+        "date": "2026-03-09",
+        "seq": 1,
+        "type": "comment",
+        "actor": "Yanis Benali",
+        "payload": {
+          "text": "Point d'avancement sur « Export CSV » : ça avance comme prévu."
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 5,
+        "date": "2026-03-09",
+        "seq": 2,
+        "type": "review_approved",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "text": "OK pour moi"
+        }
+      },
+      {
+        "ticket": "BANK-2",
+        "day": 5,
+        "date": "2026-03-09",
+        "seq": 3,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 5,
+        "date": "2026-03-09",
+        "seq": 4,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 6.5,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 6,
+        "date": "2026-03-10",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 5.5,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 7,
+        "date": "2026-03-11",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 5.5,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 7,
+        "date": "2026-03-11",
+        "seq": 1,
+        "type": "comment",
+        "actor": "Marc Delorme",
+        "payload": {
+          "text": "Je fais un premier retour sur « Architecture du rapprochement bancaire », pas de difficulté particulière."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 8,
+        "date": "2026-03-12",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 6.7,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 9,
+        "date": "2026-03-13",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 6.8,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 9,
+        "date": "2026-03-13",
+        "seq": 1,
+        "type": "comment",
+        "actor": "Marc Delorme",
+        "payload": {
+          "text": "Mise à jour sur « Architecture du rapprochement bancaire » : les cas limites sont en cours de traitement."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 10,
+        "date": "2026-03-16",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 6.4,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 11,
+        "date": "2026-03-17",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 4.7,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 11,
+        "date": "2026-03-17",
+        "seq": 1,
+        "type": "comment",
+        "actor": "Marc Delorme",
+        "payload": {
+          "text": "« Architecture du rapprochement bancaire » : j'ai échangé avec l'équipe, on garde cette approche."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 12,
+        "date": "2026-03-18",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Marc Delorme",
+        "payload": {
+          "hours": 4.7,
+          "note": "Concevoir l'architecture du rapprochement entre les relevés bancaires et les factures : modèle de données, règles de correspondance, gestion des écarts et des paiements partiels."
+        }
+      },
+      {
+        "ticket": "BANK-4",
+        "day": 12,
+        "date": "2026-03-18",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Marc Delorme",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-5",
+        "day": 13,
+        "date": "2026-03-19",
+        "seq": 0,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-5",
+        "day": 13,
+        "date": "2026-03-19",
+        "seq": 1,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 8.0,
+          "note": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement."
+        }
+      },
+      {
+        "ticket": "BANK-5",
+        "day": 14,
+        "date": "2026-03-20",
+        "seq": 0,
+        "type": "blocked",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "reason": "En attente des accès à l'API bancaire"
+        }
+      },
+      {
+        "ticket": "BANK-5",
+        "day": 14,
+        "date": "2026-03-20",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "En cours",
+          "to": "Bloqué"
+        }
+      },
+      {
+        "ticket": "BANK-5",
+        "day": 15,
+        "date": "2026-03-23",
+        "seq": 0,
+        "type": "unblocked",
+        "actor": "Sophie Lambert",
+        "payload": {}
+      },
+      {
+        "ticket": "BANK-5",
+        "day": 15,
+        "date": "2026-03-23",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "Bloqué",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-5",
+        "day": 16,
+        "date": "2026-03-24",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 6.6,
+          "note": "Importer automatiquement les relevés de compte depuis l'API bancaire et les stocker au format interne en vue du rapprochement."
+        }
+      },
+      {
+        "ticket": "BANK-5",
+        "day": 16,
+        "date": "2026-03-24",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-6",
+        "day": 17,
+        "date": "2026-03-25",
+        "seq": 0,
+        "type": "transition",
+        "actor": "Camille Roux",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-6",
+        "day": 17,
+        "date": "2026-03-25",
+        "seq": 1,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 6.7,
+          "note": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés."
+        }
+      },
+      {
+        "ticket": "BANK-11",
+        "day": 17,
+        "date": "2026-03-25",
+        "seq": 2,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-11",
+        "day": 17,
+        "date": "2026-03-25",
+        "seq": 3,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 4.9,
+          "note": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement."
+        }
+      },
+      {
+        "ticket": "BANK-6",
+        "day": 18,
+        "date": "2026-03-26",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 7.4,
+          "note": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés."
+        }
+      },
+      {
+        "ticket": "BANK-6",
+        "day": 18,
+        "date": "2026-03-26",
+        "seq": 1,
+        "type": "comment",
+        "actor": "Camille Roux",
+        "payload": {
+          "text": "Point d'avancement sur « Statut de paiement des factures » : ça avance comme prévu."
+        }
+      },
+      {
+        "ticket": "BANK-11",
+        "day": 18,
+        "date": "2026-03-26",
+        "seq": 2,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 6.0,
+          "note": "Rédiger la documentation d'exploitation : déploiement, surveillance de l'import des relevés et procédure en cas d'échec du rapprochement."
+        }
+      },
+      {
+        "ticket": "BANK-11",
+        "day": 18,
+        "date": "2026-03-26",
+        "seq": 3,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-6",
+        "day": 19,
+        "date": "2026-03-27",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 4.9,
+          "note": "Afficher pour chaque facture son statut de paiement (payée, partiellement payée, en retard) à partir des paiements rapprochés."
+        }
+      },
+      {
+        "ticket": "BANK-6",
+        "day": 19,
+        "date": "2026-03-27",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Camille Roux",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 20,
+        "date": "2026-03-30",
+        "seq": 0,
+        "type": "transition",
+        "actor": "Yanis Benali",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 20,
+        "date": "2026-03-30",
+        "seq": 1,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 7.2,
+          "note": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance."
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 20,
+        "date": "2026-03-30",
+        "seq": 2,
+        "type": "review_requested",
+        "actor": "Yanis Benali",
+        "payload": {
+          "text": "Afficher aussi la référence du virement bancaire pour chaque paiement reçu."
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 20,
+        "date": "2026-03-30",
+        "seq": 3,
+        "type": "transition",
+        "actor": "Yanis Benali",
+        "payload": {
+          "from": "En cours",
+          "to": "En revue"
+        }
+      },
+      {
+        "ticket": "BANK-8",
+        "day": 20,
+        "date": "2026-03-30",
+        "seq": 4,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-8",
+        "day": 20,
+        "date": "2026-03-30",
+        "seq": 5,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 4.6,
+          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 21,
+        "date": "2026-03-31",
+        "seq": 0,
+        "type": "review_changes",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "text": "Afficher aussi la référence du virement bancaire pour chaque paiement reçu."
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 21,
+        "date": "2026-03-31",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "En revue",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 21,
+        "date": "2026-03-31",
+        "seq": 2,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 5.6,
+          "note": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance."
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 21,
+        "date": "2026-03-31",
+        "seq": 3,
+        "type": "comment",
+        "actor": "Yanis Benali",
+        "payload": {
+          "text": "Point d'avancement sur « Détail des paiements partiels » : ça avance comme prévu."
+        }
+      },
+      {
+        "ticket": "BANK-8",
+        "day": 21,
+        "date": "2026-03-31",
+        "seq": 4,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 4.6,
+          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 22,
+        "date": "2026-04-01",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 4.8,
+          "note": "Ajouter sur la fiche d'une facture l'historique des paiements reçus, le solde restant dû et la date prévue d'échéance."
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 22,
+        "date": "2026-04-01",
+        "seq": 1,
+        "type": "review_approved",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "text": "OK pour moi"
+        }
+      },
+      {
+        "ticket": "BANK-7",
+        "day": 22,
+        "date": "2026-04-01",
+        "seq": 2,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-8",
+        "day": 22,
+        "date": "2026-04-01",
+        "seq": 3,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 7.0,
+          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+        }
+      },
+      {
+        "ticket": "BANK-8",
+        "day": 22,
+        "date": "2026-04-01",
+        "seq": 4,
+        "type": "comment",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "text": "Point d'avancement sur « Alertes e-mail pour factures en retard » : ça avance comme prévu."
+        }
+      },
+      {
+        "ticket": "BANK-8",
+        "day": 23,
+        "date": "2026-04-02",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 7.0,
+          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+        }
+      },
+      {
+        "ticket": "BANK-9",
+        "day": 23,
+        "date": "2026-04-02",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Yanis Benali",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-9",
+        "day": 23,
+        "date": "2026-04-02",
+        "seq": 2,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 7.4,
+          "note": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées."
+        }
+      },
+      {
+        "ticket": "BANK-8",
+        "day": 24,
+        "date": "2026-04-03",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 5.7,
+          "note": "Envoyer chaque matin un e-mail récapitulatif aux gestionnaires concernés avec les factures dont l'échéance est dépassée."
+        }
+      },
+      {
+        "ticket": "BANK-8",
+        "day": 24,
+        "date": "2026-04-03",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-9",
+        "day": 24,
+        "date": "2026-04-03",
+        "seq": 2,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 4.6,
+          "note": "Le service comptabilité demande d'ajouter le code journal dans le fichier, hors périmètre initial."
+        }
+      },
+      {
+        "ticket": "BANK-9",
+        "day": 24,
+        "date": "2026-04-03",
+        "seq": 3,
+        "type": "comment",
+        "actor": "Yanis Benali",
+        "payload": {
+          "text": "Point d'avancement sur « Export comptable » : ça avance comme prévu."
+        }
+      },
+      {
+        "ticket": "BANK-10",
+        "day": 25,
+        "date": "2026-04-06",
+        "seq": 0,
+        "type": "transition",
+        "actor": "Camille Roux",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-10",
+        "day": 25,
+        "date": "2026-04-06",
+        "seq": 1,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 5.4,
+          "note": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés."
+        }
+      },
+      {
+        "ticket": "BANK-9",
+        "day": 25,
+        "date": "2026-04-06",
+        "seq": 2,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 7.2,
+          "note": "Produire un fichier d'écritures comptables au format attendu par l'outil de comptabilité de la banque, à partir des factures payées."
+        }
+      },
+      {
+        "ticket": "BANK-12",
+        "day": 25,
+        "date": "2026-04-06",
+        "seq": 3,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "À faire",
+          "to": "En cours"
+        }
+      },
+      {
+        "ticket": "BANK-12",
+        "day": 25,
+        "date": "2026-04-06",
+        "seq": 4,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 5.5,
+          "note": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable."
+        }
+      },
+      {
+        "ticket": "BANK-10",
+        "day": 26,
+        "date": "2026-04-07",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 8.0,
+          "note": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés."
+        }
+      },
+      {
+        "ticket": "BANK-9",
+        "day": 26,
+        "date": "2026-04-07",
+        "seq": 1,
+        "type": "worklog",
+        "actor": "Yanis Benali",
+        "payload": {
+          "hours": 5.7,
+          "note": "Le service comptabilité demande d'ajouter le code journal dans le fichier, hors périmètre initial."
+        }
+      },
+      {
+        "ticket": "BANK-9",
+        "day": 26,
+        "date": "2026-04-07",
+        "seq": 2,
+        "type": "comment",
+        "actor": "Yanis Benali",
+        "payload": {
+          "text": "Je fais un premier retour sur « Export comptable », pas de difficulté particulière."
+        }
+      },
+      {
+        "ticket": "BANK-9",
+        "day": 26,
+        "date": "2026-04-07",
+        "seq": 3,
+        "type": "transition",
+        "actor": "Yanis Benali",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-12",
+        "day": 26,
+        "date": "2026-04-07",
+        "seq": 4,
+        "type": "worklog",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "hours": 8.0,
+          "note": "Corriger l'arrondi de la TVA affiché sur les factures à taux multiples, signalé en production par l'équipe comptable."
+        }
+      },
+      {
+        "ticket": "BANK-12",
+        "day": 26,
+        "date": "2026-04-07",
+        "seq": 5,
+        "type": "transition",
+        "actor": "Sophie Lambert",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      },
+      {
+        "ticket": "BANK-10",
+        "day": 27,
+        "date": "2026-04-08",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 4.6,
+          "note": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés."
+        }
+      },
+      {
+        "ticket": "BANK-10",
+        "day": 27,
+        "date": "2026-04-08",
+        "seq": 1,
+        "type": "comment",
+        "actor": "Camille Roux",
+        "payload": {
+          "text": "Point d'avancement sur « Centre de notifications » : ça avance comme prévu."
+        }
+      },
+      {
+        "ticket": "BANK-10",
+        "day": 28,
+        "date": "2026-04-09",
+        "seq": 0,
+        "type": "worklog",
+        "actor": "Camille Roux",
+        "payload": {
+          "hours": 4.4,
+          "note": "Ajouter dans l'interface un centre de notifications listant les alertes de retard de paiement et les imports de relevés terminés."
+        }
+      },
+      {
+        "ticket": "BANK-10",
+        "day": 28,
+        "date": "2026-04-09",
+        "seq": 1,
+        "type": "transition",
+        "actor": "Camille Roux",
+        "payload": {
+          "from": "En cours",
+          "to": "Terminé"
+        }
+      }
+    ],
+    "invoices": [
+      {
+        "number": "F-2026-001",
+        "lot": "L1",
+        "ticket": null,
+        "issued_day": 6,
+        "due_day": 36,
+        "amount_ht": 3000,
+        "vat": 600,
+        "amount_ttc": 3600,
+        "covers": [
+          "BANK-1",
+          "BANK-2",
+          "BANK-3"
+        ]
+      },
+      {
+        "number": "F-2026-002",
+        "lot": "L2",
+        "ticket": null,
+        "issued_day": 23,
+        "due_day": 53,
+        "amount_ht": 13650,
+        "vat": 2730,
+        "amount_ttc": 16380,
+        "covers": [
+          "BANK-4",
+          "BANK-5",
+          "BANK-6",
+          "BANK-7"
+        ]
+      },
+      {
+        "number": "F-2026-003",
+        "lot": null,
+        "ticket": "BANK-12",
+        "issued_day": 26,
+        "due_day": 56,
+        "amount_ht": 750,
+        "vat": 150,
+        "amount_ttc": 900,
+        "covers": [
+          "BANK-12"
+        ]
+      },
+      {
+        "number": "F-2026-004",
+        "lot": "L3",
+        "ticket": null,
+        "issued_day": 29,
+        "due_day": 59,
+        "amount_ht": 8100,
+        "vat": 1620,
+        "amount_ttc": 9720,
+        "covers": [
+          "BANK-8",
+          "BANK-9",
+          "BANK-10",
+          "BANK-11"
+        ]
+      }
+    ],
+    "payments": [
+      {
+        "invoice": "F-2026-001",
+        "day": 36,
+        "amount": 1200,
+        "reference": "VIR-F-2026-001-1"
+      },
+      {
+        "invoice": "F-2026-001",
+        "day": 51,
+        "amount": 2400,
+        "reference": "VIR-F-2026-001-2"
+      },
+      {
+        "invoice": "F-2026-003",
+        "day": 56,
+        "amount": 900,
+        "reference": "VIR-F-2026-003-1"
+      },
+      {
+        "invoice": "F-2026-002",
+        "day": 65,
+        "amount": 16380,
+        "reference": "VIR-F-2026-002-1"
+      },
+      {
+        "invoice": "F-2026-004",
+        "day": 79,
+        "amount": 4860,
+        "reference": "VIR-F-2026-004-1"
+      },
+      {
+        "invoice": "F-2026-004",
+        "day": 94,
+        "amount": 4860,
+        "reference": "VIR-F-2026-004-2"
+      }
+    ],
+    "approvals": [
+      {
+        "lot": "L1",
+        "day": 6,
+        "approved_by": "Direction des achats"
+      },
+      {
+        "lot": "L2",
+        "day": 23,
+        "approved_by": "Direction des achats"
+      },
+      {
+        "lot": "L3",
+        "day": 29,
+        "approved_by": "Direction des achats"
+      }
+    ]
+  },
+  "diff": {
+    "tickets": [
+      {
+        "key": "BANK-1",
+        "lot": "L1",
+        "assignee": "Camille Roux",
+        "planned_start": 0,
+        "planned_end": 2,
+        "real_start": 0,
+        "real_end": 2,
+        "slip_days": 0,
+        "days_charged": 3,
+        "actual_days": 2.59
+      },
+      {
+        "key": "BANK-2",
+        "lot": "L1",
+        "assignee": "Yanis Benali",
+        "planned_start": 3,
+        "planned_end": 3,
+        "real_start": 3,
+        "real_end": 5,
+        "slip_days": 2,
+        "days_charged": 1,
+        "actual_days": 2.16
+      },
+      {
+        "key": "BANK-3",
+        "lot": "L1",
+        "assignee": "Camille Roux",
+        "planned_start": 3,
+        "planned_end": 3,
+        "real_start": 3,
+        "real_end": 3,
+        "slip_days": 0,
+        "days_charged": 1,
+        "actual_days": 0.99
+      },
+      {
+        "key": "BANK-4",
+        "lot": "L2",
+        "assignee": "Marc Delorme",
+        "planned_start": 3,
+        "planned_end": 12,
+        "real_start": 3,
+        "real_end": 12,
+        "slip_days": 0,
+        "days_charged": 10,
+        "actual_days": 7.48
+      },
+      {
+        "key": "BANK-5",
+        "lot": "L2",
+        "assignee": "Sophie Lambert",
+        "planned_start": 13,
+        "planned_end": 15,
+        "real_start": 13,
+        "real_end": 16,
+        "slip_days": 1,
+        "days_charged": 3,
+        "actual_days": 1.82
+      },
+      {
+        "key": "BANK-6",
+        "lot": "L2",
+        "assignee": "Camille Roux",
+        "planned_start": 16,
+        "planned_end": 18,
+        "real_start": 17,
+        "real_end": 19,
+        "slip_days": 1,
+        "days_charged": 3,
+        "actual_days": 2.38
+      },
+      {
+        "key": "BANK-7",
+        "lot": "L2",
+        "assignee": "Yanis Benali",
+        "planned_start": 19,
+        "planned_end": 19,
+        "real_start": 20,
+        "real_end": 22,
+        "slip_days": 3,
+        "days_charged": 1,
+        "actual_days": 2.2
+      },
+      {
+        "key": "BANK-8",
+        "lot": "L3",
+        "assignee": "Sophie Lambert",
+        "planned_start": 19,
+        "planned_end": 23,
+        "real_start": 20,
+        "real_end": 24,
+        "slip_days": 1,
+        "days_charged": 5,
+        "actual_days": 3.61
+      },
+      {
+        "key": "BANK-9",
+        "lot": "L3",
+        "assignee": "Yanis Benali",
+        "planned_start": 20,
+        "planned_end": 22,
+        "real_start": 23,
+        "real_end": 26,
+        "slip_days": 4,
+        "days_charged": 3,
+        "actual_days": 3.11
+      },
+      {
+        "key": "BANK-10",
+        "lot": "L3",
+        "assignee": "Camille Roux",
+        "planned_start": 24,
+        "planned_end": 26,
+        "real_start": 25,
+        "real_end": 28,
+        "slip_days": 2,
+        "days_charged": 3,
+        "actual_days": 2.8
+      },
+      {
+        "key": "BANK-11",
+        "lot": "L3",
+        "assignee": "Sophie Lambert",
+        "planned_start": 16,
+        "planned_end": 16,
+        "real_start": 17,
+        "real_end": 18,
+        "slip_days": 2,
+        "days_charged": 1,
+        "actual_days": 1.36
+      },
+      {
+        "key": "BANK-12",
+        "lot": null,
+        "assignee": "Sophie Lambert",
+        "planned_start": 24,
+        "planned_end": 24,
+        "real_start": 25,
+        "real_end": 26,
+        "slip_days": 2,
+        "days_charged": 1,
+        "actual_days": 1.69
+      }
+    ],
+    "lots": [
+      {
+        "key": "L1",
+        "name": "Tableau de bord factures",
+        "planned_delivery_day": 3,
+        "real_delivery_day": 5,
+        "slip_days": 2,
+        "days_charged": 5,
+        "actual_days": 5.74
+      },
+      {
+        "key": "L2",
+        "name": "Suivi des paiements",
+        "planned_delivery_day": 19,
+        "real_delivery_day": 22,
+        "slip_days": 3,
+        "days_charged": 17,
+        "actual_days": 13.88
+      },
+      {
+        "key": "L3",
+        "name": "Exports et notifications",
+        "planned_delivery_day": 26,
+        "real_delivery_day": 28,
+        "slip_days": 2,
+        "days_charged": 12,
+        "actual_days": 10.88
+      }
+    ]
+  },
+  "clock": {
+    "day": 109,
+    "last_day": 109,
+    "date": "2026-07-31"
+  }
+}
