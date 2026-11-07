@@ -27,7 +27,7 @@ def pay_invoice(conn: sqlite3.Connection, number: str) -> dict:
             "SELECT MIN(day) FROM payment WHERE invoice_id = ? AND day <= ?", (invoice["id"], today)
         ).fetchone()[0]
         if earlier is not None:
-            raise AlreadyPaid(f"Facture déjà payée le {date_for_day(start, earlier).isoformat()}")
+            raise AlreadyPaid(f"Facture déjà payée le {date_for_day(start, earlier).strftime('%d/%m/%Y')}")
         # The participant moved the clock back and is rewriting their own future action.
         conn.execute("DELETE FROM payment WHERE invoice_id = ? AND day > ?", (invoice["id"], today))
         reference = f"VIR-{number}-1"

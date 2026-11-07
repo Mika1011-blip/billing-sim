@@ -16,6 +16,8 @@ def client(tmp_path):
 
 
 def generate(client, **body):
+    """Seeded by default: payment tests assert on fixture dates, which a random seed can shift (seed 7 does)."""
+    body.setdefault("seed", 42)
     return client.post("/setup/generate", json={"request_text": "x", "fallback": True, **body})
 
 
@@ -25,7 +27,7 @@ def test_generate_fallback(client):
     body = r.json()
     assert body["kind"] == "plan"
     assert len(body["plan"]["lots"]) == 3
-    assert isinstance(body["seed"], int)
+    assert body["seed"] == 42  # the `generate` helper pins the seed
     assert isinstance(body["warnings"], list)
 
 
@@ -259,4 +261,5 @@ def test_pay_invoice_twice_is_409(client):
     first = client.post("/client/invoices/F-2026-001/payer").json()
     r = client.post("/client/invoices/F-2026-001/payer")
     assert r.status_code == 409
-    assert r.json() == {"detail": f"Facture déjà payée le {first['date']}"}
+    y, m, d = first["date"].split("-")
+    assert r.json() == {"detail": f"Facture déjà payée le {d}/{m}/{y}"}

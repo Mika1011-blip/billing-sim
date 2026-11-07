@@ -253,7 +253,10 @@ export function ClientPage() {
     try {
       await payInvoice(numero)
     } catch (e) {
-      throw new Error(e instanceof ApiError && e.status === 409 && e.detail ? e.detail : fr.invoiceCard.payError)
+      const alreadyPaid = e instanceof ApiError && e.status === 409 && e.detail
+      // A 409 means the card was stale (paid elsewhere, or the clock moved): refetch, still showing the message.
+      if (alreadyPaid) await refresh()
+      throw new Error(alreadyPaid ? e.detail : fr.invoiceCard.payError)
     }
     await refresh()
   }
