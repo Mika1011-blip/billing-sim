@@ -1,4 +1,5 @@
 import json
+import logging
 import sqlite3
 from datetime import date
 
@@ -9,7 +10,7 @@ from billing_sim.engine.clock import get_day, last_day, set_day
 from billing_sim.engine.payments import pay_invoice
 from billing_sim.expander.calendar import date_for_day
 from billing_sim.expander.expand import expand
-from billing_sim.store.db import NotFound, connect, wipe
+from billing_sim.store.db import SCHEMA_VERSION, NotFound, connect, wipe
 from billing_sim.store.dev_queries import (
     diff_plan_vs_real,
     full_plan,
@@ -598,3 +599,59 @@ def test_ticket_has_planned_dates(conn):
         assert x["debut_prevu"] and x["fin_prevu"] and x["fin_prevu"] >= x["debut_prevu"]
     nested = [x for inv in list_invoices(conn, last_day(conn)) for x in inv["tickets"]]
     assert nested and all("debut_prevu" in x and "fin_prevu" in x for x in nested)
+
+
+def _user_version(conn):
+    return conn.execute("PRAGMA user_version").fetchone()[0]
+
+
+def _schema_warnings(caplog):
+    return [r for r in caplog.records if r.name == "billing_sim.store" and r.levelno == logging.WARNING]
+
+
+def test_connect_sets_schema_version(tmp_path, caplog):
+    with caplog.at_level(logging.WARNING, logger="billing_sim.store"):
+        conn = connect(tmp_path / "fresh.sqlite")
+    assert _user_version(conn) == SCHEMA_VERSION
+    assert not _schema_warnings(caplog)
+    conn.close()
+
+
+def test_old_schema_is_rebuilt(tmp_path, caplog):
+    path = tmp_path / "old.sqlite"
+    old = sqlite3.connect(path)
+    old.execute("CREATE TABLE lot (id INTEGER PRIMARY KEY, key TEXT)")
+    old.execute("INSERT INTO lot (key) VALUES ('L1')")
+    old.execute("PRAGMA user_version = 1")
+    old.commit()
+    old.close()
+
+    with caplog.at_level(logging.WARNING, logger="billing_sim.store"):
+        conn = connect(path)
+
+    assert conn.execute("SELECT COUNT(*) FROM lot").fetchone()[0] == 0
+    columns = [row["name"] for row in conn.execute("PRAGMA table_info(lot)")]
+    assert "delivery_summary" in columns
+    assert _user_version(conn) == SCHEMA_VERSION
+    assert len(_schema_warnings(caplog)) == 1
+    assert "database rebuilt" in _schema_warnings(caplog)[0].getMessage()
+    conn.close()
+
+
+def test_current_schema_is_kept(tmp_path, plan, contract, timeline, caplog):
+    path = tmp_path / "current.sqlite"
+    first = connect(path)
+    load_scenario(
+        first, plan=plan, contract=contract, timeline=timeline,
+        request_text="Un tableau de bord.", seed=42, start_date=START,
+    )  # fmt: skip
+    tickets = first.execute("SELECT COUNT(*) FROM ticket").fetchone()[0]
+    assert tickets > 0
+    first.close()
+
+    with caplog.at_level(logging.WARNING, logger="billing_sim.store"):
+        second = connect(path)
+    assert second.execute("SELECT COUNT(*) FROM ticket").fetchone()[0] == tickets
+    assert second.execute("SELECT COUNT(*) FROM scenario").fetchone()[0] == 1
+    assert not _schema_warnings(caplog)
+    second.close()
