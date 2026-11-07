@@ -1,5 +1,5 @@
 {
-  "total": 109.913,
+  "total": 105.573,
   "scenes": [
     {
       "scene": 1,
@@ -7,35 +7,35 @@
     },
     {
       "scene": 2,
-      "start": 16.236
+      "start": 10.581
     },
     {
       "scene": 3,
-      "start": 32.307
+      "start": 26.645
     },
     {
       "scene": 4,
-      "start": 45.118
+      "start": 39.447
     },
     {
       "scene": 5,
-      "start": 56.872
+      "start": 52.279
     },
     {
       "scene": 6,
-      "start": 69.674
+      "start": 65.092
     },
     {
       "scene": 7,
-      "start": 77.44
+      "start": 72.857
     },
     {
       "scene": 8,
-      "start": 86.253
+      "start": 81.643
     },
     {
       "scene": 9,
-      "start": 101.418
+      "start": 97.082
     }
   ]
 }
