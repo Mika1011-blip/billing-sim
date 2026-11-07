@@ -37,13 +37,7 @@ docker compose up --build
 
 ### Upgrading an existing install
 
-Existing databases are not migrated (the schema gained work steps and delivery summaries and lost the scripted payment behaviour). Start from an empty database:
-
-```bash
-docker compose down -v
-rm -f data/sim.sqlite    # the database is a bind mount (./data), which `down -v` does not remove
-docker compose up --build
-```
+An older database is rebuilt automatically on start (the loaded scenario is discarded; generate again).
 
 ### API key
 

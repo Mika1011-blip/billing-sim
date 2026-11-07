@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from datetime import date
 from pathlib import Path
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
+# Bump whenever schema.sql changes shape (a new column, a dropped table). An older database is rebuilt on connect.
+SCHEMA_VERSION = 2
+
+_log = logging.getLogger("billing_sim.store")
 
 # Child tables first, so foreign keys never block the deletes.
 _TABLES = (
@@ -35,9 +40,40 @@ class NotFound(KeyError):
 def connect(path: str | Path = ":memory:") -> sqlite3.Connection:
     conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
+    _apply_schema(conn)
     conn.execute("PRAGMA foreign_keys = ON")
-    conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
     return conn
+
+
+def _apply_schema(conn: sqlite3.Connection) -> None:
+    """Create the tables, or rebuild them when the file was written by another schema version.
+
+    Everything runs in one transaction (SQLite DDL and `user_version` are transactional), so a failure leaves the
+    file as it was. Foreign keys stay off while tables are dropped; `connect` turns them on afterwards.
+    """
+    old_version = conn.execute("PRAGMA user_version").fetchone()[0]
+    existing = [
+        row[0]
+        for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")
+    ]
+    rebuild = bool(existing) and old_version != SCHEMA_VERSION
+    statements = ["BEGIN"]
+    if rebuild:
+        known = set(_TABLES)
+        for table in [*_TABLES, *(name for name in existing if name not in known)]:
+            statements.append(f'DROP TABLE IF EXISTS "{table}"')
+    statements.append(SCHEMA_PATH.read_text(encoding="utf-8"))
+    statements.append(f"PRAGMA user_version = {SCHEMA_VERSION}")
+    statements.append("COMMIT")
+    script = ";\n".join(statements) + ";"
+    conn.execute("PRAGMA foreign_keys = OFF")
+    try:
+        conn.executescript(script)
+    except BaseException:
+        conn.rollback()
+        raise
+    if rebuild:
+        _log.warning("schema version %s → %s: database rebuilt, scenario discarded", old_version, SCHEMA_VERSION)
 
 
 def clear_rows(conn: sqlite3.Connection) -> None:
