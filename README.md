@@ -85,7 +85,7 @@ Both speak MCP over stdio and read the same SQLite file (`SIM_DB_PATH`). Install
 
 | Server | Command | Purpose |
 |---|---|---|
-| Manager | `python -m billing_sim.mcp_manager` | Control plane: `generate`, `reset`, `get_clock`, `set_day`, `step`, `get_plan`, `get_timeline`, `get_ticket_full`, `diff_plan_vs_real`, `get_agent_tools`. Sees everything, including the future. |
+| Manager | `python -m billing_sim.mcp_manager` | Control plane: `generate`, `reset`, `get_clock`, `set_day`, `step`, `get_plan`, `get_timeline`, `get_ticket_full`, `diff_plan_vs_real`, `get_agent_tools`, `pay_invoice` (pay an issued invoice in full at the clock's day, as the participant would). Sees everything, including the future. |
 | Client | `python -m billing_sim.mcp_client` | What the client agent can call: 13 read-only tools (`get_today`, `get_contract`, `get_summary`, `list_lots`, `get_lot`, `list_tickets`, `get_ticket`, `get_ticket_history`, `list_invoices`, `get_invoice`, `list_payments`, `list_pending_approvals`, `explain_price`). Past-only: every tool reads the clock itself and none accepts a day. |
 
 To drive the simulation from **Claude Desktop**, add the manager to `claude_desktop_config.json` (use the absolute path of your virtualenv's Python; on Windows `backend\\.venv\\Scripts\\python.exe`):
