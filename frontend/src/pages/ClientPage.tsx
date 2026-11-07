@@ -14,12 +14,14 @@ import {
 } from '../api'
 import { AlertLine } from '../components/client/AlertLine'
 import { Assistant, invoiceHash, REVEAL_EVENT } from '../components/client/Assistant'
+import { ChronologieView } from '../components/client/ChronologieView'
 import { Header } from '../components/client/Header'
 import { InvoiceDetail } from '../components/client/InvoiceDetail'
 import { InvoiceGallery } from '../components/client/InvoiceGallery'
 import { LotsEnCours } from '../components/client/LotsEnCours'
 import { PendingApprovals } from '../components/client/PendingApprovals'
 import { SummaryTiles } from '../components/client/SummaryTiles'
+import { useClientView, VIEW_PANEL_ID, viewTabId, ViewTabs } from '../components/client/ViewTabs'
 import { fr } from '../i18n/fr'
 import { dayForDate } from '../lib/workdays'
 import { useOnSimReset, useSimClock } from '../sim'
@@ -74,6 +76,7 @@ export function ClientPage() {
   const [data, setData] = useState<Loaded | null>(null)
   const [message, setMessage] = useState<string>(fr.page.loading)
   const [error, setError] = useState('')
+  const [view, setView] = useClientView() // Chronologie or Factures, remembered in this browser
   const latest = useRef(0)
   const hasData = useRef(false)
   const shownDay = useRef<number | null>(null) // the clock day the dashboard was last loaded at
@@ -201,13 +204,15 @@ export function ClientPage() {
     if (!data) return
     const onReveal = (e: Event) => {
       const key = (e as CustomEvent<string>).detail
-      const invoice = invoiceFor(key, data)
+      // On the Chronologie tab every ticket has its row on the page: it reveals itself there.
+      const onPage = view === 'chronologie' && data.tickets.some((tk) => tk.cle === key)
+      const invoice = onPage ? undefined : invoiceFor(key, data)
       if (invoice && invoice.numero !== open?.numero) openInvoice(invoice.numero, key)
       else if (!invoice && open) closeInvoice() // the record is on the page, under the drawer
     }
     window.addEventListener(REVEAL_EVENT, onReveal)
     return () => window.removeEventListener(REVEAL_EVENT, onReveal)
-  }, [data, open, closeInvoice]) // openInvoice only sets state and the hash: no stale value to miss
+  }, [data, open, view, closeInvoice]) // openInvoice only sets state and the hash: no stale value to miss
 
   const shown = open && data ? data.invoices.find((i) => i.numero === open.numero) : undefined
 
@@ -284,12 +289,21 @@ export function ClientPage() {
           {error && <p className="error">{error}</p>}
           <SummaryTiles summary={data.summary} />
           <AlertLine summary={data.summary} invoices={data.invoices} />
-          {/* The invoice dashboard: invoices, then the lots still to invoice. */}
-          <section className="panel invoices">
-            <h2>{fr.invoiceCard.title}</h2>
-            <InvoiceGallery invoices={data.invoices} onPay={pay} onOpen={(numero) => openInvoice(numero)} />
-          </section>
-          <LotsEnCours lots={data.lots} tickets={data.tickets} day={today.jour} />
+          <ViewTabs value={view} onChange={setView} />
+          <div role="tabpanel" id={VIEW_PANEL_ID} aria-labelledby={viewTabId(view)}>
+            {view === 'factures' ? (
+              <>
+                {/* The invoice dashboard: invoices, then the lots still to invoice. */}
+                <section className="panel invoices">
+                  <h2>{fr.invoiceCard.title}</h2>
+                  <InvoiceGallery invoices={data.invoices} onPay={pay} onOpen={(numero) => openInvoice(numero)} />
+                </section>
+                <LotsEnCours lots={data.lots} tickets={data.tickets} day={today.jour} />
+              </>
+            ) : (
+              <ChronologieView tickets={data.tickets} lots={data.lots} today={today} />
+            )}
+          </div>
           <PendingApprovals lots={data.approvals} />
         </main>
         <aside className="assistant">

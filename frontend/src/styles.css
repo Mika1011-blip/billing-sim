@@ -633,6 +633,86 @@ td.num {
   font-weight: 600;
 }
 
+/* ---- client views: Chronologie / Factures tabs ---- */
+
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.view-tabs button {
+  margin-bottom: -1px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px 8px 0 0;
+  background: none;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.view-tabs button[aria-selected='true'] {
+  border-color: var(--border);
+  border-bottom-color: var(--bg);
+  background: var(--bg);
+  color: var(--accent);
+}
+
+/* ---- Chronologie: Avancement chart ---- */
+
+.avancement-scroll {
+  overflow-x: auto;
+}
+
+.avancement text {
+  font-size: 11px;
+  fill: #374151;
+}
+
+.avancement .sprint-band.odd { fill: #f8fafc; }
+.avancement .sprint-band.even { fill: #eef2f7; }
+.avancement .sprint-label,
+.avancement .date-tick { fill: var(--muted); }
+.avancement .date-tick-mark { stroke: var(--border); }
+.avancement .lot-label { font-weight: 600; }
+.avancement .planned { fill: #cbd5e1; }
+.avancement .real { fill: var(--accent); }
+.avancement .blocked { stroke: var(--warn); }
+.avancement .hatch-bg { fill: #fff; }
+.avancement .hatch-line { stroke: var(--warn); stroke-width: 3; }
+.avancement .today { stroke: var(--danger); stroke-width: 2; }
+
+.avancement .chrono-row {
+  cursor: pointer;
+  outline: none;
+}
+
+.avancement .row-hit {
+  fill: var(--accent);
+  fill-opacity: 0;
+}
+
+.avancement .chrono-row:hover .row-hit { fill-opacity: 0.05; }
+.avancement .chrono-row.selected .row-hit { fill-opacity: 0.12; }
+
+.avancement .chrono-row:focus-visible .row-hit {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+ul.legend {
+  list-style: none;
+  padding: 0;
+}
+
+.avancement-detail {
+  margin-top: 12px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
 /* ---- invoice dashboard ---- */
 
 .filter-pills {

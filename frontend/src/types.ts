@@ -202,6 +202,8 @@ export interface ClientTicket {
   montant: number
   statut: TicketStatus
   assigne: string
+  debut_prevu: string | null // plan data (as shown at signature), not filtered by the clock
+  fin_prevu: string | null
   debut_reel: string | null
   fin_reel: string | null
   jours_reels: number
