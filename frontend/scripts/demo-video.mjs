@@ -1,7 +1,7 @@
 // Records the demo video of the simulation against a running stack (docker compose up).
 // Run from frontend/:  node scripts/demo-video.mjs   → ../docs/demo/demo.webm + timeline.json
 // Deterministic: fallback scenario, seed 42. French captions are injected into the page.
-// Each scene lasts at least its narration segment (docs/demo/seg/segN.mp3, durations below) so the
+// Each scene lasts at least its narration file (docs/demo/voice/narration-fr-0N.mp3, durations below) so the
 // voice-over can be placed at the scene's start time: see docs/demo/mux.sh.
 import { chromium } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
@@ -14,8 +14,8 @@ const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 
 fs.mkdirSync(outDir, { recursive: true })
 for (const f of fs.readdirSync(outDir)) if (f.endsWith('.webm')) fs.unlinkSync(path.join(outDir, f))
 
-// Narration segment lengths in seconds (docs/demo/narration.md, one paragraph per scene) + a breath.
-const SEGMENTS = [10.45, 16.41, 13.15, 12.12, 12.15, 8.11, 9.14, 12.15, 7.36]
+// Narration file lengths in seconds (docs/demo/voice/narration-fr-0N.mp3, one per scene) + a breath.
+const SEGMENTS = [9.98, 15.46, 12.20, 11.15, 11.18, 7.16, 8.18, 11.18, 6.87]
 const BREATH = 0.6
 
 const browser = await chromium.launch()
@@ -121,17 +121,38 @@ await page.getByRole('link', { name: 'Client', exact: true }).click()
 await page.getByRole('heading', { level: 1 }).waitFor()
 await pause(800)
 await caption('Le client suit, jour par jour, ce qui est réellement fait.', 2000)
-await smoothScroll(page.locator('.lots-en-cours'))
-const firstLot = page.locator('.lot-card').first()
-await firstLot.getByRole('button', { name: 'Afficher les tickets' }).click()
-await firstLot.locator('.ticket-row').first().waitFor({ state: 'visible' })
-await pause(900)
-await firstLot.locator('.ticket-row').first().click()
-await firstLot.locator('.ticket-body').first().waitFor({ state: 'visible' })
-await pause(400)
-await smoothScroll(firstLot.locator('.ticket-body').first())
-await caption('Étapes prévues cochées, journal du travail, jours réels contre jours facturés.', 3000)
-await sceneEnd(4)
+const chronoTab = page.getByRole('tab', { name: 'Chronologie' })
+const hasChrono = (await chronoTab.count()) > 0
+if (hasChrono) {
+  // Final cut: the Chronologie view (planned vs real up to today, Terminé / Reste à faire, ticket detail).
+  await chronoTab.click()
+  await page.getByRole('tabpanel').waitFor()
+  await pause(600)
+  await smoothScroll(page.getByRole('tabpanel'))
+  await pause(1800)
+  const doneRow = page.getByRole('tabpanel').locator('.ticket-row').first()
+  await doneRow.click()
+  await page.getByRole('tabpanel').locator('.ticket-body').first().waitFor({ state: 'visible' })
+  await pause(400)
+  await smoothScroll(page.getByRole('tabpanel').locator('.ticket-body').first())
+  await caption('Étapes prévues cochées, journal du travail, jours réels contre jours facturés.', 3000)
+  await sceneEnd(4)
+  await toTop()
+  await page.getByRole('tab', { name: 'Factures' }).click()
+  await pause(500)
+} else {
+  await smoothScroll(page.locator('.lots-en-cours'))
+  const firstLot = page.locator('.lot-card').first()
+  await firstLot.getByRole('button', { name: 'Afficher les tickets' }).click()
+  await firstLot.locator('.ticket-row').first().waitFor({ state: 'visible' })
+  await pause(900)
+  await firstLot.locator('.ticket-row').first().click()
+  await firstLot.locator('.ticket-body').first().waitFor({ state: 'visible' })
+  await pause(400)
+  await smoothScroll(firstLot.locator('.ticket-body').first())
+  await caption('Étapes prévues cochées, journal du travail, jours réels contre jours facturés.', 3000)
+  await sceneEnd(4)
+}
 
 // ---------------------------------------------------------------- scène 5 : la facture (jour 45)
 scene(5)

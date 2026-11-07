@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Places the nine narration segments (seg/segN.mp3) at the scene start times recorded in timeline.json
+# Places the nine narration files (voice/narration-fr-0N.mp3) at the scene start times recorded in timeline.json
 # over demo.webm, and writes demo.mp4 (H.264 + AAC). Runs ffmpeg in Docker; no local install needed.
 #   bash docs/demo/mux.sh            (from the repo root)
 set -euo pipefail
@@ -15,7 +15,7 @@ INPUTS=(-i /work/demo.webm)
 FILTER=""
 MIX=""
 for i in $(seq 1 9); do
-  INPUTS+=(-i "/work/seg/seg$i.mp3")
+  INPUTS+=(-i "/work/voice/narration-fr-0$i.mp3")
   ms=${STARTS[$((i-1))]}
   FILTER+="[$i:a]aresample=48000,adelay=${ms}|${ms}[a$i];"
   MIX+="[a$i]"
