@@ -24,10 +24,14 @@ interface Props {
   defaultOpen?: boolean
   /** Opens the row when it names this ticket (e.g. a drawer opened from a citation). */
   revealKey?: string | null
+  /** Extra line in the collapsed row (e.g. `Début prévu le …`). */
+  note?: string
+  /** Whether the row carries the record's `rec-<key>` anchor; a second copy of a row on the page must not. */
+  anchor?: boolean
 }
 
 /** One ticket: a collapsed price line that expands to its description, planned steps and journal. */
-export function TicketDetail({ ticket, day, defaultOpen = false, revealKey = null }: Props) {
+export function TicketDetail({ ticket, day, defaultOpen = false, revealKey = null, note, anchor = true }: Props) {
   const t = fr.ticketDetail
   const [open, setOpen] = useState(defaultOpen || revealKey === ticket.cle)
   const [seenRevealKey, setSeenRevealKey] = useState(revealKey)
@@ -83,12 +87,13 @@ export function TicketDetail({ ticket, day, defaultOpen = false, revealKey = nul
   }
 
   return (
-    <div className="ticket-detail" id={`rec-${ticket.cle}`}>
+    <div className="ticket-detail" id={anchor ? `rec-${ticket.cle}` : undefined}>
       <button type="button" className="ticket-row" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className="ticket-row-title">
           <strong>{ticket.cle}</strong> · {ticket.titre} · {fmtCalcul(ticket)}
         </span>
         <Pill statut={ticket.statut} />
+        {note && <span className="ticket-row-meta">{note}</span>}
         <span className="ticket-row-meta">
           {fmtDays(ticket.jours_reels)} {t.reels}
         </span>

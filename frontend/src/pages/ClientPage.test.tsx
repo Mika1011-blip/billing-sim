@@ -357,6 +357,103 @@ describe('ClientPage', () => {
     })
   })
 
+  describe('the Chronologie and Factures tabs', () => {
+    const VIEW_KEY = 'billing-sim.client.view'
+    const tab = (name: string) => screen.getByRole('tab', { name })
+    const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 0))) // lets the history fetches land
+    afterEach(() => {
+      vi.restoreAllMocks()
+      localStorage.clear()
+    })
+
+    it('opens on Factures, and switching keeps the tiles, the alert line and the approvals', async () => {
+      const calls = installFetch()
+      renderPage()
+      await shownDay(2)
+      expect(screen.getByRole('tablist').textContent).toBe('ChronologieFactures')
+      expect(tab('Factures')).toHaveAttribute('aria-selected', 'true')
+      expect(tab('Chronologie')).toHaveAttribute('aria-selected', 'false')
+      expect(screen.getByRole('tabpanel', { name: 'Factures' })).toBeInTheDocument()
+      await userEvent.click(tab('Chronologie'))
+      expect(tab('Chronologie')).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getByRole('tabpanel', { name: 'Chronologie' })).toBeInTheDocument()
+      expect(screen.getByRole('list', { name: 'Synthèse' })).toBeInTheDocument()
+      expect(document.querySelector('.alert-line')).not.toBeNull()
+      expect(screen.getByText('Lots à valider')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Assistant' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Avancement' })).toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'Factures' })).toBeNull()
+      expect(document.getElementById('rec-F-2026-001')).toBeNull()
+      expect(localStorage.getItem(VIEW_KEY)).toBe('chronologie')
+      await settle()
+      expect(calls).toContain('GET /client/tickets/BANK-1/history') // started on 02/03, before today (04/03)
+      expect(calls).not.toContain('GET /client/tickets/BANK-2/history') // its record starts after today
+      await userEvent.click(tab('Factures'))
+      expect(screen.getByRole('heading', { name: 'Factures' })).toBeInTheDocument()
+      expect(localStorage.getItem(VIEW_KEY)).toBe('factures')
+    })
+
+    it('restores the tab saved in localStorage', async () => {
+      localStorage.setItem(VIEW_KEY, 'chronologie')
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      expect(tab('Chronologie')).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getByRole('heading', { name: 'Avancement' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /^Terminé \(\d+\)$/ })).toBeInTheDocument()
+      await settle()
+    })
+
+    it('falls back to Factures when localStorage is unavailable', async () => {
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new Error('denied')
+      })
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('denied')
+      })
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      expect(tab('Factures')).toHaveAttribute('aria-selected', 'true')
+      await userEvent.click(tab('Chronologie'))
+      expect(tab('Chronologie')).toHaveAttribute('aria-selected', 'true')
+      await settle()
+    })
+
+    it('moves between the tabs with the arrow keys', async () => {
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      tab('Factures').focus()
+      await userEvent.keyboard('{ArrowLeft}')
+      expect(tab('Chronologie')).toHaveAttribute('aria-selected', 'true')
+      expect(tab('Chronologie')).toHaveFocus()
+      await userEvent.keyboard('{ArrowRight}')
+      expect(tab('Factures')).toHaveFocus()
+      expect(tab('Factures')).toHaveAttribute('aria-selected', 'true')
+      await settle()
+    })
+
+    it('reveals a cited ticket in the Chronologie lists instead of opening its invoice', async () => {
+      localStorage.setItem(VIEW_KEY, 'chronologie')
+      installFetch()
+      renderPage()
+      await shownDay(2)
+      await settle()
+      await act(async () => void window.dispatchEvent(new CustomEvent('reveal-record', { detail: 'BANK-5' })))
+      expect(screen.queryByRole('dialog')).toBeNull()
+      const row = within(document.getElementById('rec-BANK-5')!).getByRole('button', { name: /^BANK-5/ })
+      expect(row).toHaveAttribute('aria-expanded', 'true')
+      expect(await screen.findByText("En attente des accès à l'API bancaire")).toBeInTheDocument()
+      // an invoice citation still opens the drawer from this tab
+      await act(async () => {
+        window.location.hash = 'facture-F-2026-001'
+        await new Promise((resolve) => window.addEventListener('hashchange', resolve, { once: true }))
+      })
+      expect(await screen.findByRole('dialog', { name: /^F-2026-001/ })).toBeInTheDocument()
+    })
+  })
+
   describe('when the clock is moved elsewhere', () => {
     async function loaded() {
       const calls = installFetch()
