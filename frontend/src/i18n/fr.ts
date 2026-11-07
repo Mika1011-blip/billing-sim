@@ -166,6 +166,37 @@ export const fr = {
       `Prochaine facture : ${lot} · ${nom}, prévue vers le ${date} (${montantHt} HT)`,
     nombreFactures: (n: number) => `${n} ${n > 1 ? 'factures' : 'facture'}`, // under the En retard tile
   },
+  // The two client views, under the tiles (spec §15.2).
+  tabs: {
+    label: 'Vues du tableau de bord',
+    chronologie: 'Chronologie',
+    factures: 'Factures',
+  },
+  // The Chronologie view: planned vs real Gantt, then the done and remaining tickets (spec §15.2).
+  chronologie: {
+    avancement: 'Avancement',
+    chartLabel: 'Avancement des tickets : prévu, réel et blocages',
+    hint: 'Cliquez sur une ligne pour afficher le détail du ticket.',
+    detail: 'Détail du ticket',
+    legend: 'Légende',
+    planned: 'prévu',
+    real: 'réel',
+    blocked: 'bloqué',
+    today: "aujourd'hui",
+    noLot: 'Sans lot',
+    sprint: (n: number) => `Sprint ${n}`,
+    // dates come formatted
+    plannedSpan: (from: string, to: string) => `prévu du ${from} au ${to}`,
+    realSpan: (from: string, to: string) => `réel du ${from} au ${to}`,
+    blockedSpan: (from: string, to: string) => `bloqué du ${from} au ${to}`,
+    todayLine: (date: string) => `aujourd'hui, ${date}`,
+    termine: (n: number) => `Terminé (${n})`,
+    resteAFaire: (n: number) => `Reste à faire (${n})`,
+    aucunTermine: "Aucun ticket terminé pour l'instant.",
+    toutTermine: 'Tous les tickets sont terminés.',
+    debutPrevuLe: (date: string) => `Début prévu le ${date}`,
+    historyError: "Une partie des blocages n'a pas pu être chargée.",
+  },
   // Lots not invoiced yet (spec §8.5).
   lotsEnCours: {
     title: 'Lots en cours',

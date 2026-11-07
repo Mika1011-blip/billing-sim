@@ -63,6 +63,24 @@ test('generate with the fallback, move the clock to the end, pay an overdue invo
   await expect(page).toHaveURL(/\/client$/)
   await expect(card.locator('.invoice-card-title')).toBeFocused()
 
+  // The Chronologie tab: on the last day every ticket is done; a chart row opens its detail with its journal.
+  const tickets: { cle: string; journal_nombre: number }[] = await (await page.request.get('/client/tickets')).json()
+  expect(tickets.length).toBeGreaterThan(0)
+  await page.getByRole('tab', { name: 'Chronologie' }).click()
+  await expect(page.getByRole('tab', { name: 'Chronologie' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('list', { name: 'Synthèse' })).toBeVisible() // the tiles stay
+  await expect(page.getByRole('heading', { name: `Terminé (${tickets.length})` })).toBeVisible()
+  await expect(page.getByRole('region', { name: /^Terminé/ }).locator('.ticket-detail')).toHaveCount(tickets.length)
+  await expect(page.getByRole('heading', { name: 'Reste à faire (0)' })).toBeVisible()
+  const chart = page.getByRole('group', { name: /^Avancement des tickets/ })
+  await expect(chart.locator('rect.real')).toHaveCount(tickets.length)
+  const picked = tickets[0]
+  await chart.getByRole('button', { name: new RegExp(`^${picked.cle} · `) }).click()
+  const detail = page.getByRole('region', { name: 'Détail du ticket' })
+  await expect(detail.getByRole('button', { name: new RegExp(`^${picked.cle} `) })).toHaveAttribute('aria-expanded', 'true')
+  await expect(detail.getByRole('heading', { name: 'Journal' })).toBeVisible()
+  await expect(detail.locator('.journal li')).toHaveCount(picked.journal_nombre)
+
   // Opening and closing the drawer left no history entry behind: one Back leaves the client page.
   await page.goBack()
   await expect(page).toHaveURL(/\/dev$/)

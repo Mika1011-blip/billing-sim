@@ -57,6 +57,7 @@ Other optional settings: `SIM_DB_PATH` (default `./sim.sqlite`, `/data/sim.sqlit
 
 - **Tiles**: `Contracté` (TTC, with the HT amount underneath), `Facturé`, `Payé`, `Reste à payer` and `En retard` (amount and number of overdue invoices; red when there is any).
 - **Alert line**, when there is something to do: overdue invoices, the next invoice to pay before its due date, and the next invoice expected (lot, promised date, amount HT).
+- **Two tabs, `Chronologie` and `Factures`** (see *Two views* below); `Factures` holds the next two sections.
 - **Factures**: one card per issued invoice, newest first, with filter pills `Toutes · À payer · En retard · Payées` (`En retard` includes `Très en retard`). A card shows the number, the lot (or the ticket charged separately), the amount TTC, the issue and due dates and the status.
 - **Lots en cours**: the lots not invoiced yet, with their promised delivery date, progress and amount to come, expandable to their tickets.
 - **Lots à valider** and the **assistant** (right column).
@@ -74,7 +75,9 @@ Every invoice has one of four statuses, computed as of today; the day counts are
 
 **Invoice detail.** Clicking a card opens a drawer (its URL is `/client#facture-<number>`, so it can be linked or reloaded): the delivery summary in plain language, the tickets delivered (each expands to its description, planned steps and day-by-day journal), the price calculation (each ticket's size → days × daily rate, total HT, VAT, total TTC, days charged against days really spent, and why a fixed price does not change), and the payment. Close it with ✕, Escape or a click outside.
 
-In the assistant's answers, `[F-2026-001]` opens that invoice's drawer, `[BANK-5]` expands the ticket where it is shown (in *Lots en cours*, or inside the drawer of the invoice that billed it) and `[L2]` expands that lot in *Lots en cours*, or opens its invoice once it is billed.
+**Two views.** Under the tiles and the alert line, two tabs switch the middle of the page; the header, tiles, alert line, *Lots à valider*, the assistant and the invoice drawer are the same on both, and the last tab chosen is remembered in the browser (`localStorage` key `billing-sim.client.view`; `Factures` by default). **Factures** is the invoice dashboard described above (cards, then *Lots en cours*). **Chronologie** is the project as a timeline: *Avancement*, a Gantt with one row per ticket grouped by lot (then *Sans lot*), working days on the x-axis with 10-day sprint bands and a date every 5 days, a grey bar for the plan shown at signature, a blue bar for the real work and hatched days where the ticket was blocked (from its journal), both stopping at the red *aujourd'hui* line, so nothing after today is shown; clicking a row opens that ticket's detail under the chart. Below it, *Terminé (n)* lists the done tickets (latest first) and *Reste à faire (n)* the others by planned start (`Début prévu le …` for those not started).
+
+In the assistant's answers, `[F-2026-001]` opens that invoice's drawer, `[BANK-5]` expands the ticket where it is shown (on the *Chronologie* tab, its row in the lists; on *Factures*, in *Lots en cours* or inside the drawer of the invoice that billed it) and `[L2]` expands that lot in *Lots en cours*, or opens its invoice once it is billed.
 
 ## The two MCP servers
 
