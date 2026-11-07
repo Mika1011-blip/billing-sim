@@ -159,7 +159,9 @@ describe('ClientPage', () => {
       expect(within(card()).getByText('À payer (32 j restants)')).toBeInTheDocument()
       expect(payButton()).toBeEnabled()
       expect(calls).toContain(POST)
-      expect(summaryFetches(calls)).toBe(1)
+      // the card may be stale: a 409 refetches everything too
+      await waitFor(() => expect(summaryFetches(calls)).toBe(2))
+      expect(calls.filter((c) => c === 'GET /client/invoices')).toHaveLength(2)
     })
 
     it('shows the generic French message when the payment fails otherwise', async () => {
@@ -197,7 +199,7 @@ describe('ClientPage', () => {
       renderPage()
       await shownDay(2)
       expect(screen.queryByRole('dialog')).toBeNull()
-      expect(window.location.hash).toBe('') // forgotten: a later refetch cannot pop it open
+      await waitFor(() => expect(window.location.hash).toBe('')) // forgotten (passive effect): a refetch cannot pop it open
     })
 
     it('forgets an open invoice that is no longer visible after a refetch', async () => {

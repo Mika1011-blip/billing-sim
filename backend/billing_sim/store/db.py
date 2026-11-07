@@ -57,14 +57,17 @@ def _apply_schema(conn: sqlite3.Connection) -> None:
         for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")
     ]
     rebuild = bool(existing) and old_version != SCHEMA_VERSION
-    statements = ["BEGIN"]
+    current = bool(existing) and not rebuild
+    # A database already at this version only gets the idempotent script: no BEGIN / user_version write on plain reads.
+    statements = [] if current else ["BEGIN"]
     if rebuild:
         known = set(_TABLES)
         for table in [*_TABLES, *(name for name in existing if name not in known)]:
             statements.append(f'DROP TABLE IF EXISTS "{table}"')
     statements.append(SCHEMA_PATH.read_text(encoding="utf-8"))
-    statements.append(f"PRAGMA user_version = {SCHEMA_VERSION}")
-    statements.append("COMMIT")
+    if not current:
+        statements.append(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        statements.append("COMMIT")
     script = ";\n".join(statements) + ";"
     conn.execute("PRAGMA foreign_keys = OFF")
     try:

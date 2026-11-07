@@ -113,7 +113,8 @@ def test_pay_twice_is_already_paid(unpaid):
     set_day(unpaid, 25)
     with pytest.raises(AlreadyPaid) as caught:
         pay_invoice(unpaid, "F-2026-001")
-    assert str(caught.value) == f"Facture déjà payée le {_iso(unpaid, 20)}"
+    y, m, d = _iso(unpaid, 20).split("-")
+    assert str(caught.value) == f"Facture déjà payée le {d}/{m}/{y}"
     assert _payment_days(unpaid, "F-2026-001") == [20]
 
 

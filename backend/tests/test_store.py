@@ -1,7 +1,7 @@
 import json
 import logging
 import sqlite3
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -19,6 +19,7 @@ from billing_sim.store.dev_queries import (
 )
 from billing_sim.store.load import load_scenario
 from billing_sim.store.queries import (
+    _invoice_status,
     explain_price,
     get_contract,
     get_invoice,
@@ -638,7 +639,7 @@ def test_old_schema_is_rebuilt(tmp_path, caplog):
     conn.close()
 
 
-def test_current_schema_is_kept(tmp_path, plan, contract, timeline, caplog):
+def test_current_schema_is_kept(tmp_path, plan, contract, timeline, caplog, monkeypatch):
     path = tmp_path / "current.sqlite"
     first = connect(path)
     load_scenario(
@@ -649,9 +650,29 @@ def test_current_schema_is_kept(tmp_path, plan, contract, timeline, caplog):
     assert tickets > 0
     first.close()
 
+    statements: list[str] = []
+    real_connect = sqlite3.connect
+
+    def spying_connect(*args, **kwargs):
+        conn = real_connect(*args, **kwargs)
+        conn.set_trace_callback(statements.append)
+        return conn
+
+    monkeypatch.setattr(sqlite3, "connect", spying_connect)
     with caplog.at_level(logging.WARNING, logger="billing_sim.store"):
         second = connect(path)
+    monkeypatch.undo()
     assert second.execute("SELECT COUNT(*) FROM ticket").fetchone()[0] == tickets
     assert second.execute("SELECT COUNT(*) FROM scenario").fetchone()[0] == 1
+    assert _user_version(second) == SCHEMA_VERSION
     assert not _schema_warnings(caplog)
+    assert statements  # the spy saw the connect
+    assert not [s for s in statements if "user_version =" in s.lower().replace("  ", " ")]
+    assert not [s for s in statements if s.strip().upper() in ("BEGIN", "COMMIT")]
     second.close()
+
+
+@pytest.mark.parametrize(("days_late", "statut"), [(30, "En retard"), (31, "Très en retard")])
+def test_invoice_status_late_boundary(days_late, statut):
+    due = date(2026, 4, 1)
+    assert _invoice_status(due + timedelta(days=days_late), due, False) == (statut, days_late, 0)
